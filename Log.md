@@ -757,3 +757,383 @@ int main() {
 #### 4.3 解析
 
 这道题同样地是等效最优解，由于是基于上一题解法改的，也同样有点丑陋。这里就没什么其他解法了，上一题给的通用K模板，在已经是很好的做法。
+
+
+
+### 5. 多数元素**
+
+#### 5.1 题目
+
+给定一个大小为 `n` 的数组 `nums` ，返回其中的多数元素。多数元素是指在数组中出现次数 **大于** `⌊ n/2 ⌋` 的元素。
+
+你可以假设数组是非空的，并且给定的数组总是存在多数元素。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [3,2,3]
+输出：3
+```
+
+**示例 2：**
+
+```
+输入：nums = [2,2,1,1,1,2,2]
+输出：2
+```
+
+ 
+
+**提示：**
+
+- `n == nums.length`
+- `1 <= n <= 5 * 10^4`
+- `-10^9 <= nums[i] <= 10^9`
+- 输入保证数组中一定有一个多数元素。
+
+ 
+
+**进阶：**尝试设计时间复杂度为 O(n)、空间复杂度为 O(1) 的算法解决此问题。
+
+
+
+#### 5.2 解法
+
+**时间复杂度**：$O(n)$，**空间复杂度**：$O(n)$
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int majorityElement(vector<int>& nums) {
+    unordered_map<int, int> freq;
+    int max = 0, maxNum = 0;
+
+    for (auto x : nums) {
+      if (++freq[x] > max) {
+        max = freq[x];
+        maxNum = x;
+      }
+    }
+
+    return maxNum;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> nums(n);
+    for (int i = 0; i < n; ++i) {
+      cin >> nums[i];
+    }
+
+    Solution obj;
+    int k = obj.majorityElement(nums);
+
+    cout << k;
+  }
+
+  return 0;
+}
+```
+
+> 我们不必要找出max，只要频率满足条件即可
+>
+> ```cpp
+> #include <unordered_map>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int majorityElement(vector<int>& nums) {
+>         unordered_map<int, int> freq;
+>         int target = nums.size() / 2;
+> 
+>         for (int x : nums) {
+>             if (++freq[x] > target) {
+>                 return x;
+>             }
+>         }
+> 
+>         return -1;
+>     }
+> };
+> ```
+
+
+
+#### 5.3 解析
+
+这次并未找到等效最优解，要么是内存大了，要么就是时间慢了，来看看别的解法：
+
+1. 排序法
+
+   ```cpp
+   // 内存严格达标，但是时间超出
+   #include <algorithm>
+   #include <vector>
+   
+   using namespace std;
+   
+   class Solution {
+   public:
+       int majorityElement(vector<int>& nums) {
+           sort(nums.begin(), nums.end());
+           return nums[nums.size() / 2];
+       }
+   };
+   ```
+
+2. **Boyer-Moore 投票算法**
+
+   **时间复杂度**：$O(n)$，**空间复杂度**：$O(1)$。这个方法很巧妙，核心在于利用了多数元素频次比数组中其他任何元素频次之和还要大，也即选取一个candidate，如果遇到等值数即++，遇到非等值即--，当count为0时重选candidate，如此能保证多数元素与所有其他元素“一换一”后还能至少存活一个（count=1），即得结果。
+
+   ```cpp
+   #include <vector>
+   
+   using namespace std;
+   
+   class Solution {
+   public:
+       int majorityElement(vector<int>& nums) {
+           int candidate = 0;
+           int count = 0;
+   
+           for (int x : nums) {
+               if (count == 0) {
+                   candidate = x;
+               }
+               if (x == candidate) {
+                   count++;
+               } else {
+                   count--;
+               }
+           }
+   
+           return candidate;
+       }
+   };
+   ```
+
+   
+
+### 6. 轮转数组**
+
+#### 6.1 题目
+
+给定一个整数数组 `nums`，将数组中的元素向右轮转 `k` 个位置，其中 `k` 是非负数。
+
+ 
+
+**示例 1:**
+
+```
+输入: nums = [1,2,3,4,5,6,7], k = 3
+输出: [5,6,7,1,2,3,4]
+解释:
+向右轮转 1 步: [7,1,2,3,4,5,6]
+向右轮转 2 步: [6,7,1,2,3,4,5]
+向右轮转 3 步: [5,6,7,1,2,3,4]
+```
+
+**示例 2:**
+
+```
+输入：nums = [-1,-100,3,99], k = 2
+输出：[3,99,-1,-100]
+解释: 
+向右轮转 1 步: [99,-1,-100,3]
+向右轮转 2 步: [3,99,-1,-100]
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 105`
+- `-231 <= nums[i] <= 231 - 1`
+- `0 <= k <= 105`
+
+ 
+
+**进阶：**
+
+- 尽可能想出更多的解决方案，至少有 **三种** 不同的方法可以解决这个问题。
+- 你可以使用空间复杂度为 `O(1)` 的 **原地** 算法解决这个问题吗？
+
+
+
+#### 6.2 解法
+
+1. 时间复杂度为 $O(n \times k)$，空间复杂度为 $O(1)$
+2. 时间复杂度 $O(n)$，空间复杂度 $O(n)$
+3. 错误解法
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  void rotate(vector<int>& nums, int k) {
+    int n = nums.size();
+    k = k % int(n);
+    if (k == 0) return;
+
+    rotate3(nums, k, n);
+  }
+
+  void rotate1(vector<int>& nums, int k, int n) {
+    for (int i = 0; i < k; i++) {
+      for (int j = n - 1; j > 0; j--) {
+        swap(nums[j], nums[j - 1]);
+      }
+    }
+  }
+
+  void rotate2(vector<int>& nums, int k, int n) {
+    vector<int> rotateNum(n);
+
+    for (int i = 0; i < n; i++) {
+      rotateNum[(i + k) % n] = nums[i];
+    }
+
+    nums = rotateNum;
+  }
+
+  void rotate3(vector<int>& nums, int k, int n) {
+    for (int i = 0; i < n / k; i++) {
+      for (int j = 0; j < k; j++) {
+        swap(nums[i * k + j], nums[n - k + j]);
+      }
+    }
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n, k;
+  while (cin >> n) {
+    cin >> k;
+
+    vector<int> nums(n);
+    for (int i = 0; i < n; ++i) {
+      cin >> nums[i];
+    }
+
+    Solution obj;
+    obj.rotate(nums, k);
+
+    cout << "nums = [";
+    for (int i = 0; i < nums.size(); ++i) {
+      cout << nums[i] << (i == nums.size() - 1 ? "" : ",");
+    }
+    cout << "]\n";
+  }
+
+  return 0;
+}
+```
+
+
+
+#### 6.3 解析
+
+花了很长的时间，仍无法改好rorate3，未来的思路可能是较为复杂的递归，理论能能够达到$O(1)$空间复杂度，但是递归本身也需要相当的空间（拆解成循环或可实现，但是过于复杂）。
+
+1. **三次翻转**：
+
+   一个很显著的特征就是平移，但是要原地地实现平移就是难点。我们可以三次翻转，即先翻转一次，发现前后两段位置对了，但是顺序不对，再各自独立翻转一次即可：
+
+   > 观察输入 `[1, 2, 3, 4, 5, 6, 7]` 和输出 `[5, 6, 7, 1, 2, 3, 4]`。
+   >
+   > 可以发现，数组其实被分成了两段：
+   >
+   > - **尾部段** `[5, 6, 7]`（长度为 $k$）：它们整体平移到了最前面。
+   > - **首部段** `[1, 2, 3, 4]`（长度为 $n-k$）：它们整体平移到了后面。
+   >
+   > 如果我们直接将整个数组首尾翻转，变成 `[7, 6, 5, 4, 3, 2, 1]`。
+   >
+   > 此时，原本在尾部的元素确实跑到前面去了，原本在前面的元素也跑到后面去了。唯一的问题是，这两段内部的元素顺序是逆序的。
+   >
+   > 因此，我们只需要将前 $k$ 个元素再翻转一次，把后面的 $n-k$ 个元素也翻转一次，就能完美负负得正，恢复原来的相对顺序。
+
+   ```cpp
+   #include <vector>
+   #include <algorithm>
+   
+   using namespace std;
+   
+   class Solution {
+   public:
+       void rotate(vector<int>& nums, int k) {
+           int n = nums.size();
+           k = k % n;
+           
+           reverse(nums.begin(), nums.end());
+           reverse(nums.begin(), nums.begin() + k);
+           reverse(nums.begin() + k, nums.end());
+       }
+   };
+   ```
+
+2. 环状替换：
+
+   仅了解。
+
+   ```cpp
+   #include <vector>
+   #include <numeric>
+   
+   using namespace std;
+   
+   class Solution {
+   public:
+       void rotate(vector<int>& nums, int k) {
+           int n = nums.size();
+           k = k % n;
+           if (k == 0) return;
+   
+           int count = gcd(k, n);
+           
+           for (int start = 0; start < count; ++start) {
+               int current = start;
+               int prev = nums[start];
+               
+               do {
+                   int next = (current + k) % n;
+                   int temp = nums[next];
+                   nums[next] = prev;
+                   prev = temp;
+                   current = next;
+               } while (start != current);
+           }
+       }
+   };
+   ```
+
+   
