@@ -1136,4 +1136,332 @@ int main() {
    };
    ```
 
+
+
+
+### 7. 买卖股票的最佳时机*
+
+#### 7.1 题目
+
+给定一个数组 `prices` ，它的第 `i` 个元素 `prices[i]` 表示一支给定股票第 `i` 天的价格。
+
+你只能选择 **某一天** 买入这只股票，并选择在 **未来的某一个不同的日子** 卖出该股票。设计一个算法来计算你所能获取的最大利润。
+
+返回你可以从这笔交易中获取的最大利润。如果你不能获取任何利润，返回 `0` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：[7,1,5,3,6,4]
+输出：5
+解释：在第 2 天（股票价格 = 1）的时候买入，在第 5 天（股票价格 = 6）的时候卖出，最大利润 = 6-1 = 5 。
+     注意利润不能是 7-1 = 6, 因为卖出价格需要大于买入价格；同时，你不能在买入前卖出股票。
+```
+
+**示例 2：**
+
+```
+输入：prices = [7,6,4,3,1]
+输出：0
+解释：在这种情况下, 没有交易完成, 所以最大利润为 0。
+```
+
+ 
+
+**提示：**
+
+- `1 <= prices.length <= 105`
+- `0 <= prices[i] <= 104`
+
+
+
+#### 7.2 解法
+
+时间复杂度 **O(n)**，空间复杂度为 **O(1)**
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int maxProfit(vector<int>& prices) {
+    int n = prices.size(), sum = 0, b = 0;
+
+    for (int i = 1; i < n; i++) {
+      int profit = prices[i] - prices[i - 1];
+      if (b > 0) {
+        b += profit;
+      } else {
+        b = profit;
+      }
+
+      sum = max(b, sum);
+    }
+
+    return sum;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> p(n);
+    for (int i = 0; i < n; i++) {
+      cin >> p[i];
+    }
+
+    Solution obj;
+    int profit = obj.maxProfit(p);
+
+    cout << profit;
+  }
+  return 0;
+}
+```
+
+> 一些写法上的优化：（实际上差不多）
+>
+> ```cpp
+> class Solution {
+> public:
+>     int maxProfit(vector<int>& prices) {
+>         int n = prices.size();
+>         int sum = 0, b = 0;
+> 
+>         for (int i = 1; i < n; i++) {
+>             int profit = prices[i] - prices[i - 1];
+>             b = max(profit, b + profit);
+>             sum = max(b, sum);
+>         }
+> 
+>         return sum;
+>     }
+> };
+> ```
+
+
+
+#### 7.3 解析
+
+我的解法达到了等效最优解，本质上是利用了动态规划中的最大字段和问题的解法。事实上还有一些别的想法：
+
+1. 贪心算法
+
+   算是这道题的标准解法，重点在于相对最小值，即：若在`i`出卖出，那么此前若是在最低点买入的，则必然是该天卖出的最大利润情况。这样的想法把找最小值和比较利润最大值融合，同样是 **O(n)**的时间复杂度。
+
+   ```cpp
+   class Solution {
+   public:
+       int maxProfit(vector<int>& prices) {
+           int minPrice = 1e9;
+           int maxProf = 0;
    
+           for (int price : prices) {
+               minPrice = min(minPrice, price);
+               maxProf = max(maxProf, price - minPrice);
+           }
+   
+           return maxProf;
+       }
+   };
+   ```
+
+2. 状态机动态规划
+
+   每一天，我们只有两种状态：**持有股票**（状态 1）或 **不持有股票**（状态 0）。
+
+   - 今天**不持有**股票的最大收益，等于：昨天也不持有，或者昨天持有但今天卖掉了，两者取最大。
+   - 今天**持有**股票的最大收益，等于：昨天就持有，或者昨天不持有但今天买入了，两者取最大（因为只能交易一次，所以今天买入的收益就是 `-prices[i]`）。
+
+   这类题关键在于状态的确定与比较，即：
+
+   ```cpp
+   class Solution {
+   public:
+       int maxProfit(vector<int>& prices) {
+           int n = prices.size();
+           if (n == 0) return 0;
+   
+           int dp_i_0 = 0;
+           int dp_i_1 = -prices[0];
+   
+           for (int i = 1; i < n; i++) {
+               dp_i_0 = max(dp_i_0, dp_i_1 + prices[i]);
+               dp_i_1 = max(dp_i_1, -prices[i]);
+           }
+   
+           return dp_i_0;
+       }
+   };
+   ```
+
+
+
+### 8. 买卖股票的最佳时机II*
+
+#### 8.1 题目
+
+给你一个整数数组 `prices` ，其中 `prices[i]` 表示某支股票第 `i` 天的价格。
+
+在每一天，你可以决定是否购买和/或出售股票。你在任何时候 **最多** 只能持有 **一股** 股票。然而，你可以在 **同一天** 多次买卖该股票，但要确保你持有的股票不超过一股。
+
+返回 *你能获得的 **最大** 利润* 。
+
+ 
+
+**示例 1：**
+
+```
+输入：prices = [7,1,5,3,6,4]
+输出：7
+解释：在第 2 天（股票价格 = 1）的时候买入，在第 3 天（股票价格 = 5）的时候卖出, 这笔交易所能获得利润 = 5 - 1 = 4。
+随后，在第 4 天（股票价格 = 3）的时候买入，在第 5 天（股票价格 = 6）的时候卖出, 这笔交易所能获得利润 = 6 - 3 = 3。
+最大总利润为 4 + 3 = 7 。
+```
+
+**示例 2：**
+
+```
+输入：prices = [1,2,3,4,5]
+输出：4
+解释：在第 1 天（股票价格 = 1）的时候买入，在第 5 天 （股票价格 = 5）的时候卖出, 这笔交易所能获得利润 = 5 - 1 = 4。
+最大总利润为 4 。
+```
+
+**示例 3：**
+
+```
+输入：prices = [7,6,4,3,1]
+输出：0
+解释：在这种情况下, 交易无法获得正利润，所以不参与交易可以获得最大利润，最大利润为 0。
+```
+
+ 
+
+**提示：**
+
+- `1 <= prices.length <= 3 * 104`
+- `0 <= prices[i] <= 104`
+
+
+
+#### 8.2 解法
+
+时间复杂度 $O(n)$，空间复杂度 $O(1)$
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int maxProfit(vector<int>& prices) {
+    int n = prices.size(), sum = 0;
+
+    for (int i = 1; i < n; i++) {
+      int profit = prices[i] - prices[i - 1];
+      if (profit > 0) {
+        sum += profit;
+      }
+    }
+
+    return sum;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> p(n);
+    for (int i = 0; i < n; i++) {
+      cin >> p[i];
+    }
+
+    Solution obj;
+    int profit = obj.maxProfit(p);
+
+    cout << profit;
+  }
+  return 0;
+}
+```
+
+> 也是写法上的：
+>
+> ```cpp
+> #include <algorithm>
+> #include <iostream>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int maxProfit(vector<int>& prices) {
+>         int n = prices.size(), sum = 0;
+> 
+>         for (int i = 1; i < n; i++) {
+>             sum += max(0, prices[i] - prices[i - 1]);
+>         }
+> 
+>         return sum;
+>     }
+> };
+> ```
+
+
+
+#### 8.3 解析
+
+上一题的思路在此发挥了巨大的作用，其本质上是贪心算法，将全局问题拆解为了最小粒度的局部问题。
+
+再看看上一题的DP状态机在这题的改进：
+
+```cpp
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int n = prices.size();
+        if (n == 0) return 0;
+
+        int dp_i_0 = 0;
+        int dp_i_1 = -prices[0];
+
+        for (int i = 1; i < n; i++) {
+            // 区别在于这次的买入有基础资金dp_i_0，也就是昨天没有持有股票时的利润
+            int temp = dp_i_0;
+            dp_i_0 = max(dp_i_0, dp_i_1 + prices[i]);
+            dp_i_1 = max(dp_i_1, temp - prices[i]);
+        }
+
+        return dp_i_0;
+    }
+};
+```
+
