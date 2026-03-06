@@ -1465,3 +1465,354 @@ public:
 };
 ```
 
+
+
+### 9. 跳跃游戏*
+
+#### 9.1 题目
+
+给你一个非负整数数组 `nums` ，你最初位于数组的 **第一个下标** 。数组中的每个元素代表你在该位置可以跳跃的最大长度。
+
+判断你是否能够到达最后一个下标，如果可以，返回 `true` ；否则，返回 `false` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [2,3,1,1,4]
+输出：true
+解释：可以先跳 1 步，从下标 0 到达下标 1, 然后再从下标 1 跳 3 步到达最后一个下标。
+```
+
+**示例 2：**
+
+```
+输入：nums = [3,2,1,0,4]
+输出：false
+解释：无论怎样，总会到达下标为 3 的位置。但该下标的最大跳跃长度是 0 ， 所以永远不可能到达最后一个下标。
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 104`
+- `0 <= nums[i] <= 105`
+
+ 
+
+#### 9.2 解法
+
+时间复杂度为 $O(n)$，空间复杂度为 $O(1)$
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool canJump(vector<int>& nums) {
+    int n = nums.size(), canReach = 0;
+    for (int i = 0; i < n; i++) {
+      if (canReach < i) {
+        return false;
+      } else {
+        canReach = max(canReach, i + nums[i]);
+      }
+    }
+
+    return true;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+      cin >> nums[i];
+    }
+
+    Solution obj;
+    bool canJump = obj.canJump(nums);
+    cout << canJump;
+  }
+
+  return 0;
+}
+```
+
+> 可以加入一个提前终止的机制，即若途中canReach即可达到末尾，可以终止：
+>
+> ```cpp
+> #include <algorithm>
+> #include <iostream>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     bool canJump(vector<int>& nums) {
+>         int n = nums.size(), canReach = 0;
+>         
+>         for (int i = 0; i < n; i++) {
+>             if (canReach < i) {
+>                 return false;
+>             }
+>             
+>             canReach = max(canReach, i + nums[i]);
+>             
+>             // 若直接可达末位，终止
+>             if (canReach >= n - 1) {
+>                 return true;
+>             }
+>         }
+> 
+>         return true;
+>     }
+> };
+> ```
+
+
+
+#### 9.3 解析
+
+同样达到了等效最优解，来看看另外两种比较经典的解法：
+
+1. 逆向贪心
+
+   与本解同为贪心，不过是逆向跑的：如果目的地是最后一个点，那么逆向遍历，如果遇到的点能够到达上一个目的地，那么新的目的地就变成了该点，直到结束如果目的地移动到了最开始的点，那么就成功。
+
+   ```cpp
+   class Solution {
+   public:
+       bool canJump(vector<int>& nums) {
+           int n = nums.size();
+           int destination = n - 1;
+           
+           for (int i = n - 2; i >= 0; i--) {
+               if (i + nums[i] >= destination) {
+                   destination = i;
+               }
+           }
+           
+           return destination == 0;
+       }
+   };
+   ```
+
+2. 动态规划
+
+   **“在想不到贪心策略时，万物皆可 DP。”**
+
+   同样来看状态：定义 `dp[i]` 表示“能否到达下标 `i`”。 如果要到达下标 `i`，那么在它前面的所有点 `j` 中，必须存在至少一个点满足两个条件：第一，点 `j` 本身是可达的（`dp[j] == true`）；第二，从点 `j` 起跳的最大距离能覆盖到 `i`（`j + nums[j] >= i`）。
+
+   但是这种解法的时间复杂度是 $O(n^2)$，很可能超时。
+
+   ```cpp
+   class Solution {
+   public:
+       bool canJump(vector<int>& nums) {
+           int n = nums.size();
+           vector<bool> dp(n, false);
+           dp[0] = true;
+           
+           for (int i = 1; i < n; i++) {
+               for (int j = 0; j < i; j++) {
+                   if (dp[j] && j + nums[j] >= i) {
+                       dp[i] = true;
+                       break;
+                   }
+               }
+           }
+           
+           return dp[n - 1];
+       }
+   };
+   ```
+
+
+
+### 10. 跳跃游戏II**
+
+#### 10.1 题目
+
+给定一个长度为 `n` 的 **0 索引**整数数组 `nums`。初始位置在下标 0。
+
+每个元素 `nums[i]` 表示从索引 `i` 向后跳转的最大长度。换句话说，如果你在索引 `i` 处，你可以跳转到任意 `(i + j)` 处：
+
+- `0 <= j <= nums[i]` 且
+- `i + j < n`
+
+返回到达 `n - 1` 的最小跳跃次数。测试用例保证可以到达 `n - 1`。
+
+ 
+
+**示例 1:**
+
+```
+输入: nums = [2,3,1,1,4]
+输出: 2
+解释: 跳到最后一个位置的最小跳跃数是 2。
+     从下标为 0 跳到下标为 1 的位置，跳 1 步，然后跳 3 步到达数组的最后一个位置。
+```
+
+**示例 2:**
+
+```
+输入: nums = [2,3,0,1,4]
+输出: 2
+```
+
+ 
+
+**提示:**
+
+- `1 <= nums.length <= 104`
+- `0 <= nums[i] <= 1000`
+- 题目保证可以到达 `n - 1`
+
+
+
+#### 10.2 解法
+
+时间复杂度接近 $O(n!)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int minTimes = 10000;
+
+  int jump(vector<int>& nums) {
+    if (nums.size() == 1) {
+      return 0;
+    }
+
+    canReach(nums, nums.size() - 1, -1);
+
+    return minTimes;
+  }
+
+  void canReach(vector<int>& nums, int k, int times) {
+    // cout << "enter pos:" << k << ", and now:" << times << endl;
+    times++;
+    if (times > minTimes) return;
+
+    for (int i = k - 1; i >= 0; i--) {
+      if (i + nums[i] >= k) {
+        // cout << "in " << k << ", reach: " << i << ", and now: " << times
+        //      << endl;
+        if (i == 0) {
+          minTimes = min(minTimes, times + 1);
+          return;
+        } else {
+          canReach(nums, i, times);
+        }
+      }
+    }
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+      cin >> nums[i];
+    }
+
+    Solution obj;
+    int jumpTimes = obj.jump(nums);
+    cout << jumpTimes;
+  }
+
+  return 0;
+}
+```
+
+> 可以从开始往后搜索，而不是从后往前。这样的话搜索算法的复杂度能降下来到时间复杂度是 $O(n^2)$，空间复杂度是 $O(1)$。
+>
+> ```cpp
+> #include <vector>
+> #include <algorithm>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int jump(vector<int>& nums) {
+>         int position = nums.size() - 1;
+>         int steps = 0;
+>         
+>         while (position > 0) {
+>             for (int i = 0; i < position; i++) {
+>                 if (i + nums[i] >= position) {
+>                     position = i;
+>                     steps++;
+>                     break;
+>                 }
+>             }
+>         }
+>         
+>         return steps;
+>     }
+> };
+> ```
+
+
+
+#### 10.3 解析
+
+很遗憾未能找到最优解，优化后的搜索算法仍然是  $O(n^2)$级别的。看看其他办法吧，最优解本质上就是我上一题的优化解法，我也曾这样想过，可惜当时未能理解其本质：
+
+```cpp
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    int jump(vector<int>& nums) {
+        int maxReach = 0;
+        int end = 0;
+        int steps = 0;
+        
+        for (int i = 0; i < nums.size() - 1; i++) {
+            maxReach = max(maxReach, i + nums[i]);
+            
+            if (i == end) {
+                end = maxReach;
+                steps++;
+            }
+        }
+        
+        return steps;
+    }
+}
+```
+
+其核心在于steps++的时机上，也即当我们未到达当前最大覆盖范围的边界时，始终在上一次step+1次跳跃的可控范围内，不需要真的加一；而若到达了边界，则需要加一落实新的一次跳跃以达到该边界；若超出，则无法到达末尾。这是上一题思路的更深入扩充，也就是把能够到达时候的情况讨论得更加深入了。
