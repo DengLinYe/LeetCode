@@ -1,7 +1,7 @@
 # LeetCode Log
 
 > - 先以《面试经典150题》开始，每日两题预计五月中结束，此后题目再议。
-> - 题目后的`*`个数表示难度，一般我能做出等效最优解的题目，不视为难题。
+> - 题目后的`*`个数表示难度，一般我能做出等效最优解的题目，不视为难题，即 *；而若能解出但不是最优，则 **；若无法解出，则 \*\*\*。
 
 ## 零、一些配置
 
@@ -1816,3 +1816,389 @@ public:
 ```
 
 其核心在于steps++的时机上，也即当我们未到达当前最大覆盖范围的边界时，始终在上一次step+1次跳跃的可控范围内，不需要真的加一；而若到达了边界，则需要加一落实新的一次跳跃以达到该边界；若超出，则无法到达末尾。这是上一题思路的更深入扩充，也就是把能够到达时候的情况讨论得更加深入了。
+
+
+
+### 11. H 指数*
+
+#### 11.1 题目
+
+给你一个整数数组 `citations` ，其中 `citations[i]` 表示研究者的第 `i` 篇论文被引用的次数。计算并返回该研究者的 **`h` 指数**。
+
+根据维基百科上 [h 指数的定义](https://baike.baidu.com/item/h-index/3991452?fr=aladdin)：`h` 代表“高引用次数” ，一名科研人员的 `h` **指数** 是指他（她）至少发表了 `h` 篇论文，并且 **至少** 有 `h` 篇论文被引用次数大于等于 `h` 。如果 `h` 有多种可能的值，**`h` 指数** 是其中最大的那个。
+
+ 
+
+**示例 1：**
+
+```
+输入：citations = [3,0,6,1,5]
+输出：3 
+解释：给定数组表示研究者总共有 5 篇论文，每篇论文相应的被引用了 3, 0, 6, 1, 5 次。
+     由于研究者有 3 篇论文每篇 至少 被引用了 3 次，其余两篇论文每篇被引用 不多于 3 次，所以她的 h 指数是 3。
+```
+
+**示例 2：**
+
+```
+输入：citations = [1,3,1]
+输出：1
+```
+
+ 
+
+**提示：**
+
+- `n == citations.length`
+- `1 <= n <= 5000`
+- `0 <= citations[i] <= 1000`
+
+
+
+#### 11.2 解法
+
+**时间复杂度**：$O(n)$，**空间复杂度**：$O(n)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int hIndex(vector<int>& citations) {
+    int n = citations.size(), h = 0;
+    unordered_map<int, int> passby;
+
+    for (int x : citations) {
+      if (x > h) {
+        passby[x]++;
+        if (h >= h + 1 - passby[h]) {
+          passby[h]--;
+        } else {
+          h = h + 1 - passby[h];
+        }
+      }
+    }
+
+    return h;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+      cin >> nums[i];
+    }
+
+    Solution obj;
+    int h = obj.hIndex(nums);
+    cout << h;
+  }
+
+  return 0;
+}
+```
+
+> 那个判断条件`h >= h + 1 - passby[h]`事实上能移项简化，有：
+>
+> ```cpp
+> #include <iostream>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int hIndex(vector<int>& citations) {
+>         int h = 0;
+>         int n = citations.size();
+>         vector<int> passby(1001, 0); 
+> 
+>         for (int x : citations) {
+>             if (x > h) {
+>                 passby[min(x, 1000)]++;
+>                 if (passby[h] > 0) {
+>                     passby[h]--;
+>                 } else {
+>                     h++;
+>                 }
+>             }
+>         }
+> 
+>         return h;
+>     }
+> };
+> ```
+
+
+
+#### 11.3 解析
+
+我的方法达到了等效最优解，本质上是空间换时间，核心是h++之后，会被踢出h内的论文，正确地处理它们即可解出本题。
+
+当然，如果追求空间复杂度最小，直接排序就能做；然后还有一种等效最优解是桶排序。
+
+1. 直接排序法
+
+   ```cpp
+   #include <vector>
+   #include <algorithm>
+   #include <iostream>
+   
+   using namespace std;
+   
+   class Solution {
+   public:
+       int hIndex(vector<int>& citations) {
+           // 直接使用内置排序即可
+           sort(citations.begin(), citations.end(), greater<int>());
+           int h = 0;
+           
+           for (int i = 0; i < citations.size(); i++) {
+               if (citations[i] > h) {
+                   h++;
+               } else {
+                   break;
+               }
+           }
+           
+           return h;
+       }
+   };
+   ```
+
+2. 计数排序/桶排序
+
+   本质上还是排序，但是用了最快的桶排序（$O(n)$），核心是注意到提示中citations的上限只是1000。
+
+   ```cpp
+   #include <vector>
+   #include <algorithm>
+   #include <iostream>
+   
+   using namespace std;
+   
+   class Solution {
+   public:
+       int hIndex(vector<int>& citations) {
+           int n = citations.size();
+           vector<int> count(n + 1, 0);
+   
+           for (int c : citations) {
+               if (c >= n) {
+                   count[n]++;
+               } else {
+                   count[c]++;
+               }
+           }
+   
+           int total = 0;
+           for (int i = n; i >= 0; i--) {
+               total += count[i];
+               if (total >= i) {
+                   return i;
+               }
+           }
+   
+           return 0;
+       }
+   };
+   ```
+
+
+
+### 12. O(1) 时间插入、删除和获取随机元素*
+
+#### 12.1 题目
+
+实现`RandomizedSet` 类：
+
+- `RandomizedSet()` 初始化 `RandomizedSet` 对象
+- `bool insert(int val)` 当元素 `val` 不存在时，向集合中插入该项，并返回 `true` ；否则，返回 `false` 。
+- `bool remove(int val)` 当元素 `val` 存在时，从集合中移除该项，并返回 `true` ；否则，返回 `false` 。
+- `int getRandom()` 随机返回现有集合中的一项（测试用例保证调用此方法时集合中至少存在一个元素）。每个元素应该有 **相同的概率** 被返回。
+
+你必须实现类的所有函数，并满足每个函数的 **平均** 时间复杂度为 `O(1)` 。
+
+ 
+
+**示例：**
+
+```
+输入
+["RandomizedSet", "insert", "remove", "insert", "getRandom", "remove", "insert", "getRandom"]
+[[], [1], [2], [2], [], [1], [2], []]
+输出
+[null, true, false, true, 2, true, false, 2]
+
+解释
+RandomizedSet randomizedSet = new RandomizedSet();
+randomizedSet.insert(1); // 向集合中插入 1 。返回 true 表示 1 被成功地插入。
+randomizedSet.remove(2); // 返回 false ，表示集合中不存在 2 。
+randomizedSet.insert(2); // 向集合中插入 2 。返回 true 。集合现在包含 [1,2] 。
+randomizedSet.getRandom(); // getRandom 应随机返回 1 或 2 。
+randomizedSet.remove(1); // 从集合中移除 1 ，返回 true 。集合现在包含 [2] 。
+randomizedSet.insert(2); // 2 已在集合中，所以返回 false 。
+randomizedSet.getRandom(); // 由于 2 是集合中唯一的数字，getRandom 总是返回 2 。
+```
+
+ 
+
+**提示：**
+
+- `-231 <= val <= 231 - 1`
+- 最多调用 `insert`、`remove` 和 `getRandom` 函数 `2 * ``105` 次
+- 在调用 `getRandom` 方法时，数据结构中 **至少存在一个** 元素。
+
+
+
+#### 12.2 解法
+
+
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <random>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+static std::random_device rd;
+static std::mt19937 gen(rd());
+
+class RandomizedSet {
+ public:
+  unordered_map<int, int> index;
+  vector<int> set;
+
+  RandomizedSet() { set.push_back(-1); }
+
+  bool insert(int val) {
+    if (index[val] == 0) {
+      set.push_back(val);
+      index[val] = set.size() - 1;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  bool remove(int val) {
+    if (index[val] == 0) {
+      return false;
+    } else {
+      index[set.back()] = index[val];
+      set[index[val]] = set.back();
+      set.pop_back();
+      index[val] = 0;
+      return true;
+    }
+  }
+
+  int getRandom() {
+    uniform_int_distribution<> dis(1, set.size() - 1);
+
+    return set[dis(gen)];
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    RandomizedSet* obj = nullptr;
+    cout << "[";
+    for (int i = 0; i < n; ++i) {
+      string op;
+      cin >> op;
+      if (op == "RandomizedSet") {
+        obj = new RandomizedSet();
+        cout << "null";
+      } else if (op == "insert") {
+        int val;
+        cin >> val;
+        cout << (obj->insert(val) ? "true" : "false");
+      } else if (op == "remove") {
+        int val;
+        cin >> val;
+        cout << (obj->remove(val) ? "true" : "false");
+      } else if (op == "getRandom") {
+        cout << obj->getRandom();
+      }
+
+      if (i < n - 1) cout << ",";
+    }
+    cout << "]\n";
+
+    delete obj;
+  }
+
+  return 0;
+}
+```
+
+
+
+#### 12.3 解析
+
+同样也算等效最优解，但是直接把index设为0，会让该index仍然存在（只是值为0），会导致空间无法释放，所以优化一下就是：
+
+```cpp
+static std::random_device rd;
+static std::mt19937 gen(rd());
+
+class RandomizedSet {
+public:
+    unordered_map<int, int> index;
+    vector<int> set;
+
+    RandomizedSet() {}
+
+    bool insert(int val) {
+        if (index.count(val)) {
+            return false;
+        }
+        set.push_back(val);
+        index[val] = set.size() - 1;
+        return true;
+    }
+
+    bool remove(int val) {
+        if (!index.count(val)) {
+            return false;
+        }
+        int lastElement = set.back();
+        int idx = index[val];
+
+        set[idx] = lastElement;
+        index[lastElement] = idx;
+
+        set.pop_back();
+        index.erase(val); // 就是用了erase
+        return true;
+    }
+
+    int getRandom() {
+        uniform_int_distribution<> dis(0, set.size() - 1);
+        return set[dis(gen)];
+    }
+};
+```
+
