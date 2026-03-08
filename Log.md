@@ -2202,3 +2202,312 @@ public:
 };
 ```
 
+
+
+### 13. 除自身以外数组的乘积*
+
+#### 13.1 题目
+
+给你一个整数数组 `nums`，返回 数组 `answer` ，其中 `answer[i]` 等于 `nums` 中除了 `nums[i]` 之外其余各元素的乘积 。
+
+题目数据 **保证** 数组 `nums`之中任意元素的全部前缀元素和后缀的乘积都在 **32 位** 整数范围内。
+
+请 **不要使用除法，**且在 `O(n)` 时间复杂度内完成此题。
+
+ 
+
+**示例 1:**
+
+```
+输入: nums = [1,2,3,4]
+输出: [24,12,8,6]
+```
+
+**示例 2:**
+
+```
+输入: nums = [-1,1,0,-3,3]
+输出: [0,0,9,0,0]
+```
+
+ 
+
+**提示：**
+
+- `2 <= nums.length <= 105`
+- `-30 <= nums[i] <= 30`
+- 输入 **保证** 数组 `answer[i]` 在 **32 位** 整数范围内
+
+ 
+
+**进阶：**你可以在 `O(1)` 的额外空间复杂度内完成这个题目吗？（ 出于对空间复杂度分析的目的，输出数组 **不被视为** 额外空间。）
+
+
+
+#### 13.2 解法
+
+时间复杂度$O(n)$，空间复杂度$O(1)$（除输出数组）
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<int> productExceptSelf(vector<int>& nums) {
+    int n = nums.size(), mul = 1;
+    vector<int> out(n, 1);
+
+    for (int i = 0; i < n - 1; i++) {
+      mul *= nums[i];
+      out[i + 1] *= mul;
+    }
+
+    mul = 1;
+    for (int i = n - 1; i > 0; i--) {
+      mul *= nums[i];
+      out[i - 1] *= mul;
+    }
+
+    return out;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+      cin >> nums[i];
+    }
+
+    Solution obj;
+    vector<int> out = obj.productExceptSelf(nums);
+
+    cout << "[";
+    for (int i = 0; i < n; i++) {
+      cout << out[i] << (i == n - 1 ? " " : ", ");
+    }
+    cout << "]\n";
+  }
+
+  return 0;
+}
+```
+
+> 可以再简化一点
+>
+> ```cpp
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     vector<int> productExceptSelf(vector<int>& nums) {
+>         int n = nums.size();
+>         vector<int> out(n, 1);
+> 
+>         for (int i = 1; i < n; i++) {
+>             // 在前面可以暂时不用变量，但是没什么区别
+>             out[i] = out[i - 1] * nums[i - 1];
+>         }
+> 
+>         int R = 1;
+>         for (int i = n - 1; i >= 0; i--) {
+>             out[i] = out[i] * R;
+>             R *= nums[i];
+>         }
+> 
+>         return out;
+>     }
+> };
+> ```
+
+
+
+#### 13.3 解析
+
+这次不存在太多的等效最优解，我这个可能就是唯一的最优解。另有一个思路，也就是我的解的基础版，就是用数组去存前缀积以及后缀积，但是这样额外空间相当的大。
+
+
+
+
+
+### 14. 加油站*/**
+
+#### 14.1 题目
+
+在一条环路上有 `n` 个加油站，其中第 `i` 个加油站有汽油 `gas[i]` 升。
+
+你有一辆油箱容量无限的的汽车，从第 `i` 个加油站开往第 `i+1` 个加油站需要消耗汽油 `cost[i]` 升。你从其中的一个加油站出发，开始时油箱为空。
+
+给定两个整数数组 `gas` 和 `cost` ，如果你可以按顺序绕环路行驶一周，则返回出发时加油站的编号，否则返回 `-1` 。如果存在解，则 **保证** 它是 **唯一** 的。
+
+ 
+
+**示例 1:**
+
+```
+输入: gas = [1,2,3,4,5], cost = [3,4,5,1,2] 
+输出: 3
+解释:
+从 3 号加油站(索引为 3 处)出发，可获得 4 升汽油。此时油箱有 = 0 + 4 = 4 升汽油
+开往 4 号加油站，此时油箱有 4 - 1 + 5 = 8 升汽油
+开往 0 号加油站，此时油箱有 8 - 2 + 1 = 7 升汽油
+开往 1 号加油站，此时油箱有 7 - 3 + 2 = 6 升汽油
+开往 2 号加油站，此时油箱有 6 - 4 + 3 = 5 升汽油
+开往 3 号加油站，你需要消耗 5 升汽油，正好足够你返回到 3 号加油站。
+因此，3 可为起始索引。
+```
+
+**示例 2:**
+
+```
+输入: gas = [2,3,4], cost = [3,4,3]
+输出: -1
+解释:
+你不能从 0 号或 1 号加油站出发，因为没有足够的汽油可以让你行驶到下一个加油站。
+我们从 2 号加油站出发，可以获得 4 升汽油。 此时油箱有 = 0 + 4 = 4 升汽油
+开往 0 号加油站，此时油箱有 4 - 3 + 2 = 3 升汽油
+开往 1 号加油站，此时油箱有 3 - 3 + 3 = 3 升汽油
+你无法返回 2 号加油站，因为返程需要消耗 4 升汽油，但是你的油箱只有 3 升汽油。
+因此，无论怎样，你都不可能绕环路行驶一周。
+```
+
+ 
+
+**提示:**
+
+- `n == gas.length == cost.length`
+- `1 <= n <= 105`
+- `0 <= gas[i], cost[i] <= 104`
+- 输入保证答案唯一。
+
+
+
+#### 14.2 解法
+
+时间复杂度是 `O(n)`，空间复杂度是 `O(1)`。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+    int n = gas.size(), sum = 0, b = 0, bSt = 0, st = 0;
+
+    for (int i = 0; i < 2 * n; i++) {
+      int index = i % n;
+      if (i - bSt >= n) break;
+
+      int k = gas[index] - cost[index];
+      if (b > 0) {
+        b += k;
+      } else {
+        b = k;
+        bSt = index;
+      }
+
+      if (b > sum) {
+        sum = b;
+        st = bSt;
+      }
+    }
+
+    sum = 0;
+    for (int i = st; i < st + n; i++) {
+      int index = i % n;
+      sum += gas[index] - cost[index];
+      if (sum < 0) {
+        return -1;
+      }
+    }
+
+    return st;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> gas(n), cost(n);
+    for (int i = 0; i < n; i++) {
+      cin >> gas[i];
+    }
+    for (int i = 0; i < n; i++) {
+      cin >> cost[i];
+    }
+
+    Solution obj;
+    int st = obj.canCompleteCircuit(gas, cost);
+    cout << st;
+  }
+
+  return 0;
+}
+```
+
+
+
+#### 14.3 解析
+
+则也算等效最优解，但是稍微差了些。这道题我想了比较久，最后是抓到了“唯一解”，进而想到最优解一定是唯一解，从而把最大子段和的思路挪到了这里。但是事实上并不需要最大富余油量的最优解，可以把这个贪心思路更简化一些，这道题的关键在两处：
+
+1. 全局上，如果总和小于零，必然没有解；反之有解。
+2. 局部上，**如果$\sum(A,B)<0$，那么A、B之间的任意一个点都不能作为起点**，这稍微有点绕，其实是迭代条件的必然结果（如果n到n+1时和为负，则立即淘汰，所以从A到n所剩油量必为非负，而若非负都无法进入到B，那么A到B的任意一点都不行）。
+
+明白这一点，这道题还是比较简单的：
+
+```cpp
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int total_sum = 0;
+        int current_sum = 0;
+        int start = 0;
+
+        for (int i = 0; i < gas.size(); i++) {
+            int diff = gas[i] - cost[i];
+            total_sum += diff;
+            current_sum += diff;
+
+            if (current_sum < 0) {
+                start = i + 1;
+                current_sum = 0;
+            }
+        }
+
+        if (total_sum < 0) {
+            return -1;
+        }
+
+        return start;
+    }
+};
+```
+
