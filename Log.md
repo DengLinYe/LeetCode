@@ -1,7 +1,7 @@
 # LeetCode Log
 
 > - 先以《面试经典150题》开始，每日两题预计五月中结束，此后题目再议。
-> - 题目后的`*`个数表示难度，一般我能做出等效最优解的题目，不视为难题，即 *；而若能解出但不是最优，则 **；若无法解出，则 \*\*\*。
+> - 题目后的`*`个数表示难度，一般我能做出等效最优解的题目，不视为难题，即 *；而若能解出但不是最优，则 **；若无法解出，则 \*\*\*。特别地，如果做到了等效最优解，但是相对不够好，则 \*/\*\*
 
 ## 零、一些配置
 
@@ -2511,3 +2511,411 @@ public:
 };
 ```
 
+
+
+### 15. 分发糖果*/**
+
+#### 15.1 题目
+
+`n` 个孩子站成一排。给你一个整数数组 `ratings` 表示每个孩子的评分。
+
+你需要按照以下要求，给这些孩子分发糖果：
+
+- 每个孩子至少分配到 `1` 个糖果。
+- 相邻两个孩子中，评分更高的那个会获得更多的糖果。
+
+请你给每个孩子分发糖果，计算并返回需要准备的 **最少糖果数目** 。
+
+ 
+
+**示例 1：**
+
+```
+输入：ratings = [1,0,2]
+输出：5
+解释：你可以分别给第一个、第二个、第三个孩子分发 2、1、2 颗糖果。
+```
+
+**示例 2：**
+
+```
+输入：ratings = [1,2,2]
+输出：4
+解释：你可以分别给第一个、第二个、第三个孩子分发 1、2、1 颗糖果。
+     第三个孩子只得到 1 颗糖果，这满足题面中的两个条件。
+```
+
+ 
+
+**提示：**
+
+- `n == ratings.length`
+- `1 <= n <= 2 * 104`
+- `0 <= ratings[i] <= 2 * 104`
+
+
+
+#### 15.2 解法
+
+时间复杂度是 `O(n)`，空间复杂度是 `O(1)`。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int candy(vector<int>& ratings) {
+    int n = ratings.size(), sum = 0, flag = 0, base = 1, tempSum = 0;
+    if (n == 1) return 1;
+    ratings.push_back(ratings.back());
+    for (int i = 1; i < n + 1; i++) {
+      int sub = ratings[i] - ratings[i - 1];
+      int cat = sub * flag;
+      if (cat > 0) {
+        tempSum++;
+      } else if (cat < 0) {
+        if (flag < 0) {
+          sum += max(0, base - tempSum - 2);
+          base = 1;
+        }
+        sum += (2 * base + tempSum + (flag - 1) * (-1)) * (tempSum + 1) / 2;
+        if (flag > 0) base += tempSum + 1;
+        flag *= -1;
+        tempSum = 0;
+      } else {
+        if (sub == 0) {
+          if (flag != 0) {
+            if (flag < 0) {
+              sum += max(0, base - tempSum - 2);
+              base = 1;
+            }
+            if (flag < 0) base = 1;
+            sum += (2 * base + tempSum + 1) * (tempSum + 2) / 2;
+            tempSum = 0;
+            flag *= 0;
+          } else {
+            sum++;
+            base = 1;
+          }
+        } else {
+          if (sub > 0) {
+            flag = 1;
+          } else {
+            flag = -1;
+          }
+        }
+      }
+    }
+    return sum;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> ratings;
+    for (int i = 0; i < n; i++) {
+      cin >> ratings[i];
+    }
+
+    Solution obj;
+    int sum = obj.candy(ratings);
+    cout << sum;
+  }
+
+  return 0;
+}
+```
+
+> 这个思路从一开始就有点问题，后面限于沉没成本打了一些补丁，最终也是正确的，效果上也不错，但是可以优化：
+>
+> ```cpp
+> class Solution {
+> public:
+>     int candy(vector<int>& ratings) {
+>         int n = ratings.size();
+>         if (n == 0) return 0;
+>         
+>         int totalCandies = 1;
+>         int up = 1;
+>         int down = 0;
+>         int peak = 1;
+>         
+>         for (int i = 1; i < n; i++) {
+>             if (ratings[i] > ratings[i - 1]) {
+>                 down = 0;
+>                 up++;
+>                 peak = up;
+>                 totalCandies += up;
+>             } else if (ratings[i] == ratings[i - 1]) {
+>                 down = 0;
+>                 up = 1;
+>                 peak = 1;
+>                 totalCandies += 1;
+>             } else {
+>                 up = 1;
+>                 down++;
+>                 totalCandies += down;
+>                 if (peak <= down) {
+>                     totalCandies++;
+>                 }
+>             }
+>         }
+>         
+>         return totalCandies;
+>     }
+> };
+> ```
+>
+> 这个思路就清晰很多了，和我的方法本质上是一样的。事实上从左到右的一次遍历只会有三种情况：
+>
+> 1. 更大：那么应该++
+> 2. 不变：直接重置为1
+> 3. 更小：加下坡长度（down）；如果长度超过了下降前的值（peak，或者说是这个孩子的糖果已经要小于1了），那就总数额外加1（并不需要把前面的都加，只要peak对应的孩子加即可）
+
+
+
+#### 15.3 解析
+
+我虽然也是等效最优解，但是并不好看。优化之后的思路其实逻辑已经很清晰了，但是两次遍历的贪心算法相对更加标准、易懂且稳定：既然题目要求“相邻两个孩子评分更高的孩子会获得更多的糖果”，这句话其实包含两个维度的约束：
+
+1. **左规则**：如果右边的孩子评分比左边高，右边孩子的糖果必须比左边多。
+2. **右规则**：如果左边的孩子评分比右边高，左边孩子的糖果必须比右边多。
+
+我们不要试图同时满足这两个规则，那样大脑会过载。 先从左往右扫一遍：每个人初始先发 1 个糖。如果右边比左边分数高，右边的糖果就等于左边加 1。这保证了所有**上坡**都符合规矩。 再从右往左扫一遍：如果左边比右边分数高，且左边的糖果还没有右边多，就把左边的糖果拔高到右边加 1。这保证了所有**下坡**也符合规矩。所以有：
+
+```cpp
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    int candy(vector<int>& ratings) {
+        int n = ratings.size();
+        vector<int> candies(n, 1);
+        
+        for (int i = 1; i < n; i++) {
+            if (ratings[i] > ratings[i - 1]) {
+                candies[i] = candies[i - 1] + 1;
+            }
+        }
+        
+        int total = candies[n - 1];
+        
+        for (int i = n - 2; i >= 0; i--) {
+            if (ratings[i] > ratings[i + 1]) {
+                candies[i] = max(candies[i], candies[i + 1] + 1);
+            }
+            total += candies[i];
+        }
+        
+        return total;
+    }
+};
+```
+
+
+
+### 16. 接雨水*
+
+#### 16.1 题目
+
+给定 `n` 个非负整数表示每个宽度为 `1` 的柱子的高度图，计算按此排列的柱子，下雨之后能接多少雨水。
+
+**示例 1：**
+
+![img](./assets/rainwatertrap.png)
+
+```
+输入：height = [0,1,0,2,1,0,1,3,2,1,2,1]
+输出：6
+解释：上面是由数组 [0,1,0,2,1,0,1,3,2,1,2,1] 表示的高度图，在这种情况下，可以接 6 个单位的雨水（蓝色部分表示雨水）。 
+```
+
+**示例 2：**
+
+```
+输入：height = [4,2,0,3,2,5]
+输出：9
+```
+
+ 
+
+**提示：**
+
+- `n == height.length`
+- `1 <= n <= 2 * 104`
+- `0 <= height[i] <= 105`
+
+
+
+#### 16.2 解法
+
+时间复杂度$O(n)$，空间复杂度为 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int trap(vector<int>& height) {
+    int st = 0, n = height.size(), peak = 0, peakSum = 0, rain = 0;
+    for (int i = 0; i < n; i++) {
+      if (height[i] >= peak) {
+        rain += peak * (i - st - 1) - peakSum;
+        st = i;
+        peakSum = 0;
+        peak = height[i];
+      } else {
+        peakSum += height[i];
+      }
+    }
+
+    peak = 0;
+    peakSum = 0;
+    int ed = n - 1;
+    for (int i = n - 1; i >= st; i--) {
+      if (height[i] >= peak) {
+        rain += peak * (ed - i - 1) - peakSum;
+        ed = i;
+        peakSum = 0;
+        peak = height[i];
+      } else {
+        peakSum += height[i];
+      }
+    }
+
+    return rain;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    vector<int> height(n);
+    for (int i = 0; i < n; i++) {
+      cin >> height[i];
+    }
+
+    Solution obj;
+    int rain = obj.trap(height);
+    cout << rain;
+  }
+
+  return 0;
+}
+```
+
+
+
+#### 16.3 解析
+
+同样是等效最优解，我们只需要找到最大值，分别从其两边向它遍历即可，理论最优可以达到一次遍历，但是期望是1.5次。不过还有很多其他解法：
+
+1. **双指针**
+
+   对于任意一个位置 `i`（仅`i`本身，不考虑其他位置），它能接多少水，完全取决于它**左边最高的柱子**和**右边最高的柱子**中更矮的那个，即：
+   $$
+   \text{水} = \min(\text{左最高}, \text{右最高}) - \text{当前高度}
+   $$
+   设有两个指针right与left分别在两边开始向内收紧：
+
+   - 如果 `height[left] < height[right]`，这意味着左边较低，此时右边即使有再高的柱子也无济于事，制约水位的“短板”一定在左边。所以我们放心地用 `left_max` 结算左边当前位置的水，然后左指针右移。
+   - 反之，制约水位的短板在右边，结算右侧并左移。
+
+   这种解法不仅是 $O(1)$​ 空间，而且只遍历数组一次。
+
+   ```cpp
+   #include <vector>
+   
+   using namespace std;
+   
+   class Solution {
+   public:
+       int trap(vector<int>& height) {
+           int left = 0, right = height.size() - 1;
+           int left_max = 0, right_max = 0;
+           int water = 0;
+   
+           while (left < right) {
+               if (height[left] < height[right]) {
+                   if (height[left] >= left_max) {
+                       left_max = height[left];
+                   } else {
+                       water += left_max - height[left];
+                   }
+                   left++;
+               } else {
+                   if (height[right] >= right_max) {
+                       right_max = height[right];
+                   } else {
+                       water += right_max - height[right];
+                   }
+                   right--;
+               }
+           }
+           return water;
+       }
+   };
+   ```
+
+2. **单调栈**
+
+   这个办法其实我也开了个头，但是没有深入，也就是按行横着算水。我们用一个栈来维护一个单调递减的高度序列。一旦遇到一个比栈顶高的柱子，说明我们遇到了一个“坑”的右边界，而栈里的元素就是坑底和左边界。 此时将坑底弹出，通过当前的柱子（右边界）和新的栈顶（左边界）计算出坑的宽度和有效高度，得出一层横向的水量。接着继续对比，直到栈重新变得单调递减。 这种解法的空间复杂度退化到了 $O(n)$。
+
+   > 并不存在维护栈单调性的额外时间花销，事实上我最开始是因为误解了这一点导致没有继续深入。元素按遍历循序入栈，而当遇到更高的柱子时，会立即触发结算，从而一直到栈中没有比它更小的元素，则暂置栈顶；若更小，则直接入栈，因此始终保持单调性。
+
+   ```cpp
+   #include <stack>
+   #include <vector>
+   #include <algorithm>
+   
+   using namespace std;
+   
+   class Solution {
+   public:
+       int trap(vector<int>& height) {
+           int water = 0;
+           stack<int> st;
+   
+           for (int i = 0; i < height.size(); i++) {
+               while (!st.empty() && height[i] > height[st.top()]) {
+                   int top = st.top();
+                   st.pop();
+   
+                   if (st.empty()) break;
+   
+                   int distance = i - st.top() - 1;
+                   int bounded_height = min(height[i], height[st.top()]) - height[top];
+                   water += distance * bounded_height;
+               }
+               st.push(i);
+           }
+           return water;
+       }
+   };
+   ```
+
+   
