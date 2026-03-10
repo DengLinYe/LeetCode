@@ -2918,4 +2918,516 @@ int main() {
    };
    ```
 
+
+
+
+### 17. 罗马数字转整数*
+
+#### 17.1 题目
+
+罗马数字包含以下七种字符: `I`， `V`， `X`， `L`，`C`，`D` 和 `M`。
+
+```
+字符          数值
+I             1
+V             5
+X             10
+L             50
+C             100
+D             500
+M             1000
+```
+
+例如， 罗马数字 `2` 写做 `II` ，即为两个并列的 1 。`12` 写做 `XII` ，即为 `X` + `II` 。 `27` 写做 `XXVII`, 即为 `XX` + `V` + `II` 。
+
+通常情况下，罗马数字中小的数字在大的数字的右边。但也存在特例，例如 4 不写做 `IIII`，而是 `IV`。数字 1 在数字 5 的左边，所表示的数等于大数 5 减小数 1 得到的数值 4 。同样地，数字 9 表示为 `IX`。这个特殊的规则只适用于以下六种情况：
+
+- `I` 可以放在 `V` (5) 和 `X` (10) 的左边，来表示 4 和 9。
+- `X` 可以放在 `L` (50) 和 `C` (100) 的左边，来表示 40 和 90。 
+- `C` 可以放在 `D` (500) 和 `M` (1000) 的左边，来表示 400 和 900。
+
+给定一个罗马数字，将其转换成整数。
+
+ 
+
+**示例 1:**
+
+```
+输入: s = "III"
+输出: 3
+```
+
+**示例 2:**
+
+```
+输入: s = "IV"
+输出: 4
+```
+
+**示例 3:**
+
+```
+输入: s = "IX"
+输出: 9
+```
+
+**示例 4:**
+
+```
+输入: s = "LVIII"
+输出: 58
+解释: L = 50, V= 5, III = 3.
+```
+
+**示例 5:**
+
+```
+输入: s = "MCMXCIV"
+输出: 1994
+解释: M = 1000, CM = 900, XC = 90, IV = 4.
+```
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 15`
+- `s` 仅含字符 `('I', 'V', 'X', 'L', 'C', 'D', 'M')`
+- 题目数据保证 `s` 是一个有效的罗马数字，且表示整数在范围 `[1, 3999]` 内
+- 题目所给测试用例皆符合罗马数字书写规则，不会出现跨位等情况。
+- IL 和 IM 这样的例子并不符合题目要求，49 应该写作 XLIX，999 应该写作 CMXCIX 。
+- 关于罗马数字的详尽书写规则，可以参考 [罗马数字 - 百度百科](https://baike.baidu.com/item/罗马数字/772296)。
+
+
+
+#### 17.2 解法
+
+**时间复杂度**：$O(n)$，**空间复杂度**：$O(1)$
+
+```
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int romanToInt(string s) {
+    int n = s.size(), sum = 0;
+    unordered_map<string, int> value;
+    value["I"] = 1;
+    value["IV"] = 4;
+    value["V"] = 5;
+    value["IX"] = 9;
+    value["X"] = 10;
+    value["XL"] = 40;
+    value["L"] = 50;
+    value["XC"] = 90;
+    value["C"] = 100;
+    value["CD"] = 400;
+    value["D"] = 500;
+    value["CM"] = 900;
+    value["M"] = 1000;
+
+    for (int i = 0; i < n; i++) {
+      switch (s[i]) {
+        case 'I':
+          if (i != n - 1 && (s[i + 1] == 'V' || s[i + 1] == 'X')) {
+            sum += value[s.substr(i, 2)];
+            i++;
+          } else {
+            sum += value[s.substr(i, 1)];
+          }
+          break;
+        case 'X':
+          if (i != n - 1 && (s[i + 1] == 'L' || s[i + 1] == 'C')) {
+            sum += value[s.substr(i, 2)];
+            i++;
+          } else {
+            sum += value[s.substr(i, 1)];
+          }
+          break;
+        case 'C':
+          if (i != n - 1 && (s[i + 1] == 'D' || s[i + 1] == 'M')) {
+            sum += value[s.substr(i, 2)];
+            i++;
+          } else {
+            sum += value[s.substr(i, 1)];
+          }
+          break;
+        default:
+          sum += value[s.substr(i, 1)];
+          break;
+      }
+    }
+
+    return sum;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  while (cin >> n) {
+    for (int i = 0; i < n; i++) {
+      string s;
+      cin >> s;
+      Solution obj;
+      cout << obj.romanToInt(s) << "\n";
+    }
+  }
+
+  return 0;
+}
+```
+
+> `.substr`和双字符的映射表会消耗很多的空间与时间，适当简化：
+>
+> ```cpp
+> #include <string>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int romanToInt(string s) {
+>         int sum = 0;
+>         int n = s.size();
+>         
+>         for (int i = 0; i < n; i++) {
+>             int current = getValue(s[i]);
+>             
+>             // 用对应数值的递增性质替代字符比较
+>             if (i < n - 1 && current < getValue(s[i + 1])) {
+>                 sum -= current;
+>             } else {
+>                 sum += current;
+>             }
+>         }
+>         
+>         return sum;
+>     }
+> 
+> // 用一个函数替代映射（因为是固定的映射表，并没有变动需求）
+> private:
+>     int getValue(char ch) {
+>         switch (ch) {
+>             case 'I': return 1;
+>             case 'V': return 5;
+>             case 'X': return 10;
+>             case 'L': return 50;
+>             case 'C': return 100;
+>             case 'D': return 500;
+>             case 'M': return 1000;
+>             default: return 0;
+>         }
+>     }
+> };
+> ```
+
+
+
+#### 17.3 解析
+
+同样达到了最优解的标准。但是这里忽略了一个重要的特性，即：一个字符代表的数值如果比左边的小，那么它就是要被减去的，否则就是正的原值。如果考虑到这一点，那么逆向遍历会更加简单一些。
+
+
+
+### 18. 整数转罗马数字*
+
+#### 18.1 题目
+
+七个不同的符号代表罗马数字，其值如下：
+
+| 符号 | 值   |
+| ---- | ---- |
+| I    | 1    |
+| V    | 5    |
+| X    | 10   |
+| L    | 50   |
+| C    | 100  |
+| D    | 500  |
+| M    | 1000 |
+
+罗马数字是通过添加从最高到最低的小数位值的转换而形成的。将小数位值转换为罗马数字有以下规则：
+
+- 如果该值不是以 4 或 9 开头，请选择可以从输入中减去的最大值的符号，将该符号附加到结果，减去其值，然后将其余部分转换为罗马数字。
+- 如果该值以 4 或 9 开头，使用 **减法形式**，表示从以下符号中减去一个符号，例如 4 是 5 (`V`) 减 1 (`I`): `IV` ，9 是 10 (`X`) 减 1 (`I`)：`IX`。仅使用以下减法形式：4 (`IV`)，9 (`IX`)，40 (`XL`)，90 (`XC`)，400 (`CD`) 和 900 (`CM`)。
+- 只有 10 的次方（`I`, `X`, `C`, `M`）最多可以连续附加 3 次以代表 10 的倍数。你不能多次附加 5 (`V`)，50 (`L`) 或 500 (`D`)。如果需要将符号附加4次，请使用 **减法形式**。
+
+给定一个整数，将其转换为罗马数字。
+
+ 
+
+**示例 1：**
+
+**输入：**num = 3749
+
+**输出：** "MMMDCCXLIX"
+
+**解释：**
+
+```
+3000 = MMM 由于 1000 (M) + 1000 (M) + 1000 (M)
+ 700 = DCC 由于 500 (D) + 100 (C) + 100 (C)
+  40 = XL 由于 50 (L) 减 10 (X)
+   9 = IX 由于 10 (X) 减 1 (I)
+注意：49 不是 50 (L) 减 1 (I) 因为转换是基于小数位
+```
+
+**示例 2：**
+
+**输入：**num = 58
+
+**输出：**"LVIII"
+
+**解释：**
+
+```
+50 = L
+ 8 = VIII
+```
+
+**示例 3：**
+
+**输入：**num = 1994
+
+**输出：**"MCMXCIV"
+
+**解释：**
+
+```
+1000 = M
+ 900 = CM
+  90 = XC
+   4 = IV
+```
+
+ 
+
+**提示：**
+
+- `1 <= num <= 3999`
+
+
+
+#### 18.2 解法
+
+时间复杂度 $O(1)$，空间复杂度也是 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  string intToRoman(int num) {
+    int base = 1000;
+    string roman;
+    while (base > 0) {
+      int k = num / base;
+      num = num % base;
+
+      if (k == 0) {
+        base /= 10;
+        continue;
+      }
+
+      if (k == 9 || k == 4) {
+        roman = roman + Tran(base) + Tran((k + 1) * base);
+      } else if (k >= 5) {
+        roman += Tran(5 * base);
+        for (int i = 5; i < k; i++) {
+          roman += Tran(base);
+        }
+      } else {
+        for (int i = 0; i < k; i++) {
+          roman += Tran(base);
+        }
+      }
+
+      base /= 10;
+    }
+
+    return roman;
+  }
+
+ private:
+  string Tran(int a) {
+    switch (a) {
+      case 1:
+        return "I";
+      case 5:
+        return "V";
+      case 10:
+        return "X";
+      case 50:
+        return "L";
+      case 100:
+        return "C";
+      case 500:
+        return "D";
+      case 1000:
+        return "M";
+      default:
+        return "0";
+    }
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int num;
+  cin >> num;
+
+  Solution obj;
+  string result = obj.intToRoman(num);
+
+  for (int i = 0; i < result.size(); i++) {
+    cout << result[i];
+  }
+
+  return 0;
+}
+```
+
+> 一些写法上可以优化：
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     string intToRoman(int num) {
+>         int base = 1000;
+>         string roman;
+>         roman.reserve(16);
+> 
+>         while (base > 0) {
+>             int k = num / base;
+>             num = num % base;
+> 
+>             if (k == 0) {
+>                 base /= 10;
+>                 continue;
+>             }
+> 
+>             if (k == 9 || k == 4) {
+>                 // 直接+=避免产生临时对象
+>                 roman += Tran(base);
+>                 roman += Tran((k + 1) * base);
+>             } else if (k >= 5) {
+>                 roman += Tran(5 * base);
+>                 for (int i = 5; i < k; i++) {
+>                     roman += Tran(base);
+>                 }
+>             } else {
+>                 for (int i = 0; i < k; i++) {
+>                     roman += Tran(base);
+>                 }
+>             }
+> 
+>             base /= 10;
+>         }
+> 
+>         return roman;
+>     }
+> 
+> private:
+>     // 返回常字符串引用，减少空间花销
+>     const string& Tran(int a) {
+>         static const string I = "I", V = "V", X = "X", L = "L", C = "C", D = "D", M = "M", Z = "";
+>         switch (a) {
+>             case 1: return I;
+>             case 5: return V;
+>             case 10: return X;
+>             case 50: return L;
+>             case 100: return C;
+>             case 500: return D;
+>             case 1000: return M;
+>             default: return Z;
+>         }
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     int num;
+>     while (cin >> num) {
+>         Solution obj;
+>         // 直接cout
+>         cout << obj.intToRoman(num) << "\n";
+>     }
+> 
+>     return 0;
+> }
+> ```
+
+
+
+#### 18.3 解析
+
+也达到了最优解，但是还有一些别的比较不错的解法：
+
+1. 贪心：
+
+   类似于找零，比较好理解：
+
+   ```cpp
+   class Solution {
+   public:
+       string intToRoman(int num) {
+           const int values[] = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+           const string symbols[] = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+           
+           string roman;
+           for (int i = 0; i < 13; i++) {
+               while (num >= values[i]) {
+                   num -= values[i];
+                   roman += symbols[i];
+               }
+           }
+           
+           return roman;
+       }
+   };
+   ```
+
+2. 面向答案：
+
+   直接暴力破解（限值小于4000）
+
+   ```cpp
+   class Solution {
+   public:
+       string intToRoman(int num) {
+           const string M[] = {"", "M", "MM", "MMM"};
+           const string C[] = {"", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"};
+           const string X[] = {"", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"};
+           const string I[] = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"};
+           
+           return M[num / 1000] + C[(num % 1000) / 100] + X[(num % 100) / 10] + I[num % 10];
+       }
+   };
+   ```
+
    
