@@ -3431,3 +3431,350 @@ int main() {
    ```
 
    
+
+### 19. 最后一个单词的长度*/**
+
+#### 19.1 题目
+
+给你一个字符串 `s`，由若干单词组成，单词前后用一些空格字符隔开。返回字符串中 **最后一个** 单词的长度。
+
+**单词** 是指仅由字母组成、不包含任何空格字符的最大子字符串。
+
+ 
+
+**示例 1：**
+
+```
+输入：s = "Hello World"
+输出：5
+解释：最后一个单词是“World”，长度为 5。
+```
+
+**示例 2：**
+
+```
+输入：s = "   fly me   to   the moon  "
+输出：4
+解释：最后一个单词是“moon”，长度为 4。
+```
+
+**示例 3：**
+
+```
+输入：s = "luffy is still joyboy"
+输出：6
+解释：最后一个单词是长度为 6 的“joyboy”。
+```
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 104`
+- `s` 仅有英文字母和空格 `' '` 组成
+- `s` 中至少存在一个单词
+
+
+
+#### 19.2 解法
+
+时间复杂度为 $O(n)$，空间复杂度为 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int lengthOfLastWord(string s) {
+    int n = s.size(), lastLen = 0, state = 0;
+
+    for (int i = 0; i < n; i++) {
+      if (state == 0 && s[i] != ' ') {
+        state++;
+        lastLen = 1;
+      } else if (state == 1) {
+        if (s[i] != ' ') {
+          lastLen++;
+        } else {
+          state--;
+        }
+      }
+    }
+
+    return lastLen;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s;
+  getline(cin, s);
+
+  Solution obj;
+  cout << obj.lengthOfLastWord(s);
+
+  return 0;
+}
+```
+
+
+
+#### 19.3 解析
+
+严格来说，我这个办法不算最优解，因为最优解能够达到$O(1)$级别。事实上所谓最后一个，只需要倒着找就行了：
+
+```cpp
+#include <string>
+
+using namespace std;
+
+class Solution {
+public:
+    int lengthOfLastWord(string s) {
+        int n = s.size();
+        int len = 0;
+        int i = n - 1;
+
+        while (i >= 0 && s[i] == ' ') {
+            i--;
+        }
+
+        while (i >= 0 && s[i] != ' ') {
+            len++;
+            i--;
+        }
+
+        return len;
+    }
+};
+```
+
+或者直接用STL库的`find_last_not_of`
+
+```cpp
+#include <string>
+
+using namespace std;
+
+class Solution {
+public:
+    int lengthOfLastWord(string s) {
+        size_t end = s.find_last_not_of(' ');
+        
+        if (end == string::npos) {
+            return 0;
+        }
+        
+        size_t start = s.find_last_of(' ', end);
+        
+        if (start == string::npos) {
+            return end + 1;
+        }
+        
+        return end - start;
+    }
+};
+```
+
+
+
+### 20. 最长公共前缀*
+
+#### 20.1 题目
+
+编写一个函数来查找字符串数组中的最长公共前缀。
+
+如果不存在公共前缀，返回空字符串 `""`。
+
+ 
+
+**示例 1：**
+
+```
+输入：strs = ["flower","flow","flight"]
+输出："fl"
+```
+
+**示例 2：**
+
+```
+输入：strs = ["dog","racecar","car"]
+输出：""
+解释：输入不存在公共前缀。
+```
+
+ 
+
+**提示：**
+
+- `1 <= strs.length <= 200`
+- `0 <= strs[i].length <= 200`
+- `strs[i]` 如果非空，则仅由小写英文字母组成
+
+
+
+#### 20.2 解法
+
+时间复杂度 $O(S)$，其中 $S$ 是所有字符串的字符总数。空间复杂度 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  string longestCommonPrefix(vector<string>& strs) {
+    int n = strs.size();
+    if (n == 0) return "";
+
+    int k = strs[0].size();
+    for (int i = 1; i < n; i++) {
+      k = prefixFetch(strs[0], strs[i], k);
+      if (k == 0) break;
+    }
+
+    return strs[0].substr(0, k);
+  }
+
+ private:
+  int prefixFetch(string& a, string& b, int k) {
+    int newK = 0;
+    for (int i = 0; i < k; i++) {
+      if (a[i] - b[i] == 0) {
+        newK++;
+      } else {
+        break;
+      }
+    }
+
+    return newK;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  if (!(cin >> n)) return 0;
+  cin.ignore();
+
+  vector<string> strs(n);
+  for (int i = 0; i < n; i++) {
+    getline(cin, strs[i]);
+  }
+
+  Solution obj;
+  cout << obj.longestCommonPrefix(strs);
+
+  return 0;
+}
+```
+
+> 存在越界隐患：即若后续单词长度没有当前公共前缀长度长时，发生越界。
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> #include <vector>
+> #include <algorithm>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     string longestCommonPrefix(vector<string>& strs) {
+>         if (strs.empty()) return "";
+> 
+>         int k = strs[0].size();
+>         
+>         for (int i = 1; i < strs.size(); i++) {
+>             // 取最小长度为边界
+>             int limit = min(k, static_cast<int>(strs[i].size()));
+>             k = 0;
+>             
+>             // 用while简化写法
+>             while (k < limit && strs[0][k] == strs[i][k]) {
+>                 k++;
+>             }
+>             
+>             if (k == 0) break;
+>         }
+> 
+>         return strs[0].substr(0, k);
+>     }
+> };
+> ```
+
+
+
+#### 20.3 解析
+
+算是等效最优解吧，毕竟这个的时间复杂度事实上不好计算。另外还有两种思路，都挺好理解：
+
+1. 纵向对比法
+
+   不同于我的横向比较，纵向比较是对n个字符串一个个字符地比：
+
+   ```cpp
+   class Solution {
+   public:
+       string longestCommonPrefix(vector<string>& strs) {
+           if (strs.empty()) return "";
+   
+           for (int i = 0; i < strs[0].size(); i++) {
+               char c = strs[0][i];
+               for (int j = 1; j < strs.size(); j++) {
+                   if (i == strs[j].size() || strs[j][i] != c) {
+                       return strs[0].substr(0, i);
+                   }
+               }
+           }
+   
+           return strs[0];
+       }
+   };
+   ```
+
+2. 排序法
+
+   时间复杂度较高。
+
+   ```cpp
+   class Solution {
+   public:
+       string longestCommonPrefix(vector<string>& strs) {
+           if (strs.empty()) return "";
+   
+           sort(strs.begin(), strs.end());
+   
+           string first = strs.front();
+           string last = strs.back();
+           int k = 0;
+           int limit = min(first.size(), last.size());
+   
+           while (k < limit && first[k] == last[k]) {
+               k++;
+           }
+   
+           return first.substr(0, k);
+       }
+   };
+   ```
+
+   
