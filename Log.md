@@ -3777,4 +3777,428 @@ int main() {
    };
    ```
 
-   
+
+
+
+### 21. 反转字符串中的单词*
+
+#### 21.1 题目
+
+给你一个字符串 `s` ，请你反转字符串中 **单词** 的顺序。
+
+**单词** 是由非空格字符组成的字符串。`s` 中使用至少一个空格将字符串中的 **单词** 分隔开。
+
+返回 **单词** 顺序颠倒且 **单词** 之间用单个空格连接的结果字符串。
+
+**注意：**输入字符串 `s`中可能会存在前导空格、尾随空格或者单词间的多个空格。返回的结果字符串中，单词间应当仅用单个空格分隔，且不包含任何额外的空格。
+
+ 
+
+**示例 1：**
+
+```
+输入：s = "the sky is blue"
+输出："blue is sky the"
+```
+
+**示例 2：**
+
+```
+输入：s = "  hello world  "
+输出："world hello"
+解释：反转后的字符串中不能存在前导空格和尾随空格。
+```
+
+**示例 3：**
+
+```
+输入：s = "a good   example"
+输出："example good a"
+解释：如果两个单词间有多余的空格，反转后的字符串需要将单词间的空格减少到仅有一个。
+```
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 104`
+- `s` 包含英文大小写字母、数字和空格 `' '`
+- `s` 中 **至少存在一个** 单词
+
+ 
+
+**进阶：**如果字符串在你使用的编程语言中是一种可变数据类型，请尝试使用 `O(1)` 额外空间复杂度的 **原地** 解法。
+
+
+
+#### 21.2 解法
+
+时间复杂度 $O(n)$，空间复杂度 $O(1)$
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  string reverseWords(string s) {
+    int n = s.size();
+    for (int i = 0; i < n / 2; i++) {
+      int temp = s[i];
+      s[i] = s[n - i - 1];
+      s[n - i - 1] = temp;
+    }
+
+    int k = 0, state = 0, lastStart = 0;
+    s.push_back(' ');
+    for (int i = 0; i <= n; i++) {
+      if (state == 0 && s[i] != ' ') {
+        lastStart = k;
+        s[k++] = s[i];
+        state++;
+      } else if (state == 1) {
+        if (s[i] == ' ') {
+          state--;
+          int d = lastStart + k;
+          for (int j = lastStart; j < d / 2; j++) {
+            int temp = s[j];
+            s[j] = s[d - j - 1];
+            s[d - j - 1] = temp;
+          }
+        }
+
+        s[k++] = s[i];
+      }
+    }
+    s.resize(k - 1);
+
+    return s;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s;
+  getline(cin, s);
+
+  Solution obj;
+  cout << obj.reverseWords(s);
+
+  return 0;
+}
+```
+
+> 有一个`reverse`函数能够直接使用：
+>
+> ```cpp
+> #include <algorithm>
+> #include <iostream>
+> #include <string>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     string reverseWords(string s) {
+>         reverse(s.begin(), s.end());
+> 
+>         int n = s.size();
+>         int slow = 0;
+> 
+>         // 思路类似，但是简化了很多，也是一个个单词走的（while就是走单词），fast是原数组指针，slow是新数组指针（当然它们物理上是同一个数组）
+>         for (int fast = 0; fast < n; fast++) {
+>             if (s[fast] != ' ') {
+>                 if (slow != 0) {
+>                     s[slow++] = ' ';
+>                 }
+> 
+>                 int start = slow;
+>                 while (fast < n && s[fast] != ' ') {
+>                     s[slow++] = s[fast++];
+>                 }
+> 
+>                 reverse(s.begin() + start, s.begin() + slow);
+>             }
+>         }
+>         
+>         s.resize(slow);
+>         return s;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     string s;
+>     while (getline(cin, s)) {
+>         Solution obj;
+>         cout << obj.reverseWords(s) << "\n";
+>     }
+> 
+>     return 0;
+> }
+> ```
+
+
+
+#### 21.3 解析
+
+已经是最优解，似乎没有什么等效的情况。此外还有一种空间 $O(n)$ 复杂度的写法：
+
+```cpp
+#include <iostream>
+#include <string>
+#include <sstream>
+
+using namespace std;
+
+class Solution {
+public:
+    string reverseWords(string s) {
+        istringstream iss(s);
+        string word; //新单词
+        string result = "";	//额外数组存结果
+
+        while (iss >> word) { // iss >> word类似cin，自动忽略空格（理解成用cin输入即可）
+            if (result.empty()) {//开头处理
+                result = word;
+            } else {
+                result = word + " " + result;
+            }
+        }
+
+        return result;
+    }
+};
+```
+
+
+
+### 22. Z 字形变换*
+
+#### 22.1 题目
+
+将一个给定字符串 `s` 根据给定的行数 `numRows` ，以从上往下、从左到右进行 Z 字形排列。
+
+比如输入字符串为 `"PAYPALISHIRING"` 行数为 `3` 时，排列如下：
+
+```
+P   A   H   N
+A P L S I I G
+Y   I   R
+```
+
+之后，你的输出需要从左往右逐行读取，产生出一个新的字符串，比如：`"PAHNAPLSIIGYIR"`。
+
+请你实现这个将字符串进行指定行数变换的函数：
+
+```
+string convert(string s, int numRows);
+```
+
+ 
+
+**示例 1：**
+
+```
+输入：s = "PAYPALISHIRING", numRows = 3
+输出："PAHNAPLSIIGYIR"
+```
+
+**示例 2：**
+
+```
+输入：s = "PAYPALISHIRING", numRows = 4
+输出："PINALSIGYAHRPI"
+解释：
+P     I    N
+A   L S  I G
+Y A   H R
+P     I
+```
+
+**示例 3：**
+
+```
+输入：s = "A", numRows = 1
+输出："A"
+```
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 1000`
+- `s` 由英文字母（小写和大写）、`','` 和 `'.'` 组成
+- `1 <= numRows <= 1000`
+
+
+
+#### 22.2 解法
+
+时间复杂度达到了 $O(n)$，空间复杂度为 $O(1)$
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  string convert(string s, int numRows) {
+    if (numRows == 1) return s;
+
+    int n = s.size(), base = numRows * 2 - 2, f = 0, k = 0;
+    string result;
+
+    while (f < numRows && k < n) {
+      bool flag = true;
+
+      for (int i = f; i < n;) {
+        result += s[i];
+        k++;
+        if (k >= n) break;
+
+        int weight = base - f * 2;
+        if (flag) {
+          if (weight == 0) weight = base;
+          i += weight;
+        } else {
+          if (weight == base) weight = 0;
+          i += base - weight;
+        }
+
+        flag = !flag;
+      }
+
+      f++;
+    }
+
+    return result;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s;
+  getline(cin, s);
+
+  int n;
+  cin >> n;
+
+  Solution obj;
+  cout << obj.convert(s, n);
+
+  return 0;
+}
+```
+
+> k的判断是冗余的；然后其实只有中间行才有特殊的斜线部分，这一点可以处理得更加简洁：
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     string convert(string s, int numRows) {
+>         if (numRows == 1 || numRows >= s.size()) {
+>             return s;
+>         }
+> 
+>         string result;
+>         int n = s.size();
+>         int cycleLen = 2 * numRows - 2;
+> 
+>         for (int i = 0; i < numRows; i++) {
+>             for (int j = 0; j + i < n; j += cycleLen) {
+>                 result += s[j + i];
+>                 
+>                 if (i != 0 && i != numRows - 1 && j + cycleLen - i < n) {
+>                     result += s[j + cycleLen - i];
+>                 }
+>             }
+>         }
+> 
+>         return result;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     string s;
+>     int n;
+>     
+>     while (cin >> s >> n) {
+>         Solution obj;
+>         cout << obj.convert(s, n) << "\n";
+>     }
+> 
+>     return 0;
+> }
+> ```
+
+
+
+#### 22.3 解析
+
+同样是最优解，但是也可以按题目的说法直接模拟：
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    string convert(string s, int numRows) {
+        if (numRows == 1 || numRows >= s.size()) {
+            return s;
+        }
+
+        vector<string> rows(min(numRows, int(s.size())));
+        int curRow = 0;
+        bool goingDown = false;
+
+        for (char c : s) {
+            rows[curRow] += c;
+            
+            if (curRow == 0 || curRow == numRows - 1) {
+                goingDown = !goingDown;
+            }
+            
+            curRow += goingDown ? 1 : -1;
+        }
+
+        string result;
+        for (string row : rows) {
+            result += row;
+        }
+        
+        return result;
+    }
+};
+```
+
