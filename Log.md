@@ -4202,3 +4202,362 @@ public:
 };
 ```
 
+
+
+### 23. 找出字符串中第一个匹配项的下标**
+
+#### 23.1 题目
+
+给你两个字符串 `haystack` 和 `needle` ，请你在 `haystack` 字符串中找出 `needle` 字符串的第一个匹配项的下标（下标从 0 开始）。如果 `needle` 不是 `haystack` 的一部分，则返回 `-1` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：haystack = "sadbutsad", needle = "sad"
+输出：0
+解释："sad" 在下标 0 和 6 处匹配。
+第一个匹配项的下标是 0 ，所以返回 0 。
+```
+
+**示例 2：**
+
+```
+输入：haystack = "leetcode", needle = "leeto"
+输出：-1
+解释："leeto" 没有在 "leetcode" 中出现，所以返回 -1 。
+```
+
+ 
+
+**提示：**
+
+- `1 <= haystack.length, needle.length <= 104`
+- `haystack` 和 `needle` 仅由小写英文字符组成
+
+
+
+#### 23.2 解法
+
+时间复杂度 $O(n + m)$，空间复杂度为 $O(m)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int strStr(string haystack, string needle) {
+    int j = 0, i = 1, n = needle.size();
+
+    vector<int> next(n);
+    next[0] = 0;
+
+    while (i < n) {
+      if (needle[i] == needle[j]) {
+        next[i++] = ++j;
+      } else if (j == 0) {
+        next[i++] = j;
+      } else {
+        j = next[j - 1];
+      }
+    }
+
+    j = 0;
+    i = 0;
+    while (i < haystack.size()) {
+      if (haystack[i] == needle[j]) {
+        i++;
+        j++;
+      } else if (j == 0) {
+        i++;
+      } else {
+        j = next[j - 1];
+      }
+
+      if (j == n) return i - n;
+    }
+
+    return -1;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string a, b;
+  cin >> a >> b;
+
+  Solution obj;
+  cout << obj.strStr(a, b);
+
+  return 0;
+}
+```
+
+
+
+#### 23.3 解析
+
+这就是最标准的最优解，也就是**KMP算法**。这个算法逻辑上很好理解，但是实现起来比较困难，特别是`next`数组的构造。
+
+注意到暴力算法会在不匹配时让原串指针也回退，而回退的部分即为该算法的无用功，事实上既然原串已经扫描到此，就不必回退，保证原串只遍历一遍，就是KMP算法的核心特点。既然不希望原串指针回退，那么可能会在之前的部分匹配串中，出现这样的一种情况从而影响结果，即：**部分匹配串的后缀等于其本身的前缀**。也就是说，部分匹配串它的后缀必然和原串指针前的对应长度串是匹配的，而如果部分匹配串的前缀也等于这部分后缀，那么就意味着下一次的匹配依然开始，并进行到了上述三部分的长度值处。
+
+进而，这个问题就变成了怎么求`needle`的前`i`长子串的最大匹配前后缀，也就是`next`数组的构造。这一块是整个算法最难理解的部分，其本质上是一个递推算法：令`next[i]`为`needle[0:i]`的最长匹配前后缀长度，`j`为当时最长前缀的末端`index`，此时比较`i+1`与`j+1`情况，如果仍然相等，则`next[i+1]`等于`j+1`；而当不等时，如果`j`等于0，那么`next[i+1]`就等于0，然后`i++`，如果不等于0，那么存在一种情况影响结果，即：`needle[i-j:i]`中可能存在后缀使得在`i+1`与`j+1`处能够匹配出新的最长前后缀，而`needle[i-j+1:i]`其实就与`needle[0:j-1]`相等，所以此时令`j = next[j - 1]`从而继续匹配。
+
+
+
+### 24.  文本左右对齐*
+
+#### 24.1 题目
+
+给定一个单词数组 `words` 和一个长度 `maxWidth` ，重新排版单词，使其成为每行恰好有 `maxWidth` 个字符，且左右两端对齐的文本。
+
+你应该使用 “**贪心算法**” 来放置给定的单词；也就是说，尽可能多地往每行中放置单词。必要时可用空格 `' '` 填充，使得每行恰好有 *maxWidth* 个字符。
+
+要求尽可能均匀分配单词间的空格数量。如果某一行单词间的空格不能均匀分配，则左侧放置的空格数要多于右侧的空格数。
+
+文本的最后一行应为左对齐，且单词之间不插入**额外的**空格。
+
+**注意:**
+
+- 单词是指由非空格字符组成的字符序列。
+- 每个单词的长度大于 0，小于等于 *maxWidth*。
+- 输入单词数组 `words` 至少包含一个单词。
+
+ 
+
+**示例 1:**
+
+```
+输入: words = ["This", "is", "an", "example", "of", "text", "justification."], maxWidth = 16
+输出:
+[
+   "This    is    an",
+   "example  of text",
+   "justification.  "
+]
+```
+
+**示例 2:**
+
+```
+输入:words = ["What","must","be","acknowledgment","shall","be"], maxWidth = 16
+输出:
+[
+  "What   must   be",
+  "acknowledgment  ",
+  "shall be        "
+]
+解释: 注意最后一行的格式应为 "shall be    " 而不是 "shall     be",
+     因为最后一行应为左对齐，而不是左右两端对齐。       
+     第二行同样为左对齐，这是因为这行只包含一个单词。
+```
+
+**示例 3:**
+
+```
+输入:words = ["Science","is","what","we","understand","well","enough","to","explain","to","a","computer.","Art","is","everything","else","we","do"]，maxWidth = 20
+输出:
+[
+  "Science  is  what we",
+  "understand      well",
+  "enough to explain to",
+  "a  computer.  Art is",
+  "everything  else  we",
+  "do                  "
+]
+```
+
+ 
+
+**提示:**
+
+- `1 <= words.length <= 300`
+- `1 <= words[i].length <= 20`
+- `words[i]` 由小写英文字母和符号组成
+- `1 <= maxWidth <= 100`
+- `words[i].length <= maxWidth`
+
+
+
+#### 24.2 解法
+
+时间复杂度 `O(N)`，空间复杂度 `O(N)`
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<string> fullJustify(vector<string>& words, int maxWidth) {
+    vector<string> lines;
+    int lineLen = 0, lineSt = 0, n = words.size();
+
+    for (int i = 0; i < n; i++) {
+      if (words[i].size() + lineLen > maxWidth - max(0, i - lineSt)) {
+        string newLine;
+
+        for (int j = lineSt; j < i; j++) {
+          newLine += words[j];
+          int spaceNum = (maxWidth - lineLen) / max(1, (i - lineSt - 1));
+
+          if (j < i - 1 || i - lineSt - 1 == 0) {
+            for (int k = 0; k < spaceNum; k++) {
+              newLine += " ";
+            }
+            if (j < lineSt + (maxWidth - lineLen) % max(1, (i - lineSt - 1))) {
+              newLine += " ";
+            }
+          }
+        }
+
+        lines.push_back(newLine);
+        lineSt = i--;
+        lineLen = 0;
+      } else {
+        lineLen += words[i].size();
+
+        if (i == n - 1) {
+          string newLine;
+
+          for (int j = lineSt; j < i + 1; j++) {
+            newLine += words[j] + (j == i ? "" : " ");
+            if (j == i) {
+              int len = maxWidth - lineLen - i + lineSt;
+              while (len-- > 0) newLine += " ";
+            }
+          }
+
+          lines.push_back(newLine);
+        }
+      }
+    }
+
+    return lines;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n, maxWidth;
+  cin >> n >> maxWidth;
+  cin.ignore();
+
+  vector<string> words(n);
+  for (int i = 0; i < n; i++) {
+    cin >> words[i];
+  }
+
+  Solution obj;
+  vector<string> lines = obj.fullJustify(words, maxWidth);
+
+  for (string x : lines) {
+    cout << x << endl;
+  }
+  return 0;
+}
+```
+
+> 稍微优化一下：
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     vector<string> fullJustify(vector<string>& words, int maxWidth) {
+>         vector<string> res;
+>         int n = words.size();
+>         int left = 0;
+> 
+>         while (left < n) {
+>             int right = left;
+>             int lineLen = 0;
+> 
+>             while (right < n && lineLen + words[right].size() + right - left <= maxWidth) {
+>                 lineLen += words[right].size();
+>                 right++;
+>             }
+> 
+>             int numWords = right - left;
+>             int numSpaces = maxWidth - lineLen;
+>             string line;
+> 
+>             if (right == n || numWords == 1) {
+>                 for (int i = left; i < right; i++) {
+>                     line += words[i];
+>                     if (i < right - 1) {
+>                         line += " ";
+>                     }
+>                 }
+>                 line += string(maxWidth - line.size(), ' ');
+>             } else {
+>                 int avgSpaces = numSpaces / (numWords - 1);
+>                 int extraSpaces = numSpaces % (numWords - 1);
+> 
+>                 for (int i = left; i < right; i++) {
+>                     line += words[i];
+>                     if (i < right - 1) {
+>                         int spacesToApply = avgSpaces + (i - left < extraSpaces ? 1 : 0);
+>                         line += string(spacesToApply, ' ');
+>                     }
+>                 }
+>             }
+> 
+>             res.push_back(line);
+>             left = right;
+>         }
+> 
+>         return res;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     int n, maxWidth;
+>     if (cin >> n >> maxWidth) {
+>         vector<string> words(n);
+>         for (int i = 0; i < n; i++) {
+>             cin >> words[i];
+>         }
+> 
+>         Solution obj;
+>         vector<string> lines = obj.fullJustify(words, maxWidth);
+> 
+>         for (const string& x : lines) {
+>             cout << x << "\n";
+>         }
+>     }
+>     return 0;
+> }
+> ```
+
+
+
+#### 24.3 解析
+
+这道题也算是达到最优解，但是它没什么技术含量，只是比较麻烦……
