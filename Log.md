@@ -4561,3 +4561,375 @@ int main() {
 #### 24.3 解析
 
 这道题也算是达到最优解，但是它没什么技术含量，只是比较麻烦……
+
+
+
+## 二、双指针
+
+
+
+### 25. 验证回文串
+
+#### 25.1 题目
+
+如果在将所有大写字符转换为小写字符、并移除所有非字母数字字符之后，短语正着读和反着读都一样。则可以认为该短语是一个 **回文串** 。
+
+字母和数字都属于字母数字字符。
+
+给你一个字符串 `s`，如果它是 **回文串** ，返回 `true` ；否则，返回 `false` 。
+
+ 
+
+**示例 1：**
+
+```
+输入: s = "A man, a plan, a canal: Panama"
+输出：true
+解释："amanaplanacanalpanama" 是回文串。
+```
+
+**示例 2：**
+
+```
+输入：s = "race a car"
+输出：false
+解释："raceacar" 不是回文串。
+```
+
+**示例 3：**
+
+```
+输入：s = " "
+输出：true
+解释：在移除非字母数字字符之后，s 是一个空字符串 "" 。
+由于空字符串正着反着读都一样，所以是回文串。
+```
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 2 * 105`
+- `s` 仅由可打印的 ASCII 字符组成
+
+
+
+#### 25.2 解法
+
+时间复杂度 $O(n)$，空间复杂度 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <cctype>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool isPalindrome(string s) {
+    int left = 0, right = s.size();
+
+    while (left < right) {
+      if (!isalpha(s[left]) && !isdigit(s[left])) {
+        left++;
+      } else if (!isalpha(s[right]) && !isdigit(s[right])) {
+        right--;
+      } else {
+        if (s[left] == s[right] || (isalpha(s[right]) && isalpha(s[left]) &&
+                                    abs(s[left] - s[right]) == 32)) {
+          left++;
+          right--;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s;
+  getline(cin, s);
+
+  Solution obj;
+  cout << obj.isPalindrome(s);
+
+  return 0;
+}
+```
+
+> 首先`right`等于`s.size()`会越界，应该先减一，然后用`isalnum()` 可以直接判断字符是否为字母或数字，`tolower()` 可以统一把字符转为小写：
+>
+> ```cpp
+> #include <cctype>
+> #include <iostream>
+> #include <string>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     bool isPalindrome(string s) {
+>         int left = 0;
+>         int right = s.size() - 1;
+> 
+>         while (left < right) {
+>             if (!isalnum(s[left])) {
+>                 left++;
+>             } else if (!isalnum(s[right])) {
+>                 right--;
+>             } else {
+>                 if (tolower(s[left]) != tolower(s[right])) {
+>                     return false;
+>                 }
+>                 left++;
+>                 right--;
+>             }
+>         }
+> 
+>         return true;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     string s;
+>     getline(cin, s);
+> 
+>     Solution obj;
+>     cout << (obj.isPalindrome(s) ? "true" : "false") << "\n";
+> 
+>     return 0;
+> }
+> ```
+
+
+
+#### 25.6 解析
+
+这就是最优解，此外，还有一种空间复杂度$O(n)$的预处理+翻转比对方法：
+
+```cpp
+#include <algorithm>
+#include <cctype>
+#include <string>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isPalindrome(string s) {
+        string cleanStr;
+
+        for (char c : s) {
+            if (isalnum(c)) {
+                cleanStr += tolower(c);
+            }
+        }
+
+        string revStr = cleanStr;
+        reverse(revStr.begin(), revStr.end());
+
+        return cleanStr == revStr;
+    }
+};
+```
+
+
+
+### 26. 判断子序列
+
+#### 26.1 题目
+
+给定字符串 **s** 和 **t** ，判断 **s** 是否为 **t** 的子序列。
+
+字符串的一个子序列是原始字符串删除一些（也可以不删除）字符而不改变剩余字符相对位置形成的新字符串。（例如，`"ace"`是`"abcde"`的一个子序列，而`"aec"`不是）。
+
+**进阶：**
+
+如果有大量输入的 S，称作 S1, S2, ... , Sk 其中 k >= 10亿，你需要依次检查它们是否为 T 的子序列。在这种情况下，你会怎样改变代码？
+
+**致谢：**
+
+特别感谢 [@pbrother ](https://leetcode.com/pbrother/)添加此问题并且创建所有测试用例。
+
+ 
+
+**示例 1：**
+
+```
+输入：s = "abc", t = "ahbgdc"
+输出：true
+```
+
+**示例 2：**
+
+```
+输入：s = "axc", t = "ahbgdc"
+输出：false
+```
+
+ 
+
+**提示：**
+
+- `0 <= s.length <= 100`
+- `0 <= t.length <= 10^4`
+- 两个字符串都只由小写字符组成。
+
+
+
+#### 26.2 解法
+
+时间复杂度 $O(n)$（$n$ 为 `t` 的长度），空间复杂度 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool isSubsequence(string s, string t) {
+    int j = 0, n = t.size(), m = s.size();
+
+    if (n == 0 && m == 0) return true;
+
+    for (int i = 0; i < n; i++) {
+      if (t[i] == s[j]) {
+        j++;
+      }
+
+      if (j >= m) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s, t;
+  cin >> s >> t;
+
+  Solution obj;
+  cout << obj.isSubsequence(s, t);
+
+  return 0;
+}
+```
+
+> 对空串情况加了新判断，并换成`while`
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     bool isSubsequence(string s, string t) {
+>         if (s.empty()) return true;
+>         
+>         int i = 0;
+>         int j = 0;
+>         
+>         while (i < s.size() && j < t.size()) {
+>             if (s[i] == t[j]) {
+>                 i++;
+>             }
+>             j++;
+>         }
+>         
+>         return i == s.size();
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     string s, t;
+>     if (cin >> s >> t) {
+>         Solution obj;
+>         cout << (obj.isSubsequence(s, t) ? "true" : "false") << "\n";
+>     }
+> 
+>     return 0;
+> }
+> ```
+
+
+
+#### 26.7 解析
+
+单次匹配时候确实算优解，但是对进阶来说还是差了些。而进阶的思路简单来说就是空间换时间，如果继续用双指针，每次比对都要把长为 $N$ 的主串 $T$ 遍历一遍，总时间复杂度会达到恐怖的 $O(k \times N)$；故而我们对主串T进行预处理，类似于构建一个确定性有限状态自动机（DFA）。
+
+我们可以倒序遍历主串 $T$，构建一个二维的状态转移矩阵 `dp[i][26]`。 `dp[i][j]` 表示：从主串的下标 $i$ 开始往后看，字符 $j$（'a' 到 'z'）**第一次出现的位置**。预处理完成后，无论进来多少个短串 $S_i$，我们就像在查字典一样：可以直接 $O(1)$ 地跳跃到下一个匹配位置。对于每个短串，匹配时间从 $O(N)$ 降到了 $O(M)$（$M$ 为短串 $S_i$ 的长度）。总时间复杂度优化为 $O(N \times 26 + k \times M)$​。
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        int n = t.size();
+        vector<vector<int>> dp(n + 1, vector<int>(26, 0));
+
+        // 初始化边界，n代表越界（不存在）
+        for (int c = 0; c < 26; c++) {
+            dp[n][c] = n;
+        }
+
+        for (int i = n - 1; i >= 0; i--) {
+            for (int c = 0; c < 26; c++) {
+                // 匹配字母：如果t[i]是字母α，则对应为i；不是就是i+1时对应值
+                if (t[i] == c + 'a') {
+                    dp[i][c] = i;
+                } else {
+                    dp[i][c] = dp[i + 1][c];
+                }
+            }
+        }
+
+        int curr = 0;
+        for (int i = 0; i < s.size(); i++) {
+            if (curr == n) return false;
+            
+            curr = dp[curr][s[i] - 'a'];
+            
+            if (curr == n) return false;
+            curr++;
+        }
+
+        return true;
+    }
+};
+```
+
