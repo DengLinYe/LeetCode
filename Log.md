@@ -2,6 +2,7 @@
 
 > - 先以《面试经典150题》开始，每日两题预计五月中结束，此后题目再议。
 > - 题目后的`*`个数表示难度，一般我能做出等效最优解的题目，不视为难题，即 *；而若能解出但不是最优，则 **；若无法解出，则 \*\*\*。特别地，如果做到了等效最优解，但是相对不够好，则 \*/\*\*
+> - `@`被认为是重点题目
 
 ## 零、一些配置
 
@@ -4568,7 +4569,7 @@ int main() {
 
 
 
-### 25. 验证回文串
+### 25. 验证回文串*
 
 #### 25.1 题目
 
@@ -4749,7 +4750,7 @@ public:
 
 
 
-### 26. 判断子序列
+### 26. 判断子序列*/**
 
 #### 26.1 题目
 
@@ -4933,3 +4934,287 @@ public:
 };
 ```
 
+
+
+### 27. 两数之和II - 输入有序数组 *（@）
+
+#### 27.1 题目
+
+给你一个下标从 **1** 开始的整数数组 `numbers` ，该数组已按 **非递减顺序排列** ，请你从数组中找出满足相加之和等于目标数 `target` 的两个数。如果设这两个数分别是 `numbers[index1]` 和 `numbers[index2]` ，则 `1 <= index1 < index2 <= numbers.length` 。
+
+以长度为 2 的整数数组 `[index1, index2]` 的形式返回这两个整数的下标 `index1` 和 `index2`。
+
+你可以假设每个输入 **只对应唯一的答案** ，而且你 **不可以** 重复使用相同的元素。
+
+你所设计的解决方案必须只使用常量级的额外空间。
+
+ 
+
+**示例 1：**
+
+```
+输入：numbers = [2,7,11,15], target = 9
+输出：[1,2]
+解释：2 与 7 之和等于目标数 9 。因此 index1 = 1, index2 = 2 。返回 [1, 2] 。
+```
+
+**示例 2：**
+
+```
+输入：numbers = [2,3,4], target = 6
+输出：[1,3]
+解释：2 与 4 之和等于目标数 6 。因此 index1 = 1, index2 = 3 。返回 [1, 3] 。
+```
+
+**示例 3：**
+
+```
+输入：numbers = [-1,0], target = -1
+输出：[1,2]
+解释：-1 与 0 之和等于目标数 -1 。因此 index1 = 1, index2 = 2 。返回 [1, 2] 。
+```
+
+ 
+
+**提示：**
+
+- `2 <= numbers.length <= 3 * 104`
+- `-1000 <= numbers[i] <= 1000`
+- `numbers` 按 **非递减顺序** 排列
+- `-1000 <= target <= 1000`
+- **仅存在一个有效答案**
+
+
+
+#### 27.2 解法
+
+时间复杂度$O(n)$，空间复杂度为 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<int> twoSum(vector<int>& numbers, int target) {
+    vector<int> a(2);
+    int n = numbers.size(), i = 0;
+    int j = n - 1;
+    while (i < j) {
+      if (numbers[i] + numbers[j] == target) {
+        a[0] = i + 1;
+        a[1] = j + 1;
+        return a;
+      } else if (numbers[i] + numbers[j] > target) {
+        j--;
+      } else {
+        i++;
+      }
+    }
+
+    return a;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n, t;
+  cin >> n >> t;
+
+  vector<int> nums(n);
+  for (int i = 0; i < n; i++) {
+    cin >> nums[i];
+  }
+
+  Solution obj;
+  vector<int> sum = obj.twoSum(nums, t);
+
+  cout << sum[0] << " " << sum[1];
+  return 0;
+}
+```
+
+> 写法上可以优化，特别是返回数组时：
+>
+> ```cpp
+> #include <iostream>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     vector<int> twoSum(vector<int>& numbers, int target) {
+>         int left = 0;
+>         int right = numbers.size() - 1;
+> 
+>         while (left < right) {
+>             int current_sum = numbers[left] + numbers[right];
+>             
+>             if (current_sum == target) {
+>                 // 不用额外初始化vector<int>
+>                 return {left + 1, right + 1};
+>             } else if (current_sum < target) {
+>                 left++;
+>             } else {
+>                 right--;
+>             }
+>         }
+> 
+>         return {};
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     int n, t;
+>     if (cin >> n >> t) {
+>         vector<int> nums(n);
+>         for (int i = 0; i < n; i++) {
+>             cin >> nums[i];
+>         }
+> 
+>         Solution obj;
+>         vector<int> result = obj.twoSum(nums, t);
+> 
+>         if (!result.empty()) {
+>             cout << result[0] << " " << result[1] << "\n";
+>         }
+>     }
+> 
+>     return 0;
+> }
+> ```
+>
+> 
+
+
+
+#### 27.3 解析
+
+同样是等效最优解。这是**对撞双指针**的核心题目，可以结合图片来看看，是选自LeetCode论坛上用户nettee的一篇[文章](https://leetcode.cn/problems/two-sum-ii-input-array-is-sorted/solutions/87919/yi-zhang-tu-gao-su-ni-on-de-shuang-zhi-zhen-jie-fa)：
+
+1. 正常搜索空间：
+
+   <img src="./assets/image-20260315115048062.png" alt="image-20260315115048062" style="zoom:67%;" />
+
+2. 从边角开始：
+
+   <img src="./assets/image-20260315115120752.png" alt="image-20260315115120752" style="zoom:67%;" />
+
+3. 如果小了，则下图部分不用搜索；反之旋转九十度部分不用搜索：
+
+   <img src="./assets/image-20260315115212192.png" alt="image-20260315115212192" style="zoom: 67%;" />
+
+4. 最后本质上就是在图中走了一条长度为n的线，所以是$O(n)$
+
+
+
+### 28. 盛最多水的容器*
+
+#### 28.1 题目
+
+给定一个长度为 `n` 的整数数组 `height` 。有 `n` 条垂线，第 `i` 条线的两个端点是 `(i, 0)` 和 `(i, height[i])` 。
+
+找出其中的两条线，使得它们与 `x` 轴共同构成的容器可以容纳最多的水。
+
+返回容器可以储存的最大水量。
+
+**说明：**你不能倾斜容器。
+
+ 
+
+**示例 1：**
+
+![img](./assets/question_11.jpg)
+
+```
+输入：[1,8,6,2,5,4,8,3,7]
+输出：49 
+解释：图中垂直线代表输入数组 [1,8,6,2,5,4,8,3,7]。在此情况下，容器能够容纳水（表示为蓝色部分）的最大值为 49。
+```
+
+**示例 2：**
+
+```
+输入：height = [1,1]
+输出：1
+```
+
+ 
+
+**提示：**
+
+- `n == height.length`
+- `2 <= n <= 105`
+- `0 <= height[i] <= 104`
+
+
+
+#### 28.2 解法
+
+时间复杂度$O(n)$，空间复杂度为 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int maxArea(vector<int>& height) {
+    int i = 0, j = height.size() - 1, maxVol = 0;
+    while (i < j) {
+      int vol = (j - i) * min(height[i], height[j]);
+      maxVol = max(vol, maxVol);
+
+      if (height[i] < height[j]) {
+        i++;
+      } else {
+        j--;
+      }
+    }
+
+    return maxVol;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  cin >> n;
+
+  vector<int> heights(n);
+  for (int i = 0; i < n; i++) {
+    cin >> heights[i];
+  }
+
+  Solution obj;
+  cout << obj.maxArea(heights);
+
+  return 0;
+}
+```
+
+
+
+#### 28.3 解析
+
+这道题和上一道题其实差不多，关键一点是不要代入之前“接雨水”那道题的想法，因为这里不算柱子的空间，所以不用担心柱子影响体积，这是很关键的。明白这一点之后，同样取左右指针，那么考虑一个问题：移动哪一个指针，凭什么移动？注意到当`height[i] < height[j]`时，如果移动右边`j`，宽度一定减少，但是水位一定不变，这样容积一定减小，那么不能移动`j`，自然而然地就得移动`i`……
