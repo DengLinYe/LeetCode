@@ -5603,3 +5603,409 @@ int main() {
 这就是等效最优解。注意到这道题是**大于等于**，不要误以为是等于即可。
 
 进阶这部分是考虑到数字可能是负数，这样就没有$O(n)$了，不过这是另一个题目的解，这里先不说。
+
+
+
+### 31. 无重复字符的最长子串*
+
+#### 31.1 题目
+
+给定一个字符串 `s` ，请你找出其中不含有重复字符的 **最长 子串** 的长度。
+
+ 
+
+**示例 1:**
+
+```
+输入: s = "abcabcbb"
+输出: 3 
+解释: 因为无重复字符的最长子串是 "abc"，所以其长度为 3。注意 "bca" 和 "cab" 也是正确答案。
+```
+
+**示例 2:**
+
+```
+输入: s = "bbbbb"
+输出: 1
+解释: 因为无重复字符的最长子串是 "b"，所以其长度为 1。
+```
+
+**示例 3:**
+
+```
+输入: s = "pwwkew"
+输出: 3
+解释: 因为无重复字符的最长子串是 "wke"，所以其长度为 3。
+     请注意，你的答案必须是 子串 的长度，"pwke" 是一个子序列，不是子串。
+```
+
+ 
+
+**提示：**
+
+- `0 <= s.length <= 5 * 104`
+- `s` 由英文字母、数字、符号和空格组成
+
+
+
+#### 31.2 解法
+
+时间复杂度 $O(N)$，空间复杂度 $O(M)$（$M$ 为字符集大小）。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  int lengthOfLongestSubstring(string s) {
+    int left = 1, n = s.size(), maxLen = 0;
+    unordered_map<char, int> lastIndex;
+    for (int right = 0; right < n; right++) {
+      if (lastIndex[s[right]] >= left) {
+        left = lastIndex[s[right]] + 1;
+      }
+      lastIndex[s[right]] = right + 1;
+      maxLen = max(right - left + 2, maxLen);
+    }
+
+    return maxLen;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s;
+  getline(cin, s);
+
+  Solution obj;
+  cout << obj.lengthOfLongestSubstring(s);
+
+  return 0;
+}
+```
+
+> 由于只是ASCII码，以定长数组代替`unordered_map`速度会更快，顺便还解决了后者初始值是`0`的问题：
+>
+> ```cpp
+> #include <algorithm>
+> #include <iostream>
+> #include <string>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int lengthOfLongestSubstring(string s) {
+>         vector<int> lastIndex(128, -1);
+>         int maxLen = 0;
+>         int left = 0;
+>         
+>         for (int right = 0; right < s.size(); right++) {
+>             if (lastIndex[s[right]] >= left) {
+>                 left = lastIndex[s[right]] + 1;
+>             }
+>             
+>             lastIndex[s[right]] = right;
+>             maxLen = max(maxLen, right - left + 1);
+>         }
+>         
+>         return maxLen;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     string s;
+>     if (getline(cin, s)) {
+>         Solution obj;
+>         cout << obj.lengthOfLongestSubstring(s) << "\n";
+>     }
+> 
+>     return 0;
+> }
+> ```
+
+
+
+#### 31.3 解析
+
+这就是等效最优解，存下每个字符上一次出现的位置，如果在窗口中就直接缩减窗口左边界到该处（+1）。
+
+此外，还可以用`bool`数组表征窗口状态：
+
+```cpp
+#include <algorithm>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        // 128位的布尔数组，表征窗口中是否有该字符
+        vector<bool> window(128, false);
+        int maxLen = 0;
+        int left = 0;
+        
+        for (int right = 0; right < s.size(); right++) {
+            // while循环代替跳转逻辑
+            while (window[s[right]]) {
+                window[s[left]] = false;
+                left++;
+            }
+            
+            window[s[right]] = true;
+            maxLen = max(maxLen, right - left + 1);
+        }
+        
+        return maxLen;
+    }
+};
+```
+
+
+
+### 32. 串联所有单词的子串* （@）
+
+#### 32.1 题目
+
+给定一个字符串 `s` 和一个字符串数组 `words`**。** `words` 中所有字符串 **长度相同**。
+
+ `s` 中的 **串联子串** 是指一个包含 `words` 中所有字符串以任意顺序排列连接起来的子串。
+
+- 例如，如果 `words = ["ab","cd","ef"]`， 那么 `"abcdef"`， `"abefcd"`，`"cdabef"`， `"cdefab"`，`"efabcd"`， 和 `"efcdab"` 都是串联子串。 `"acdbef"` 不是串联子串，因为他不是任何 `words` 排列的连接。
+
+返回所有串联子串在 `s` 中的开始索引。你可以以 **任意顺序** 返回答案。
+
+ 
+
+**示例 1：**
+
+```
+输入：s = "barfoothefoobarman", words = ["foo","bar"]
+输出：[0,9]
+解释：因为 words.length == 2 同时 words[i].length == 3，连接的子字符串的长度必须为 6。
+子串 "barfoo" 开始位置是 0。它是 words 中以 ["bar","foo"] 顺序排列的连接。
+子串 "foobar" 开始位置是 9。它是 words 中以 ["foo","bar"] 顺序排列的连接。
+输出顺序无关紧要。返回 [9,0] 也是可以的。
+```
+
+**示例 2：**
+
+```
+输入：s = "wordgoodgoodgoodbestword", words = ["word","good","best","word"]
+输出：[]
+解释：因为 words.length == 4 并且 words[i].length == 4，所以串联子串的长度必须为 16。
+s 中没有子串长度为 16 并且等于 words 的任何顺序排列的连接。
+所以我们返回一个空数组。
+```
+
+**示例 3：**
+
+```
+输入：s = "barfoofoobarthefoobarman", words = ["bar","foo","the"]
+输出：[6,9,12]
+解释：因为 words.length == 3 并且 words[i].length == 3，所以串联子串的长度必须为 9。
+子串 "foobarthe" 开始位置是 6。它是 words 中以 ["foo","bar","the"] 顺序排列的连接。
+子串 "barthefoo" 开始位置是 9。它是 words 中以 ["bar","the","foo"] 顺序排列的连接。
+子串 "thefoobar" 开始位置是 12。它是 words 中以 ["the","foo","bar"] 顺序排列的连接。
+```
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 104`
+- `1 <= words.length <= 5000`
+- `1 <= words[i].length <= 30`
+- `words[i]` 和 `s` 由小写英文字母组成
+
+
+
+#### 32.2 解法
+
+时间复杂度$O(M)$（$M$ 为字符串 `s` 的长度），空间复杂度 $O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<int> findSubstring(string s, vector<string>& words) {
+    unordered_map<string, int> wordsFeq;
+    for (string x : words) wordsFeq[x]++;
+
+    int wordLen = words[0].size(), n = words.size(), m = s.size();
+    int subLen = wordLen * n;
+    vector<int> res;
+
+    for (int i = 0; i < wordLen; i++) {
+      unordered_map<string, int> nowWordFeq;
+      int left = i, nowMat = 0;
+      for (int right = i; right <= m - wordLen; right += wordLen) {
+        string sub = s.substr(right, wordLen);
+        if (wordsFeq[sub] == 0) {
+          left = right + wordLen;
+          nowWordFeq.clear();
+          nowMat = 0;
+        } else {
+          nowWordFeq[sub]++;
+          nowMat++;
+          while (wordsFeq[sub] < nowWordFeq[sub]) {
+            string backSub = s.substr(left, wordLen);
+            nowWordFeq[backSub]--;
+            nowMat--;
+            left += wordLen;
+          }
+          if (nowMat == n) {
+            res.push_back(left);
+            nowMat--;
+            nowWordFeq[s.substr(left, wordLen)]--;
+            left += wordLen;
+          }
+        }
+      }
+    }
+
+    return res;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  cin >> n;
+
+  vector<string> words(n);
+  for (int i = 0; i < n; i++) {
+    cin >> words[i];
+  }
+
+  string s;
+  cin >> s;
+
+  Solution obj;
+  vector<int> res = obj.findSubstring(s, words);
+  for (int x : res) {
+    cout << x << " ";
+  }
+
+  return 0;
+}
+```
+
+> 此前我多次直接访问`unordered_map`中未有的元素，这时它会自动初始化为0，但是这样也会额外消耗内存：
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> #include <unordered_map>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     vector<int> findSubstring(string s, vector<string>& words) {
+>         vector<int> res;
+>         if (words.empty() || s.empty()) return res;
+> 
+>         unordered_map<string, int> wordsFeq;
+>         // const string& 节省空间
+>         for (const string& word : words) {
+>             wordsFeq[word]++;
+>         }
+> 
+>         int wordLen = words[0].size();
+>         int n = words.size();
+>         int m = s.size();
+> 
+>         for (int i = 0; i < wordLen; i++) {
+>             unordered_map<string, int> nowWordFeq;
+>             int left = i;
+>             int nowMat = 0;
+> 
+>             for (int right = i; right <= m - wordLen; right += wordLen) {
+>                 string sub = s.substr(right, wordLen);
+> 
+>                 // 直接使用count就可以避免初始化它
+>                 if (wordsFeq.count(sub) == 0) {
+>                     nowWordFeq.clear();
+>                     nowMat = 0;
+>                     left = right + wordLen;
+>                 } else {
+>                     nowWordFeq[sub]++;
+>                     nowMat++;
+> 
+>                     while (nowWordFeq[sub] > wordsFeq[sub]) {
+>                         string backSub = s.substr(left, wordLen);
+>                         nowWordFeq[backSub]--;
+>                         nowMat--;
+>                         left += wordLen;
+>                     }
+> 
+>                     // 等于n后其实无需再移动，本次结束会自动right++移动，而必然导致超限，则使left++移动
+>                     if (nowMat == n) {
+>                         res.push_back(left);
+>                     }
+>                 }
+>             }
+>         }
+> 
+>         return res;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     int n;
+>     if (cin >> n) {
+>         vector<string> words(n);
+>         for (int i = 0; i < n; i++) {
+>             cin >> words[i];
+>         }
+> 
+>         string s;
+>         cin >> s;
+> 
+>         Solution obj;
+>         vector<int> res = obj.findSubstring(s, words);
+>         for (size_t i = 0; i < res.size(); i++) {
+>             cout << res[i] << (i == res.size() - 1 ? "" : " ");
+>         }
+>         cout << "\n";
+>     }
+> 
+>     return 0;
+> }
+> ```
+
+
+
+#### 32.3 解析
+
+这就是最优解。这个思路需要把所谓的`Words`看作一个个完整的单元，而做到这一点就需要以`[0:Words.size()]`为起点开始遍历数组，避免出现不从`N`的整数倍开始的子串。
