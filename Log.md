@@ -6009,3 +6009,357 @@ int main() {
 #### 32.3 解析
 
 这就是最优解。这个思路需要把所谓的`Words`看作一个个完整的单元，而做到这一点就需要以`[0:Words.size()]`为起点开始遍历数组，避免出现不从`N`的整数倍开始的子串。
+
+
+
+### 33. 最小覆盖子串*
+
+#### 33.1 题目
+
+给定两个字符串 `s` 和 `t`，长度分别是 `m` 和 `n`，返回 s 中的 **最短窗口 子串**，使得该子串包含 `t` 中的每一个字符（**包括重复字符**）。如果没有这样的子串，返回空字符串 `""`。
+
+测试用例保证答案唯一。
+
+ 
+
+**示例 1：**
+
+```
+输入：s = "ADOBECODEBANC", t = "ABC"
+输出："BANC"
+解释：最小覆盖子串 "BANC" 包含来自字符串 t 的 'A'、'B' 和 'C'。
+```
+
+**示例 2：**
+
+```
+输入：s = "a", t = "a"
+输出："a"
+解释：整个字符串 s 是最小覆盖子串。
+```
+
+**示例 3:**
+
+```
+输入: s = "a", t = "aa"
+输出: ""
+解释: t 中两个字符 'a' 均应包含在 s 的子串中，
+因此没有符合条件的子字符串，返回空字符串。
+```
+
+ 
+
+**提示：**
+
+- `m == s.length`
+- `n == t.length`
+- `1 <= m, n <= 105`
+- `s` 和 `t` 由英文字母组成
+
+ 
+
+**进阶：**你能设计一个在 `O(m + n)` 时间内解决此问题的算法吗？
+
+
+
+#### 33.2 解法
+
+时间复杂度$O(N)$，空间复杂度$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  string minWindow(string s, string t) {
+    int m = s.size(), n = t.size();
+    if (n > m) {
+      return "";
+    }
+
+    vector<int> freq(128, -1), nowFreq(128, 0);
+    for (const char& x : t) freq[x] += (freq[x] == -1 ? 2 : 1);
+
+    int count = 0, left = 0, minLen = INT_MAX, minLeft = 0;
+    for (int right = 0; right < m; right++) {
+      if (freq[s[right]] != 0) {
+        nowFreq[s[right]]++;
+        if (nowFreq[s[right]] <= freq[s[right]]) count++;
+      }
+      if (count >= n) {
+        while (nowFreq[s[left]] > freq[s[left]]) {
+          if (freq[s[left]] != 0) {
+            nowFreq[s[left]]--;
+          }
+          left++;
+        }
+
+        if (right - left + 1 < minLen) {
+          minLen = right - left + 1;
+          minLeft = left;
+        }
+      }
+    }
+
+    return (minLen == INT_MAX ? "" : s.substr(minLeft, minLen));
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s, t;
+  cin >> s >> t;
+
+  Solution obj;
+  cout << obj.minWindow(s, t) << endl;
+
+  return 0;
+}
+```
+
+
+
+#### 33.3 解析
+
+等效最优解，继承了上题的思路。此外，可以不用两个数组，上一题之所以用两个，是因为恢复起来很麻烦，这道题没有这个问题：
+
+```cpp
+#include <climits>
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    string minWindow(string s, string t) {
+        if (s.empty() || t.empty() || s.size() < t.size()) {
+            return "";
+        }
+
+        vector<int> hash(128, 0);
+        for (char c : t) {
+            hash[c]++;
+        }
+
+        int left = 0, count = t.size(), minLen = INT_MAX, minLeft = 0;
+
+        for (int right = 0; right < s.size(); right++) {
+            if (hash[s[right]] > 0) {
+                count--;
+            }
+            hash[s[right]]--;
+
+            // count==0表征当前窗口就是符合条件的窗口
+            while (count == 0) {
+                if (right - left + 1 < minLen) {
+                    minLen = right - left + 1;
+                    minLeft = left;
+                }
+
+                // 如果当前窗口满足条件，则一定会左移一步，不论是否会破坏条件
+                if (hash[s[left]] == 0) {
+                    count++;
+                }
+                hash[s[left]]++;
+                left++;
+            }
+        }
+
+        return minLen == INT_MAX ? "" : s.substr(minLeft, minLen);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    string s, t;
+    if (cin >> s >> t) {
+        Solution obj;
+        cout << obj.minWindow(s, t) << "\n";
+    }
+
+    return 0;
+}
+```
+
+
+
+## 四、矩阵
+
+### 34. 有效的数独*/**
+
+#### 34.1 题目
+
+请你判断一个 `9 x 9` 的数独是否有效。只需要 **根据以下规则** ，验证已经填入的数字是否有效即可。
+
+1. 数字 `1-9` 在每一行只能出现一次。
+2. 数字 `1-9` 在每一列只能出现一次。
+3. 数字 `1-9` 在每一个以粗实线分隔的 `3x3` 宫内只能出现一次。（请参考示例图）
+
+ 
+
+**注意：**
+
+- 一个有效的数独（部分已被填充）不一定是可解的。
+- 只需要根据以上规则，验证已经填入的数字是否有效即可。
+- 空白格用 `'.'` 表示。
+
+ 
+
+**示例 1：**
+
+![img](./assets/250px-sudoku-by-l2g-20050714svg.png)
+
+```
+输入：board = 
+[["5","3",".",".","7",".",".",".","."]
+,["6",".",".","1","9","5",".",".","."]
+,[".","9","8",".",".",".",".","6","."]
+,["8",".",".",".","6",".",".",".","3"]
+,["4",".",".","8",".","3",".",".","1"]
+,["7",".",".",".","2",".",".",".","6"]
+,[".","6",".",".",".",".","2","8","."]
+,[".",".",".","4","1","9",".",".","5"]
+,[".",".",".",".","8",".",".","7","9"]]
+输出：true
+```
+
+**示例 2：**
+
+```
+输入：board = 
+[["8","3",".",".","7",".",".",".","."]
+,["6",".",".","1","9","5",".",".","."]
+,[".","9","8",".",".",".",".","6","."]
+,["8",".",".",".","6",".",".",".","3"]
+,["4",".",".","8",".","3",".",".","1"]
+,["7",".",".",".","2",".",".",".","6"]
+,[".","6",".",".",".",".","2","8","."]
+,[".",".",".","4","1","9",".",".","5"]
+,[".",".",".",".","8",".",".","7","9"]]
+输出：false
+解释：除了第一行的第一个数字从 5 改为 8 以外，空格内其他数字均与 示例1 相同。 但由于位于左上角的 3x3 宫内有两个 8 存在, 因此这个数独是无效的。
+```
+
+ 
+
+**提示：**
+
+- `board.length == 9`
+- `board[i].length == 9`
+- `board[i][j]` 是一位数字（`1-9`）或者 `'.'`
+
+
+
+#### 34.2 解法
+
+**时间复杂度**：$O(1)$。**空间复杂度**：$O(1)$。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isValidSudoku(vector<vector<char>>& board) {
+        vector<vector<bool>> row(9, vector<bool>(9, false));
+        vector<vector<bool>> col(9, vector<bool>(9, false));
+        vector<vector<bool>> sqa(9, vector<bool>(9, false));
+
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (board[i][j] != '.') {
+                    int num = board[i][j] - '1';
+                    int boxIndex = (i / 3) * 3 + j / 3;
+
+                    if (row[i][num] || col[j][num] || sqa[boxIndex][num]) {
+                        return false;
+                    }
+
+                    row[i][num] = true;
+                    col[j][num] = true;
+                    sqa[boxIndex][num] = true;
+                }
+            }
+        }
+
+        return true;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    vector<vector<char>> board(9, vector<char>(9));
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            cin >> board[i][j];
+        }
+    }
+
+    Solution obj;
+    cout << (obj.isValidSudoku(board) ? "true" : "false") << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 34.3 解析
+
+这道题一般都是等效最优解，但在其中亦有优劣，可以使用位运算代替bool数组：
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isValidSudoku(vector<vector<char>>& board) {
+        vector<int> row(9, 0);
+        vector<int> col(9, 0);
+        vector<int> sqa(9, 0);
+
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (board[i][j] != '.') {
+                    int num = board[i][j] - '1';
+                    int mask = 1 << num; //把数字 1 向左移动 num 位，生成一个只有第 num 位是 1 的掩码
+                    int boxIndex = (i / 3) * 3 + j / 3;
+
+                    // 进行按位与操作，如果结果不为 0，说明这一位之前已经被标记过了（重复出现）
+                    if ((row[i] & mask) || (col[j] & mask) || (sqa[boxIndex] & mask)) {
+                        return false;
+                    }
+
+                    // 进行按位或操作，将当前数字的状态硬编码打入这个整数中
+                    row[i] |= mask;
+                    col[j] |= mask;
+                    sqa[boxIndex] |= mask;
+                }
+            }
+        }
+
+        return true;
+    }
+};
+```
+
