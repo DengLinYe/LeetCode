@@ -6363,3 +6363,285 @@ public:
 };
 ```
 
+
+
+### 35. 螺旋矩阵*
+
+#### 35.1 题目
+
+给你一个 `m` 行 `n` 列的矩阵 `matrix` ，请按照 **顺时针螺旋顺序** ，返回矩阵中的所有元素。
+
+ 
+
+**示例 1：**
+
+![img](./assets/spiral1.jpg)
+
+```
+输入：matrix = [[1,2,3],[4,5,6],[7,8,9]]
+输出：[1,2,3,6,9,8,7,4,5]
+```
+
+**示例 2：**
+
+![img](./assets/spiral.jpg)
+
+```
+输入：matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]
+输出：[1,2,3,4,8,12,11,10,9,5,6,7]
+```
+
+ 
+
+**提示：**
+
+- `m == matrix.length`
+- `n == matrix[i].length`
+- `1 <= m, n <= 10`
+- `-100 <= matrix[i][j] <= 100`
+
+
+
+#### 35.2 解法
+
+**时间复杂度**：$O(M \times N)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<int> spiralOrder(vector<vector<int>>& matrix) {
+    if (matrix.empty() || matrix[0].empty()) return {};
+
+    int n = matrix.size();
+    int m = matrix[0].size();
+    int i = 0, j = 0, k = 0, count = 0;
+
+    vector<vector<int>> move = {
+        {0, 1, m - 1}, {1, 0, n - 1}, {0, -1, 0}, {-1, 0, 0}};
+    vector<int> res;
+
+    while (count < m * n - 1) {
+      if (i * move[k][0] + j * move[k][1] <
+          move[k][2] * move[k][0] + move[k][2] * move[k][1]) {
+        res.push_back(matrix[i][j]);
+        count++;
+        i += move[k][0];
+        j += move[k][1];
+      } else {
+        int change = (k + 3) % 4;
+        move[change][2] -= move[change][0] + move[change][1];
+        k = (k + 1) % 4;
+      }
+    }
+    res.push_back(matrix[i][j]);
+
+    return res;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n, m;
+  if (cin >> n >> m) {
+    vector<vector<int>> matrix(n, vector<int>(m));
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < m; j++) {
+        cin >> matrix[i][j];
+      }
+    }
+
+    Solution obj;
+    vector<int> res = obj.spiralOrder(matrix);
+
+    for (size_t x = 0; x < res.size(); x++) {
+      cout << res[x] << (x == res.size() - 1 ? "" : " ");
+    }
+    cout << "\n";
+  }
+
+  return 0;
+}
+```
+
+
+
+#### 35.3 解析
+
+算是等效最优解，但是逻辑稍微有点绕。`move`就是定义了四个方向的移动向量和边界，然后用一个投影算式统一表示了边界条件，最后更新边界注意是更新` (k + 3) % 4`。
+
+此外，一般的做法更为清晰：
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> spiralOrder(vector<vector<int>>& matrix) {
+        if (matrix.empty() || matrix[0].empty()) return {};
+
+        vector<int> res;
+        int top = 0;
+        int bottom = matrix.size() - 1;
+        int left = 0;
+        int right = matrix[0].size() - 1;
+
+        while (true) {
+            for (int i = left; i <= right; i++) res.push_back(matrix[top][i]);
+            if (++top > bottom) break;
+
+            for (int i = top; i <= bottom; i++) res.push_back(matrix[i][right]);
+            if (--right < left) break;
+
+            for (int i = right; i >= left; i--) res.push_back(matrix[bottom][i]);
+            if (--bottom < top) break;
+
+            for (int i = bottom; i >= top; i--) res.push_back(matrix[i][left]);
+            if (++left > right) break;
+        }
+
+        return res;
+    }
+};
+```
+
+
+
+### 36. 旋转图像*/**
+
+#### 36.1 题目
+
+给定一个 *n* × *n* 的二维矩阵 `matrix` 表示一个图像。请你将图像顺时针旋转 90 度。
+
+你必须在**[ 原地](https://baike.baidu.com/item/原地算法)** 旋转图像，这意味着你需要直接修改输入的二维矩阵。**请不要** 使用另一个矩阵来旋转图像。
+
+ 
+
+**示例 1：**
+
+![img](./assets/mat1.jpg)
+
+```
+输入：matrix = [[1,2,3],[4,5,6],[7,8,9]]
+输出：[[7,4,1],[8,5,2],[9,6,3]]
+```
+
+**示例 2：**
+
+![img](./assets/mat2.jpg)
+
+```
+输入：matrix = [[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]]
+输出：[[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]]
+```
+
+ 
+
+**提示：**
+
+- `n == matrix.length == matrix[i].length`
+- `1 <= n <= 20`
+- `-1000 <= matrix[i][j] <= 1000`
+
+
+
+#### 36.2 解法
+
+**时间复杂度**：$O(N^2)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  void rotate(vector<vector<int>>& matrix) {
+    int n = matrix.size();
+    for (int i = n - 1; i >= n / 2; i--) {
+      int layer = n - 1 - i;
+      for (int j = 0; j < i - layer; j++) {
+        int temp = matrix[layer][layer + j];
+        matrix[layer][layer + j] = matrix[i - j][layer];
+        matrix[i - j][layer] = matrix[i][i - j];
+        matrix[i][i - j] = matrix[layer + j][i];
+        matrix[layer + j][i] = temp;
+      }
+    }
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  if (cin >> n) {
+    vector<vector<int>> matrix(n, vector<int>(n));
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
+        cin >> matrix[i][j];
+      }
+    }
+
+    Solution obj;
+    obj.rotate(matrix);
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
+        cout << matrix[i][j] << (j == n - 1 ? "" : " ");
+      }
+      cout << "\n";
+    }
+  }
+
+  return 0;
+}
+```
+
+
+
+#### 36.3 解析
+
+我这个解当然也算最优解，但是有一个更好的办法：将一个二维矩阵顺时针旋转 90 度，在数学上等价于以下两步：
+
+1. **主对角线翻转（转置）**：将矩阵的行和列互换（`matrix[i][j]` 与 `matrix[j][i]` 互换）。
+2. **左右镜像翻转**：将转置后的矩阵，每一行进行水平翻转（逆序）。
+
+那么：
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    void rotate(vector<vector<int>>& matrix) {
+        int n = matrix.size();
+        
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                swap(matrix[i][j], matrix[j][i]);
+            }
+        }
+        
+        for (int i = 0; i < n; i++) {
+            reverse(matrix[i].begin(), matrix[i].end());
+        }
+    }
+};
+```
+
