@@ -6645,3 +6645,442 @@ public:
 };
 ```
 
+
+
+### 37. 矩阵置零**
+
+#### 37.1 题目
+
+给定一个 `*m* x *n*` 的矩阵，如果一个元素为 **0** ，则将其所在行和列的所有元素都设为 **0** 。请使用 **[原地](http://baike.baidu.com/item/原地算法)** 算法**。**
+
+ 
+
+**示例 1：**
+
+![img](./assets/mat1-1773981443932-1.jpg)
+
+```
+输入：matrix = [[1,1,1],[1,0,1],[1,1,1]]
+输出：[[1,0,1],[0,0,0],[1,0,1]]
+```
+
+**示例 2：**
+
+![img](./assets/mat2-1773981443932-3.jpg)
+
+```
+输入：matrix = [[0,1,2,0],[3,4,5,2],[1,3,1,5]]
+输出：[[0,0,0,0],[0,4,5,0],[0,3,1,0]]
+```
+
+ 
+
+**提示：**
+
+- `m == matrix.length`
+- `n == matrix[0].length`
+- `1 <= m, n <= 200`
+- `-231 <= matrix[i][j] <= 231 - 1`
+
+ 
+
+**进阶：**
+
+- 一个直观的解决方案是使用  `O(*m**n*)` 的额外空间，但这并不是一个好的解决方案。
+- 一个简单的改进方案是使用 `O(*m* + *n*)` 的额外空间，但这仍然不是最好的解决方案。
+- 你能想出一个仅使用常量空间的解决方案吗？
+
+
+
+#### 37.2 解法
+
+**时间复杂度**：$O(M \times N)$，**空间复杂度**：$O(M+N)$ 。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        int n = matrix.size();
+        int m = matrix[0].size();
+        vector<int> rowZero(n, 1);
+        vector<int> colZero(m, 1);
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (matrix[i][j] == 0) {
+                    rowZero[i] = 0;
+                    colZero[j] = 0;
+                }
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (rowZero[i] == 0 || colZero[j] == 0) {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    if (cin >> n >> m) {
+        vector<vector<int>> matrix(n, vector<int>(m));
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                cin >> matrix[i][j];
+            }
+        }
+
+        Solution obj;
+        obj.setZeroes(matrix);
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                cout << matrix[i][j] << (j == m - 1 ? "" : " ");
+            }
+            cout << "\n";
+        }
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 37.3 解析
+
+这并不是最优解，最优解的空间复杂度能到达$O(1)$。但是所谓的最优解并没有思维上的跃进，它是征用了原矩阵第一行、第一列作为原本`M + N`的空间（因为如果对应行列有零，那么第一行、列的对应位置也一定会是零，并不需要备份原矩阵的第一行、列），算是一个比较巧妙的办法：
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    void setZeroes(vector<vector<int>>& matrix) {
+        int n = matrix.size();
+        int m = matrix[0].size();
+        // 两个布尔变量标记第一行、列是否需要全部置零。
+        bool firstRowZero = false;
+        bool firstColZero = false;
+
+        // 扫描第一行、列
+        for (int i = 0; i < n; i++) {
+            if (matrix[i][0] == 0) firstColZero = true;
+        }
+        for (int j = 0; j < m; j++) {
+            if (matrix[0][j] == 0) firstRowZero = true;
+        }
+
+        // 存储行列状态
+        for (int i = 1; i < n; i++) {
+            for (int j = 1; j < m; j++) {
+                if (matrix[i][j] == 0) {
+                    matrix[i][0] = 0;
+                    matrix[0][j] = 0;
+                }
+            }
+        }
+
+        // 处理0
+        for (int i = 1; i < n; i++) {
+            for (int j = 1; j < m; j++) {
+                if (matrix[i][0] == 0 || matrix[0][j] == 0) {
+                    matrix[i][j] = 0;
+                }
+            }
+        }
+
+        // 处理第一行、列
+        if (firstColZero) {
+            for (int i = 0; i < n; i++) {
+                matrix[i][0] = 0;
+            }
+        }
+        if (firstRowZero) {
+            for (int j = 0; j < m; j++) {
+                matrix[0][j] = 0;
+            }
+        }
+    }
+};
+```
+
+
+
+### 38. 生命游戏**
+
+#### 38.1 题目
+
+根据 [百度百科](https://baike.baidu.com/item/生命游戏/2926434?fr=aladdin) ， **生命游戏** ，简称为 **生命** ，是英国数学家约翰·何顿·康威在 1970 年发明的细胞自动机。
+
+给定一个包含 `m × n` 个格子的面板，每一个格子都可以看成是一个细胞。每个细胞都具有一个初始状态： `1` 即为 **活细胞** （live），或 `0` 即为 **死细胞** （dead）。每个细胞与其八个相邻位置（水平，垂直，对角线）的细胞都遵循以下四条生存定律：
+
+1. 如果活细胞周围八个位置的活细胞数少于两个，则该位置活细胞死亡；
+2. 如果活细胞周围八个位置有两个或三个活细胞，则该位置活细胞仍然存活；
+3. 如果活细胞周围八个位置有超过三个活细胞，则该位置活细胞死亡；
+4. 如果死细胞周围正好有三个活细胞，则该位置死细胞复活；
+
+下一个状态是通过将上述规则同时应用于当前状态下的每个细胞所形成的，其中细胞的出生和死亡是 **同时** 发生的。给你 `m x n` 网格面板 `board` 的当前状态，返回下一个状态。
+
+给定当前 `board` 的状态，**更新** `board` 到下一个状态。
+
+**注意** 你不需要返回任何东西。
+
+ 
+
+**示例 1：**
+
+![img](./assets/grid1.jpg)
+
+```
+输入：board = [[0,1,0],[0,0,1],[1,1,1],[0,0,0]]
+输出：[[0,0,0],[1,0,1],[0,1,1],[0,1,0]]
+```
+
+**示例 2：**
+
+![img](./assets/grid2.jpg)
+
+```
+输入：board = [[1,1],[1,0]]
+输出：[[1,1],[1,1]]
+```
+
+ 
+
+**提示：**
+
+- `m == board.length`
+- `n == board[i].length`
+- `1 <= m, n <= 25`
+- `board[i][j]` 为 `0` 或 `1`
+
+ 
+
+**进阶：**
+
+- 你可以使用原地算法解决本题吗？请注意，面板上所有格子需要同时被更新：你不能先更新某些格子，然后使用它们的更新后的值再更新其他格子。
+- 本题中，我们使用二维数组来表示面板。原则上，面板是无限的，但当活细胞侵占了面板边界时会造成问题。你将如何解决这些问题？
+
+
+
+#### 38.2 解法
+
+时间复杂度为 $O(M \times N)$，空间复杂度为 $O(M \times N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  void gameOfLife(vector<vector<int>>& board) {
+    int m = board[0].size(), n = board.size();
+    vector<vector<int>> nextState(n, vector<int>(m));
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < m; j++) {
+        if (board[i][j] == 1) {
+          nextState[i][j] += board[i][j];
+          if (i > 0) {
+            nextState[i - 1][j]++;
+          }
+          if (j > 0) {
+            nextState[i][j - 1]++;
+          }
+          if (i < n - 1) {
+            nextState[i + 1][j]++;
+          }
+          if (j < m - 1) {
+            nextState[i][j + 1]++;
+          }
+          if (i > 0 && j > 0) {
+            nextState[i - 1][j - 1]++;
+          }
+          if (i > 0 && j < m - 1) {
+            nextState[i - 1][j + 1]++;
+          }
+          if (i < n - 1 && j > 0) {
+            nextState[i + 1][j - 1]++;
+          }
+          if (i < n - 1 && j < m - 1) {
+            nextState[i + 1][j + 1]++;
+          }
+        }
+      }
+    }
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < m; j++) {
+        if (board[i][j] == 0) {
+          if (nextState[i][j] == 3) board[i][j] = 1;
+        } else {
+          if (nextState[i][j] > 4 || nextState[i][j] < 3) board[i][j] = 0;
+        }
+      }
+    }
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int m, n;
+  cin >> m >> n;
+
+  vector<vector<int>> matrix(n, vector<int>(m));
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < m; j++) {
+      cin >> matrix[i][j];
+    }
+  }
+
+  Solution obj;
+  obj.gameOfLife(matrix);
+
+  for (vector<int> r : matrix) {
+    for (int c : r) {
+      cout << c << " ";
+    }
+    cout << endl;
+  }
+
+  return 0;
+}
+```
+
+> 很多冗余的`if`分支，这里可以使用**方向数组**：
+>
+> ```cpp
+> #include <iostream>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     void gameOfLife(vector<vector<int>>& board) {
+>         int n = board.size();
+>         int m = board[0].size();
+>         vector<vector<int>> nextState(n, vector<int>(m, 0));
+> 
+>         // 定义方向数组，即(i + dx[k], j + dy[k])
+>         int dx[] = {-1, -1, -1, 0, 0, 1, 1, 1};
+>         int dy[] = {-1, 0, 1, -1, 1, -1, 0, 1};
+> 
+>         for (int i = 0; i < n; i++) {
+>             for (int j = 0; j < m; j++) {
+>                 if (board[i][j] == 1) {
+>                     nextState[i][j] += 1;
+>                     
+>                     for (int k = 0; k < 8; k++) {
+>                         int nx = i + dx[k];
+>                         int ny = j + dy[k];
+>                         
+>                         // 条件判断压缩成一句
+>                         if (nx >= 0 && nx < n && ny >= 0 && ny < m) {
+>                             nextState[nx][ny] += 1;
+>                         }
+>                     }
+>                 }
+>             }
+>         }
+> 
+>         for (int i = 0; i < n; i++) {
+>             for (int j = 0; j < m; j++) {
+>                 if (board[i][j] == 0) {
+>                     if (nextState[i][j] == 3) board[i][j] = 1;
+>                 } else {
+>                     if (nextState[i][j] > 4 || nextState[i][j] < 3) board[i][j] = 0;
+>                 }
+>             }
+>         }
+>     }
+> };
+> ```
+>
+> 
+
+
+
+#### 38.3 解析
+
+这也不算是等效最优解。
+
+最优解和上一题一样，都是借用原矩阵空间，这里由于数据只占用0和1两个数字，也就是1位，而`int`还剩31位没有用到，这时候就可以借用此后的比特位来存储`nextState`。
+
+下面是八个方向扫描的做法，当然用这种思路也可以实现我的办法（也就是活细胞贡献法）：
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    void gameOfLife(vector<vector<int>>& board) {
+        if (board.empty() || board[0].empty()) return;
+        
+        int m = board.size();
+        int n = board[0].size();
+        
+        int dx[] = {-1, -1, -1, 0, 0, 1, 1, 1};
+        int dy[] = {-1, 0, 1, -1, 1, -1, 0, 1};
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                int liveNeighbors = 0;
+                
+                for (int k = 0; k < 8; k++) {
+                    int x = i + dx[k];
+                    int y = j + dy[k];
+                    if (x >= 0 && x < m && y >= 0 && y < n) {
+                        liveNeighbors += (board[x][y] & 1);
+                    }
+                }
+
+                // 满足继续存活或者复活条件，即写入第二位 1
+                if ((board[i][j] & 1) == 1) {
+                    if (liveNeighbors == 2 || liveNeighbors == 3) {
+                        board[i][j] |= 2;
+                    }
+                } else {
+                    if (liveNeighbors == 3) {
+                        board[i][j] |= 2;
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                board[i][j] >>= 1;
+            }
+        }
+    }
+};
+```
+
