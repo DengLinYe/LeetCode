@@ -7084,3 +7084,305 @@ public:
 };
 ```
 
+
+
+## 五、哈希
+
+### 39. 赎金信*
+
+#### 39.1 题目
+
+给你两个字符串：`ransomNote` 和 `magazine` ，判断 `ransomNote` 能不能由 `magazine` 里面的字符构成。
+
+如果可以，返回 `true` ；否则返回 `false` 。
+
+`magazine` 中的每个字符只能在 `ransomNote` 中使用一次。
+
+ 
+
+**示例 1：**
+
+```
+输入：ransomNote = "a", magazine = "b"
+输出：false
+```
+
+**示例 2：**
+
+```
+输入：ransomNote = "aa", magazine = "ab"
+输出：false
+```
+
+**示例 3：**
+
+```
+输入：ransomNote = "aa", magazine = "aab"
+输出：true
+```
+
+ 
+
+**提示：**
+
+- `1 <= ransomNote.length, magazine.length <= 105`
+- `ransomNote` 和 `magazine` 由小写英文字母组成
+
+
+
+#### 39.2 解法
+
+时间复杂度 $O(m + n)$，空间复杂度$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool canConstruct(string ransomNote, string magazine) {
+    vector<int> freq(128);
+    int n = ransomNote.size();
+
+    for (char x : magazine) freq[x]++;
+
+    for (int i = 0; i < n; i++) {
+      if (--freq[ransomNote[i]] < 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s, t;
+  cin >> s >> t;
+
+  Solution obj;
+  cout << obj.canConstruct(s, t);
+
+  return 0;
+}
+```
+
+> 可以多加一个判断（拦截）条件：
+>
+> ```cpp
+> class Solution {
+> public:
+>     bool canConstruct(string ransomNote, string magazine) {
+>         if (ransomNote.size() > magazine.size()) {
+>             return false;
+>         }
+> 
+>         vector<int> freq(128, 0);
+> 
+>         for (char x : magazine) {
+>             freq[x]++;
+>         }
+> 
+>         for (char x : ransomNote) {
+>             if (--freq[x] < 0) {
+>                 return false;
+>             }
+>         }
+> 
+>         return true;
+>     }
+> };
+> ```
+
+
+
+#### 39.3 解析
+
+典型的简单题，没什么太多注意的，这题`hash`数量很少，可以不用`unordered_map`。
+
+
+
+### 40. 同构字符串*
+
+#### 40.1 题目
+
+给定两个字符串 `s` 和 `t` ，判断它们是否是同构的。
+
+如果 `s` 中的字符可以按某种映射关系替换得到 `t` ，那么这两个字符串是同构的。
+
+每个出现的字符都应当映射到另一个字符，同时不改变字符的顺序。不同字符不能映射到同一个字符上，相同字符只能映射到同一个字符上，字符可以映射到自己本身。
+
+ 
+
+**示例 1：**
+
+**输入：**s = "egg", t = "add"
+
+**输出：**true
+
+**解释：**
+
+字符串 `s` 和 `t` 可以通过以下方式变得相同：
+
+- 将 `'e'` 映射为 `'a'`。
+- 将 `'g'` 映射为 `'d'`。
+
+**示例 2：**
+
+**输入：**s = "f11", t = "b23"
+
+**输出：**false
+
+**解释：**
+
+字符串 `s` 和 `t` 无法变得相同，因为 `'1'` 需要同时映射到 `'2'` 和 `'3'`。
+
+**示例 3：**
+
+**输入：**s = "paper", t = "title"
+
+**输出：**true
+
+ 
+
+**提示：**
+
+
+
+- `1 <= s.length <= 5 * 104`
+- `t.length == s.length`
+- `s` 和 `t` 由任意有效的 ASCII 字符组成
+
+
+
+#### 40.2 解法
+
+时间复杂度 $O(N)$，空间复杂度 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool isIsomorphic(string s, string t) {
+    int n = s.size();
+    if (n != t.size()) return false;
+
+    vector<int> map(128, -1), reverseMap(128, 0);
+
+    for (int i = 0; i < n; i++) {
+      if (map[s[i]] == -1) {
+        if (reverseMap[t[i]] == 0) {
+          map[s[i]] = t[i];
+          reverseMap[t[i]]++;
+        } else {
+          return false;
+        }
+      } else {
+        if (map[s[i]] != t[i]) return false;
+      }
+    }
+
+    return true;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s, t;
+  cin >> s >> t;
+
+  Solution obj;
+  cout << obj.isIsomorphic(s, t);
+
+  return 0;
+}
+```
+
+> 这其实是一个双射模型，可以写得更加对称：
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     bool isIsomorphic(string s, string t) {
+>         if (s.size() != t.size()) return false;
+> 
+>         vector<int> s2t(128, -1);
+>         vector<int> t2s(128, -1);
+> 
+>         for (int i = 0; i < s.size(); i++) {
+>             char cs = s[i];
+>             char ct = t[i];
+> 
+>             if (s2t[cs] == -1 && t2s[ct] == -1) {
+>                 s2t[cs] = ct;
+>                 t2s[ct] = cs;
+>             } else if (s2t[cs] != ct || t2s[ct] != cs) {
+>                 return false;
+>             }
+>         }
+> 
+>         return true;
+>     }
+> };
+> ```
+
+
+
+#### 40.3 解析
+
+同样地是典型的简单题，属于双Hash的开篇。不过除了双射法，还有一种比较巧妙的办法：注意到如果两个字符串是同构的，那么它们对应位置的字符，其“上一次出现的位置”必须是一致的：
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isIsomorphic(string s, string t) {
+        if (s.size() != t.size()) return false;
+
+        vector<int> lastSeenS(128, 0);
+        vector<int> lastSeenT(128, 0);
+
+        for (int i = 0; i < s.size(); i++) {
+            if (lastSeenS[s[i]] != lastSeenT[t[i]]) {
+                return false;
+            }
+            
+            lastSeenS[s[i]] = i + 1;
+            lastSeenT[t[i]] = i + 1;
+        }
+
+        return true;
+    }
+};
+```
+
