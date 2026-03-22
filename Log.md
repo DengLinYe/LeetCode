@@ -7386,3 +7386,317 @@ public:
 };
 ```
 
+
+
+### 41. 单词规律*
+
+#### 41.1 题目
+
+给定一种规律 `pattern` 和一个字符串 `s` ，判断 `s` 是否遵循相同的规律。
+
+这里的 **遵循** 指完全匹配，例如， `pattern` 里的每个字母和字符串 `s` 中的每个非空单词之间存在着双向连接的对应规律。具体来说：
+
+- `pattern` 中的每个字母都 **恰好** 映射到 `s` 中的一个唯一单词。
+- `s` 中的每个唯一单词都 **恰好** 映射到 `pattern` 中的一个字母。
+- 没有两个字母映射到同一个单词，也没有两个单词映射到同一个字母。
+
+ 
+
+**示例1:**
+
+```
+输入: pattern = "abba", s = "dog cat cat dog"
+输出: true
+```
+
+**示例 2:**
+
+```
+输入:pattern = "abba", s = "dog cat cat fish"
+输出: false
+```
+
+**示例 3:**
+
+```
+输入: pattern = "aaaa", s = "dog cat cat dog"
+输出: false
+```
+
+ 
+
+**提示:**
+
+- `1 <= pattern.length <= 300`
+- `pattern` 只包含小写英文字母
+- `1 <= s.length <= 3000`
+- `s` 只包含小写英文字母和 `' '`
+- `s` **不包含** 任何前导或尾随对空格
+- `s` 中每个单词都被 **单个空格** 分隔
+
+
+
+#### 41.2 解法
+
+**时间复杂度**：$O(N + M)$，**空间复杂度**：$O(M)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool wordPattern(string pattern, string s) {
+    istringstream iss(s);
+    string word;
+    unordered_map<string, int> s2p;
+    vector<string> p2s(128, "");
+
+    for (char x : pattern) {
+      iss >> word;
+      if (word == "") return false;
+      if (p2s[x] == "" && s2p.count(word) == 0) {
+        p2s[x] = word;
+        s2p[word] = x;
+      } else {
+        if (p2s[x] != word || s2p[word] != x) return false;
+      }
+    }
+    if (iss >> word) return false;
+
+    return true;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string pattern, s;
+  cin >> pattern;
+  cin.ignore();
+  getline(cin, s);
+
+  Solution obj;
+  cout << obj.wordPattern(pattern, s);
+
+  return 0;
+}
+```
+
+> 流处理可以优化：
+>
+> ```cpp
+> #include <iostream>
+> #include <sstream>
+> #include <string>
+> #include <unordered_map>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     bool wordPattern(string pattern, string s) {
+>         istringstream iss(s);
+>         string word;
+>         unordered_map<string, char> s2p;
+>         vector<string> p2s(128, "");
+> 
+>         for (char x : pattern) {
+>             // 直接判断是否读取出
+>             if (!(iss >> word)) {
+>                 return false;
+>             }
+> 
+>             if (p2s[x] == "" && s2p.count(word) == 0) {
+>                 p2s[x] = word;
+>                 s2p[word] = x;
+>             } else if (p2s[x] != word) {//双射判断单边即可
+>                 return false;
+>             }
+>         }
+> 
+>         if (iss >> word) {
+>             return false;
+>         }
+> 
+>         return true;
+>     }
+> };
+> ```
+
+
+
+#### 41.3 解析
+
+算是等效最优解，但是一般认为先把流`iss`处理成一个字符串向量会更好一些，当然这也会消耗更多的空间。
+
+
+
+### 42. 有效的字母异位词*
+
+#### 42.1 题目
+
+给定两个字符串 `s` 和 `t` ，编写一个函数来判断 `t` 是否是 `s` 的 字母异位词（字母异位词是通过重新排列不同单词或短语的字母而形成的单词或短语，并使用所有原字母一次。）。
+
+ 
+
+**示例 1:**
+
+```
+输入: s = "anagram", t = "nagaram"
+输出: true
+```
+
+**示例 2:**
+
+```
+输入: s = "rat", t = "car"
+输出: false
+```
+
+ 
+
+**提示:**
+
+- `1 <= s.length, t.length <= 5 * 104`
+- `s` 和 `t` 仅包含小写字母
+
+ 
+
+**进阶:** 如果输入字符串包含 unicode 字符怎么办？你能否调整你的解法来应对这种情况？
+
+
+
+#### 42.2 解法
+
+时间复杂度 $O(N)$，空间复杂度 $O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool isAnagram(string s, string t) {
+    int count = t.size();
+    if (count != s.size()) return false;
+
+    vector<int> freq(128);
+    for (char x : t) freq[x]++;
+
+    for (char x : s) {
+      if (--freq[x] < 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  string s, t;
+  cin >> s >> t;
+
+  Solution obj;
+  cout << obj.isAnagram(s, t);
+
+  return 0;
+}
+```
+
+> 很多时候只需要管字母，也就是长为26的数组：
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     bool isAnagram(string s, string t) {
+>         if (s.size() != t.size()) {
+>             return false;
+>         }
+> 
+>         vector<int> freq(26, 0);
+> 
+>         for (char c : s) {
+>             freq[c - 'a']++;
+>         }
+> 
+>         for (char c : t) {
+>             if (--freq[c - 'a'] < 0) {
+>                 return false;
+>             }
+>         }
+> 
+>         return true;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     string s, t;
+>     if (cin >> s >> t) {
+>         Solution obj;
+>         cout << (obj.isAnagram(s, t) ? "true" : "false") << "\n";
+>     }
+> 
+>     return 0;
+> }
+> ```
+>
+> 
+
+
+
+#### 42.3 解析
+
+这当然是两两比较的最优解，但是如果字符串多了起来，比如到达$10^4$ 量级……可以考虑排序法：
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isAnagram(string s, string t) {
+        if (s.size() != t.size()) {
+            return false;
+        }
+        
+        sort(s.begin(), s.end());
+        sort(t.begin(), t.end());
+        
+        return s == t;
+    }
+};
+```
+
+当然这的时间复杂度退化为 $O(N \log N)$，空间复杂度通常为 $O(1)$ 或 $O(\log N)$（取决于 C++ 底层排序的栈空间）。
