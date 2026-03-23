@@ -7700,3 +7700,300 @@ public:
 ```
 
 当然这的时间复杂度退化为 $O(N \log N)$，空间复杂度通常为 $O(1)$ 或 $O(\log N)$（取决于 C++ 底层排序的栈空间）。
+
+
+
+### 43. 字母异位词分组**
+
+#### 43.1 题目
+
+给你一个字符串数组，请你将 字母异位词 组合在一起。可以按任意顺序返回结果列表。
+
+ 
+
+**示例 1:**
+
+**输入:** strs = ["eat", "tea", "tan", "ate", "nat", "bat"]
+
+**输出:** [["bat"],["nat","tan"],["ate","eat","tea"]]
+
+**解释：**
+
+- 在 strs 中没有字符串可以通过重新排列来形成 `"bat"`。
+- 字符串 `"nat"` 和 `"tan"` 是字母异位词，因为它们可以重新排列以形成彼此。
+- 字符串 `"ate"` ，`"eat"` 和 `"tea"` 是字母异位词，因为它们可以重新排列以形成彼此。
+
+**示例 2:**
+
+**输入:** strs = [""]
+
+**输出:** [[""]]
+
+**示例 3:**
+
+**输入:** strs = ["a"]
+
+**输出:** [["a"]]
+
+ 
+
+**提示：**
+
+- `1 <= strs.length <= 104`
+- `0 <= strs[i].length <= 100`
+- `strs[i]` 仅包含小写字母
+
+
+
+#### 43.2 解法
+
+**时间复杂度**：$O(N \times K \log K)$，**空间复杂度**：$O(N \times K)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<vector<string>> groupAnagrams(vector<string>& strs) {
+    int n = strs.size();
+    vector<vector<string>> res;
+    unordered_map<string, int> index;
+
+    for (int i = 0; i < n; i++) {
+      string word = strs[i];
+      sort(strs[i].begin(), strs[i].end());
+
+      if (index.count(strs[i]) != 0) {
+        res[index[strs[i]]].push_back(word);
+      } else {
+        res.push_back({word});
+        index[strs[i]] = res.size() - 1;
+      }
+    }
+
+    return res;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  cin >> n;
+  cin.ignore();
+
+  vector<string> strs(n);
+  for (int i = 0; i < n; i++) {
+    cin >> strs[i];
+  }
+
+  Solution obj;
+  vector<vector<string>> res = obj.groupAnagrams(strs);
+
+  for (vector<string> group : res) {
+    for (string x : group) {
+      cout << x << " ";
+    }
+    cout << endl;
+  }
+
+  return 0;
+}
+```
+
+> 主要有一个问题，就是传入的`strs`是一个引用，如果`sort`就会把原数组给修改了，这样不妥：
+>
+> ```cpp
+> #include <algorithm>
+> #include <iostream>
+> #include <string>
+> #include <unordered_map>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     vector<vector<string>> groupAnagrams(vector<string>& strs) {
+>         unordered_map<string, vector<string>> groups;
+> 
+>         for (const string& s : strs) {
+>             // 用副本排序，而不是用副本作为索引
+>             string key = s;
+>             sort(key.begin(), key.end());
+>             groups[key].push_back(s);
+>         }
+> 
+>         vector<vector<string>> res;
+>         res.reserve(groups.size());
+>         
+>         // 映射表不存索引，而是字符串向量本身，之后用move高效地（O(1)）转移
+>         for (auto& pair : groups) {
+>             res.push_back(move(pair.second));
+>         }
+> 
+>         return res;
+>     }
+> };
+> ```
+
+
+
+#### 43.3 解析
+
+这并不算最优解，还有一种利用`42题`的频次统计，再结合`hash表`的高效算法：
+
+异位词的本质是“各个字符出现的频次相同”，而题目限定了只有 26 个小写字母。这样我们可以统计每个词的字母频率，然后格式化成一个字符串，类似`"2#0#1#0...0"`，并以之作为映射表的索引：
+
+```cpp
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<vector<string>> groupAnagrams(vector<string>& strs) {
+        unordered_map<string, vector<string>> groups;
+
+        for (const string& s : strs) {
+            // 直接定义字符串，利用其数组（向量）特性
+            string key(26, 0); 
+            for (char c : s) {
+                key[c - 'a']++; 
+            }
+            groups[key].push_back(s);
+        }
+
+        vector<vector<string>> res;
+        res.reserve(groups.size());
+        for (auto& pair : groups) {
+            res.push_back(move(pair.second));
+        }
+
+        return res;
+    }
+};
+```
+
+这样的算法将单个字符串的处理时间从 $O(K \log K)$ 降到了 $O(K)$，整体时间复杂度降低为 $O(N \times K)$；空间复杂度等价。
+
+
+
+### 44. 两数之和*
+
+#### 44.1 题目
+
+给定一个整数数组 `nums` 和一个整数目标值 `target`，请你在该数组中找出 **和为目标值** *`target`* 的那 **两个** 整数，并返回它们的数组下标。
+
+你可以假设每种输入只会对应一个答案，并且你不能使用两次相同的元素。
+
+你可以按任意顺序返回答案。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [2,7,11,15], target = 9
+输出：[0,1]
+解释：因为 nums[0] + nums[1] == 9 ，返回 [0, 1] 。
+```
+
+**示例 2：**
+
+```
+输入：nums = [3,2,4], target = 6
+输出：[1,2]
+```
+
+**示例 3：**
+
+```
+输入：nums = [3,3], target = 6
+输出：[0,1]
+```
+
+ 
+
+**提示：**
+
+- `2 <= nums.length <= 104`
+- `-109 <= nums[i] <= 109`
+- `-109 <= target <= 109`
+- **只会存在一个有效答案**
+
+ 
+
+**进阶：**你可以想出一个时间复杂度小于 `O(n2)` 的算法吗？
+
+
+
+#### 44.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  vector<int> twoSum(vector<int>& nums, int target) {
+    unordered_map<int, int> index;
+    int n = nums.size();
+    for (int i = 0; i < n; i++) {
+      int sub = target - nums[i];
+      if (index.count(sub) != 0) {
+        return {index[sub], i};
+      } else {
+        index[nums[i]] = i;
+      }
+    }
+
+    return {};
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n, target;
+  cin >> n >> target;
+
+  vector<int> nums(n);
+  for (int i = 0; i < n; i++) {
+    cin >> nums[i];
+  }
+
+  Solution obj;
+  vector<int> res = obj.twoSum(nums, target);
+  // 这个输出可能有问题（越界），加一个判断即可
+  cout << res[0] << " " << res[1];
+
+  return 0;
+}
+```
+
+
+
+#### 44.3 解析
+
+由于题目要求返回原始下标，所以不太可能不用额外的空间，如果要比$O(N^2)$更快，一个是我这个办法；另一个就是排序+双指针（两数之和II），后者限于排序速度，所以还是我这种为最优。当然如果只是返回数字，综合来看后者也是很不错的，空间复杂度仅$O(1)$。
