@@ -7997,3 +7997,329 @@ int main() {
 #### 44.3 解析
 
 由于题目要求返回原始下标，所以不太可能不用额外的空间，如果要比$O(N^2)$更快，一个是我这个办法；另一个就是排序+双指针（两数之和II），后者限于排序速度，所以还是我这种为最优。当然如果只是返回数字，综合来看后者也是很不错的，空间复杂度仅$O(1)$。
+
+
+
+
+
+### 45. 快乐数**
+
+#### 45.1 题目
+
+编写一个算法来判断一个数 `n` 是不是快乐数。
+
+**「快乐数」** 定义为：
+
+- 对于一个正整数，每一次将该数替换为它每个位置上的数字的平方和。
+- 然后重复这个过程直到这个数变为 1，也可能是 **无限循环** 但始终变不到 1。
+- 如果这个过程 **结果为** 1，那么这个数就是快乐数。
+
+如果 `n` 是 *快乐数* 就返回 `true` ；不是，则返回 `false` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：n = 19
+输出：true
+解释：
+12 + 92 = 82
+82 + 22 = 68
+62 + 82 = 100
+12 + 02 + 02 = 1
+```
+
+**示例 2：**
+
+```
+输入：n = 2
+输出：false
+```
+
+ 
+
+**提示：**
+
+- `1 <= n <= 231 - 1`
+
+
+
+#### 45.2 解法
+
+**时间复杂度**：$O(\log n)$，**空间复杂度**：$O(\log n)$。
+
+```cpp
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool isHappy(int n) {
+    unordered_map<int, int> circ;
+    while (circ.count(n) == 0) {
+      circ[n] = 1;
+      int m = n, sum = 0;
+      while (m != 0) {
+        sum += int(pow(m % 10, 2));
+        m /= 10;
+      }
+      if (sum == 1) return true;
+      n = sum;
+    }
+    return false;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n;
+  cin >> n;
+
+  Solution obj;
+  cout << obj.isHappy(n);
+
+  return 0;
+}
+```
+
+> 一方面`pow`比较慢；另一方面，如果只用到`hash`的`key`，可以用`set`:
+>
+> ```cpp
+> #include <iostream>
+> #include <unordered_set>
+> 
+> using namespace std;
+> 
+> class Solution {
+> private:
+>     int getNext(int n) {
+>         int totalSum = 0;
+>         while (n > 0) {
+>             int d = n % 10;
+>             totalSum += d * d;
+>             n /= 10;
+>         }
+>         return totalSum;
+>     }
+> 
+> public:
+>     bool isHappy(int n) {
+>         unordered_set<int> seen;
+>         
+>         // 集合只判断有没有
+>         while (n != 1 && !seen.count(n)) {
+>             seen.insert(n); // 插入集合
+>             n = getNext(n);
+>         }
+>         
+>         return n == 1;
+>     }
+> };
+> ```
+
+
+
+#### 45.3 解析
+
+这当然也不算最优解，此外还有空间 $O(1)$ 的解法。既然是判断是否循环，那么其实可以使用快慢指针（即Floyd 判圈算法）：让一个指针跑得更快，当他们相遇，则一定有环；而若有环，则一定相遇：
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+private:
+    // 计算平方和独立函数
+    int getNext(int n) {
+        int totalSum = 0;
+        while (n > 0) {
+            int d = n % 10;
+            totalSum += d * d;
+            n /= 10;
+        }
+        return totalSum;
+    }
+
+public:
+    bool isHappy(int n) {
+        int slow = n;
+        int fast = getNext(n);
+        
+        while (fast != 1 && slow != fast) {
+            slow = getNext(slow); // 慢指针单步长
+            fast = getNext(getNext(fast)); // 快指针双步长
+        }
+        
+        return fast == 1;
+    }
+};
+```
+
+
+
+
+
+### 46. 存在重复元素II*/**
+
+#### 46.1 题目
+
+给你一个整数数组 `nums` 和一个整数 `k` ，判断数组中是否存在两个 **不同的索引** `i` 和 `j` ，满足 `nums[i] == nums[j]` 且 `abs(i - j) <= k` 。如果存在，返回 `true` ；否则，返回 `false` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [1,2,3,1], k = 3
+输出：true
+```
+
+**示例 2：**
+
+```
+输入：nums = [1,0,1,1], k = 1
+输出：true
+```
+
+**示例 3：**
+
+```
+输入：nums = [1,2,3,1,2,3], k = 2
+输出：false
+```
+
+ 
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 105`
+- `-109 <= nums[i] <= 109`
+- `0 <= k <= 105`
+
+
+
+#### 46.2 解法
+
+时间复杂度 $O(N)$，空间复杂度 $O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+ public:
+  bool containsNearbyDuplicate(vector<int>& nums, int k) {
+    int n = nums.size();
+    unordered_map<int, int> index;
+    for (int i = 0; i < n; i++) {
+      if (index.count(nums[i]) != 0 && i - index[nums[i]] <= k) {
+        return true;
+      }
+      index[nums[i]] = i;
+    }
+    return false;
+  }
+};
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+
+  int n, k;
+  cin >> n >> k;
+
+  vector<int> nums(n);
+  for (int i = 0; i < n; i++) {
+    cin >> nums[i];
+  }
+
+  Solution obj;
+  cout << obj.containsNearbyDuplicate(nums, k);
+
+  return 0;
+}
+```
+
+> 还可以用`find`获得迭代器，这样比我的两次哈希寻址好一点。
+>
+> ```cpp
+> #include <iostream>
+> #include <unordered_map>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     bool containsNearbyDuplicate(vector<int>& nums, int k) {
+>         unordered_map<int, int> index;
+>         
+>         for (int i = 0; i < nums.size(); i++) {
+>             auto it = index.find(nums[i]);
+>             
+>             // 前者表示找到了，后者用->取值
+>             if (it != index.end() && i - it->second <= k) {
+>                 return true;
+>             }
+>             index[nums[i]] = i;
+>         }
+>         
+>         return false;
+>     }
+> };
+> ```
+
+
+
+#### 46.3 解析
+
+算半个等效最优解吧，事实上还有更好的办法，能够把空间复杂度降低到$O(\min(N, k))$。其实不难看出不需要遍历整个数组，而只需要维护一个长度为`k`的滑动窗口即可：前者意味着$O(N)$的空间复杂度，而后者则是$O(\min(N, k))$。
+
+```cpp
+#include <iostream>
+#include <unordered_set>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    bool containsNearbyDuplicate(vector<int>& nums, int k) {
+        unordered_set<int> window;
+        
+        for (int i = 0; i < nums.size(); i++) {
+            // 当窗口大于k，移除尾部
+            if (i > k) {
+                window.erase(nums[i - k - 1]);
+            }
+            
+            // 如果无法插入集合，即在k内有重复
+            if (!window.insert(nums[i]).second) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+};
+```
+
