@@ -8471,7 +8471,7 @@ int main() {
 
 ## 六、区间
 
-### 48. 汇总区间
+### 48. 汇总区间*
 
 #### 48.1 题目
 
@@ -8629,3 +8629,410 @@ int main() {
 #### 48.3 解析
 
 我的当然也是等效最优解，但是优化版的**分组循环**是这类题目的范式，核心在于外层定位起点，内层定位终点：这样一方面比较可读，不需要记录状态；另一方面彻底告别差一错误，也就是不需要考虑边界问题。
+
+
+
+### 49. 合并区间*
+
+#### 49.1 题目
+
+以数组 `intervals` 表示若干个区间的集合，其中单个区间为 `intervals[i] = [starti, endi]` 。请你合并所有重叠的区间，并返回 *一个不重叠的区间数组，该数组需恰好覆盖输入中的所有区间* 。
+
+ 
+
+**示例 1：**
+
+```
+输入：intervals = [[1,3],[2,6],[8,10],[15,18]]
+输出：[[1,6],[8,10],[15,18]]
+解释：区间 [1,3] 和 [2,6] 重叠, 将它们合并为 [1,6].
+```
+
+**示例 2：**
+
+```
+输入：intervals = [[1,4],[4,5]]
+输出：[[1,5]]
+解释：区间 [1,4] 和 [4,5] 可被视为重叠区间。
+```
+
+**示例 3：**
+
+```
+输入：intervals = [[4,7],[1,4]]
+输出：[[1,7]]
+解释：区间 [1,4] 和 [4,7] 可被视为重叠区间。
+```
+
+ 
+
+**提示：**
+
+- `1 <= intervals.length <= 104`
+- `intervals[i].length == 2`
+- `0 <= starti <= endi <= 104`
+
+
+
+#### 49.2 解法
+
+**时间复杂度**：$O(N \log N)$，**空间复杂度**：$O(\log N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        sort(intervals.begin(), intervals.end(),
+             [](const vector<int>& a, const vector<int>& b) { return a[0] < b[0]; });
+
+        int n = intervals.size();
+        vector<vector<int>> res;
+
+        res.push_back(intervals.front());
+        for (int i = 1; i < n; i++) {
+            vector<int>& lastRanges = res.back();
+            if (lastRanges[0] <= intervals[i][0] && intervals[i][0] <= lastRanges[1]) {
+                lastRanges[1] = max(lastRanges[1], intervals[i][1]);
+            } else {
+                res.push_back(intervals[i]);
+            }
+        }
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<vector<int>> intervals(n, vector<int>(2));
+    for (int i = 0; i < n; i++) {
+        cin >> intervals[i][0] >> intervals[i][1];
+    }
+
+    Solution obj;
+    vector<vector<int>> res = obj.merge(intervals);
+
+    for (vector<int> x : res) {
+        cout << "[" << x[0] << ":" << x[1] << "]" << endl;
+    }
+
+    return 0;
+}
+```
+
+> 经过排序之后，后元素开头不可能小于前元素，所以比较有点多余：
+>
+> ```cpp
+> #include <algorithm>
+> #include <iostream>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     vector<vector<int>> merge(vector<vector<int>>& intervals) {
+>         if (intervals.empty()) {
+>             return {};
+>         }
+> 
+>         sort(intervals.begin(), intervals.end(),
+>              [](const vector<int>& a, const vector<int>& b) { return a[0] < b[0]; });
+> 
+>         vector<vector<int>> res;
+>         res.push_back(intervals[0]);
+> 
+>         for (int i = 1; i < intervals.size(); i++) {
+>             vector<int>& lastRanges = res.back();
+>             
+>             // 去掉了冗余比较
+>             if (intervals[i][0] <= lastRanges[1]) {
+>                 lastRanges[1] = max(lastRanges[1], intervals[i][1]);
+>             } else {
+>                 res.push_back(intervals[i]);
+>             }
+>         }
+> 
+>         return res;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+> 
+>     int n;
+>     if (cin >> n) {
+>         vector<vector<int>> intervals(n, vector<int>(2));
+>         for (int i = 0; i < n; i++) {
+>             cin >> intervals[i][0] >> intervals[i][1];
+>         }
+> 
+>         Solution obj;
+>         vector<vector<int>> res = obj.merge(intervals);
+> 
+>         // const避免修改、&避免拷贝，一般用在x是数组时（当然包括string）
+>         for (const auto& x : res) {
+>             cout << "[" << x[0] << ":" << x[1] << "]\n";
+>         }
+>     }
+> 
+>     return 0;
+> }
+> ```
+
+
+
+#### 49.3 解析
+
+这就是最优解了，排序没什么好说的，记住lambda的写法即可。
+
+
+
+
+
+### 50. 插入区间* （@）
+
+#### 50.1 题目
+
+给你一个 **无重叠的** *，*按照区间起始端点排序的区间列表 `intervals`，其中 `intervals[i] = [starti, endi]` 表示第 `i` 个区间的开始和结束，并且 `intervals` 按照 `starti` 升序排列。同样给定一个区间 `newInterval = [start, end]` 表示另一个区间的开始和结束。
+
+在 `intervals` 中插入区间 `newInterval`，使得 `intervals` 依然按照 `starti` 升序排列，且区间之间不重叠（如果有必要的话，可以合并区间）。
+
+返回插入之后的 `intervals`。
+
+**注意** 你不需要原地修改 `intervals`。你可以创建一个新数组然后返回它。
+
+ 
+
+**示例 1：**
+
+```
+输入：intervals = [[1,3],[6,9]], newInterval = [2,5]
+输出：[[1,5],[6,9]]
+```
+
+**示例 2：**
+
+```
+输入：intervals = [[1,2],[3,5],[6,7],[8,10],[12,16]], newInterval = [4,8]
+输出：[[1,2],[3,10],[12,16]]
+解释：这是因为新的区间 [4,8] 与 [3,5],[6,7],[8,10] 重叠。
+```
+
+ 
+
+**提示：**
+
+- `0 <= intervals.length <= 104`
+- `intervals[i].length == 2`
+- `0 <= starti <= endi <= 105`
+- `intervals` 根据 `starti` 按 **升序** 排列
+- `newInterval.length == 2`
+- `0 <= start <= end <= 105`
+
+
+
+#### 50.2 解法
+
+时间复杂度：$O(N)$，空间复杂度$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {
+        int n = intervals.size();
+        if (n == 0) return {newInterval};
+
+        int left = 0, right = n - 1;
+        while (right != left) {
+            int middle = (left + right) / 2;
+            if (newInterval[0] == intervals[middle][0]) {
+                right = middle;
+                left = middle;
+            } else if (newInterval[0] > intervals[middle][0]) {
+                if (newInterval[0] <= intervals[middle][1]) {
+                    left = middle;
+                    right = middle;
+                } else {
+                    left = middle + 1;
+                }
+            } else {
+                right = middle;
+            }
+        }
+
+        vector<vector<int>> res;
+        bool flag;
+        int l;
+        for (int i = 0; i < n; i++) {
+            if (i < left) {
+                res.push_back(intervals[i]);
+            } else {
+                if (flag) {
+                    res.push_back(intervals[i]);
+                } else {
+                    if (i == left) {
+                        if (intervals[i][1] >= newInterval[0]) {
+                            l = min(intervals[i][0], newInterval[0]);
+                        } else {
+                            res.push_back(intervals[i]);
+                            l = newInterval[0];
+                        }
+                    }
+                    if (intervals[i][0] > newInterval[1]) {
+                        res.push_back({l, newInterval[1]});
+                        res.push_back(intervals[i]);
+                        flag = true;
+                    } else if (intervals[i][1] >= newInterval[1]) {
+                        res.push_back({l, intervals[i][1]});
+                        flag = true;
+                    } else if (i == n - 1) {
+                        res.push_back({l, newInterval[1]});
+                        flag = true;
+                    }
+                }
+            }
+        }
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<vector<int>> intervals(n, vector<int>(2));
+    for (int i = 0; i < n; i++) {
+        cin >> intervals[i][0] >> intervals[i][1];
+    }
+
+    vector<int> newInterval(2);
+    cin >> newInterval[0] >> newInterval[1];
+
+    Solution obj;
+    vector<vector<int>> res = obj.insert(intervals, newInterval);
+
+    for (const auto& x : res) {
+        cout << "[" << x[0] << ":" << x[1] << "]" << endl;
+    }
+
+    return 0;
+}
+```
+
+> 则二分写得太烂了，而且也没有用。看看优化吧：
+>
+> ```cpp
+> #include <iostream>
+> #include <vector>
+> #include <algorithm>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {
+>         // 左二分：找到第一个右端点大于等于新区间左端点位置
+>         auto compLeft = [](const vector<int>& interval, int val) {
+>             return interval[1] < val;
+>         };
+>         auto itLeft = lower_bound(intervals.begin(), intervals.end(), newInterval[0], compLeft);
+> 
+>         // 右二分：找到第一个左端点大于新区间右端点位置
+>         auto compRight = [](int val, const vector<int>& interval) {
+>             return val < interval[0];
+>         };
+>         auto itRight = upper_bound(itLeft, intervals.end(), newInterval[1], compRight);
+> 
+>         if (itLeft != itRight) {
+>             newInterval[0] = min(newInterval[0], (*itLeft)[0]);
+>             newInterval[1] = max(newInterval[1], (*prev(itRight))[1]);
+>         }
+> 
+>         // 使用insert整体插入
+>         vector<vector<int>> res;
+>         res.insert(res.end(), intervals.begin(), itLeft);
+>         res.push_back(newInterval); //保证不遗漏
+>         res.insert(res.end(), itRight, intervals.end());
+> 
+>         return res;
+>     }
+> };
+> ```
+>
+> 其中：
+>
+> - **`lower_bound`**：查找 **第一个大于或等于** `val` 的元素。
+> - **`upper_bound`**：查找 **第一个大于** `val` 的元素。
+
+
+
+#### 50.3 解析
+
+一切的起因就是试图使用二分法加快左边界的查找，之后的逻辑就变得异常复杂。假如不用二分的话，正常是这样的：
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<vector<int>> insert(vector<vector<int>>& intervals, vector<int>& newInterval) {
+        vector<vector<int>> res;
+        int n = intervals.size();
+        int i = 0;
+
+        while (i < n && intervals[i][1] < newInterval[0]) {
+            res.push_back(intervals[i]);
+            i++;
+        }
+
+        while (i < n && intervals[i][0] <= newInterval[1]) {
+            newInterval[0] = min(newInterval[0], intervals[i][0]);
+            newInterval[1] = max(newInterval[1], intervals[i][1]);
+            i++;
+        }
+        res.push_back(newInterval);
+
+        while (i < n) {
+            res.push_back(intervals[i]);
+            i++;
+        }
+
+        return res;
+    }
+};
+```
+
+整体就是分三段，并不困难。
