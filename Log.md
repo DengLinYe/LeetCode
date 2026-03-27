@@ -9036,3 +9036,367 @@ public:
 ```
 
 整体就是分三段，并不困难。
+
+
+
+
+
+### 51. 用最少数量的箭引爆气球*
+
+#### 51.1 题目
+
+有一些球形气球贴在一堵用 XY 平面表示的墙面上。墙面上的气球记录在整数数组 `points` ，其中`points[i] = [xstart, xend]` 表示水平直径在 `xstart` 和 `xend`之间的气球。你不知道气球的确切 y 坐标。
+
+一支弓箭可以沿着 x 轴从不同点 **完全垂直** 地射出。在坐标 `x` 处射出一支箭，若有一个气球的直径的开始和结束坐标为 `xstart`，`xend`， 且满足  `xstart ≤ x ≤ xend`，则该气球会被 **引爆** 。可以射出的弓箭的数量 **没有限制** 。 弓箭一旦被射出之后，可以无限地前进。
+
+给你一个数组 `points` ，*返回引爆所有气球所必须射出的 **最小** 弓箭数* 。
+
+ 
+
+**示例 1：**
+
+```
+输入：points = [[10,16],[2,8],[1,6],[7,12]]
+输出：2
+解释：气球可以用2支箭来爆破:
+-在x = 6处射出箭，击破气球[2,8]和[1,6]。
+-在x = 11处发射箭，击破气球[10,16]和[7,12]。
+```
+
+**示例 2：**
+
+```
+输入：points = [[1,2],[3,4],[5,6],[7,8]]
+输出：4
+解释：每个气球需要射出一支箭，总共需要4支箭。
+```
+
+**示例 3：**
+
+```
+输入：points = [[1,2],[2,3],[3,4],[4,5]]
+输出：2
+解释：气球可以用2支箭来爆破:
+- 在x = 2处发射箭，击破气球[1,2]和[2,3]。
+- 在x = 4处射出箭，击破气球[3,4]和[4,5]。
+```
+
+
+
+**提示:**
+
+- `1 <= points.length <= 105`
+- `points[i].length == 2`
+- `-231 <= xstart < xend <= 231 - 1`
+
+
+
+#### 51.2 解法
+
+**时间复杂度**：$O(N \log N)$， **空间复杂度**：$O(\log N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int findMinArrowShots(vector<vector<int>>& points) {
+        int n = points.size(), sum = 0;
+        if (n == 1) return 1;
+
+        sort(points.begin(), points.end(), [](const vector<int>& a, const vector<int>& b) { return a[0] < b[0]; });
+        int nowRight = points[0][1];
+
+        for (int i = 1; i < n; i++) {
+            if (points[i][0] <= nowRight) {
+                nowRight = min(nowRight, points[i][1]);
+            } else {
+                sum++;
+                nowRight = points[i][1];
+            }
+
+            if (i == n - 1) {
+                sum++;
+            }
+        }
+
+        return sum;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<vector<int>> points(n, vector<int>(2));
+    for (int i = 0; i < n; i++) {
+        cin >> points[i][0] >> points[i][1];
+    }
+
+    Solution obj;
+    cout << obj.findMinArrowShots(points);
+
+    return 0;
+}
+```
+
+> 可以做成前置判断：
+>
+> ```cpp
+> #include <algorithm>
+> #include <iostream>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int findMinArrowShots(vector<vector<int>>& points) {
+>         if (points.empty()) return 0;
+> 
+>         sort(points.begin(), points.end(), [](const vector<int>& a, const vector<int>& b) {
+>             return a[0] < b[0];
+>         });
+> 
+>         // 初始直接 1
+>         int sum = 1;
+>         int nowRight = points[0][1];
+> 
+>         for (int i = 1; i < points.size(); i++) {
+>             // 不重叠再追加
+>             if (points[i][0] > nowRight) {
+>                 sum++;
+>                 nowRight = points[i][1];
+>             } else {
+>                 nowRight = min(nowRight, points[i][1]);
+>             }
+>         }
+> 
+>         return sum;
+>     }
+> };
+> ```
+
+
+
+#### 51.3 解析
+
+我这属于“左端点排序”，也算是等效的最优解。但是右端点排序相对更好一点，特别是这种最小覆盖、最多不重叠问题：
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int findMinArrowShots(vector<vector<int>>& points) {
+        if (points.empty()) return 0;
+
+        sort(points.begin(), points.end(), [](const vector<int>& a, const vector<int>& b) {
+            return a[1] < b[1];
+        });
+
+        int arrows = 1;
+        int currentEnd = points[0][1];
+
+        for (int i = 1; i < points.size(); i++) {
+            // 遇到不重叠，就重置有边界与arrows++
+            if (points[i][0] > currentEnd) {
+                arrows++;
+                currentEnd = points[i][1];
+            }
+        }
+
+        return arrows;
+    }
+};
+```
+
+
+
+## 七、栈
+
+### 52. 有效的括号*
+
+#### 52.1 题目
+
+给定一个只包括 `'('`，`')'`，`'{'`，`'}'`，`'['`，`']'` 的字符串 `s` ，判断字符串是否有效。
+
+有效字符串需满足：
+
+1. 左括号必须用相同类型的右括号闭合。
+2. 左括号必须以正确的顺序闭合。
+3. 每个右括号都有一个对应的相同类型的左括号。
+
+ 
+
+**示例 1：**
+
+**输入：**s = "()"
+
+**输出：**true
+
+**示例 2：**
+
+**输入：**s = "()[]{}"
+
+**输出：**true
+
+**示例 3：**
+
+**输入：**s = "(]"
+
+**输出：**false
+
+**示例 4：**
+
+**输入：**s = "([])"
+
+**输出：**true
+
+**示例 5：**
+
+**输入：**s = "([)]"
+
+**输出：**false
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 104`
+- `s` 仅由括号 `'()[]{}'` 组成
+
+
+
+#### 52.2 解法
+
+时间复杂度 $O(N)$，空间复杂度 $O(N)$
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <stack>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    bool isValid(string s) {
+        stack<char> b;
+
+        for (char c : s) {
+            switch (c) {
+                case '(':
+                case '[':
+                case '{': {
+                    b.push(c);
+                    break;
+                }
+                case ')':
+                case ']':
+                case '}': {
+                    if (!b.empty() && c == match(b.top())) {
+                        b.pop();
+                    } else {
+                        return false;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (b.empty()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    char match(char& a) {
+        switch (a) {
+            case '(':
+                return ')';
+            case '[':
+                return ']';
+            case '{':
+                return '}';
+        }
+        return ' ';
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    string s;
+    getline(cin, s);
+
+    Solution obj;
+    cout << obj.isValid(s);
+
+    return 0;
+}
+```
+
+> 可以做一些琐碎的优化，比如奇数长度不可能是有效的；比如char可以不用传引用（1字节）等：
+>
+> ```cpp
+> #include <iostream>
+> #include <stack>
+> #include <string>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     bool isValid(string s) {
+>         // 奇数检查
+>         if (s.length() % 2 != 0) return false;
+> 
+>         stack<char> st;
+>         for (char c : s) {
+>             // 期望符号入栈，而不是本身
+>             if (c == '(') {
+>                 st.push(')');
+>             } else if (c == '[') {
+>                 st.push(']');
+>             } else if (c == '{') {
+>                 st.push('}');
+>             } else {
+>                 if (st.empty() || st.top() != c) {
+>                     return false;
+>                 }
+>                 st.pop();
+>             }
+>         }
+>         
+>         // empty本身就是返回true或false
+>         return st.empty();
+>     }
+> };
+> ```
+
+
+
+#### 52.3 解析
+
+基础题，没什么太多能说的。如果括号（待匹配）类型很多的话，可以用一个额外的数据结构存映射即可，不需要太多重的分支。
