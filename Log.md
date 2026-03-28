@@ -9400,3 +9400,371 @@ int main() {
 #### 52.3 解析
 
 基础题，没什么太多能说的。如果括号（待匹配）类型很多的话，可以用一个额外的数据结构存映射即可，不需要太多重的分支。
+
+
+
+### 53. 简化路径*/**
+
+#### 53. 1 题目
+
+给你一个字符串 `path` ，表示指向某一文件或目录的 Unix 风格 **绝对路径** （以 `'/'` 开头），请你将其转化为 **更加简洁的规范路径**。
+
+在 Unix 风格的文件系统中规则如下：
+
+- 一个点 `'.'` 表示当前目录本身。
+- 此外，两个点 `'..'` 表示将目录切换到上一级（指向父目录）。
+- 任意多个连续的斜杠（即，`'//'` 或 `'///'`）都被视为单个斜杠 `'/'`。
+- 任何其他格式的点（例如，`'...'` 或 `'....'`）均被视为有效的文件/目录名称。
+
+返回的 **简化路径** 必须遵循下述格式：
+
+- 始终以斜杠 `'/'` 开头。
+- 两个目录名之间必须只有一个斜杠 `'/'` 。
+- 最后一个目录名（如果存在）**不能** 以 `'/'` 结尾。
+- 此外，路径仅包含从根目录到目标文件或目录的路径上的目录（即，不含 `'.'` 或 `'..'`）。
+
+返回简化后得到的 **规范路径** 。
+
+ 
+
+**示例 1：**
+
+**输入：**path = "/home/"
+
+**输出：**"/home"
+
+**解释：**
+
+应删除尾随斜杠。
+
+**示例 2：**
+
+**输入：**path = "/home//foo/"
+
+**输出：**"/home/foo"
+
+**解释：**
+
+多个连续的斜杠被单个斜杠替换。
+
+**示例 3：**
+
+**输入：**path = "/home/user/Documents/../Pictures"
+
+**输出：**"/home/user/Pictures"
+
+**解释：**
+
+两个点 `".."` 表示上一级目录（父目录）。
+
+**示例 4：**
+
+**输入：**path = "/../"
+
+**输出：**"/"
+
+**解释：**
+
+不可能从根目录上升一级目录。
+
+**示例 5：**
+
+**输入：**path = "/.../a/../b/c/../d/./"
+
+**输出：**"/.../b/d"
+
+**解释：**
+
+`"..."` 在这个问题中是一个合法的目录名。
+
+ 
+
+**提示：**
+
+- `1 <= path.length <= 3000`
+- `path` 由英文字母，数字，`'.'`，`'/'` 或 `'_'` 组成。
+- `path` 是一个有效的 Unix 风格绝对路径。
+
+
+
+#### 53.2 解法
+
+时间复杂度 $O(N)$，空间复杂度 $O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <stack>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    string simplifyPath(string path) {
+        int n = path.size();
+        stack<string> paths;
+
+        for (int i = 0; i < n;) {
+            if (path[i] == '/') {
+                while (i < n && path[++i] == '/');
+                if (i == n) break;
+                int nameIndex = i;
+
+                while (i < n && path[++i] != '/');
+                string dir = path.substr(nameIndex, i - nameIndex);
+
+                if (dir == "..") {
+                    if (!paths.empty()) paths.pop();
+                    continue;
+                }
+                if (dir != ".") {
+                    paths.push(dir);
+                }
+            }
+        }
+
+        string res = "";
+        while (!paths.empty()) {
+            res = "/" + paths.top() + res;
+            paths.pop();
+        }
+
+        return (res == "" ? "/" : res);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    string path;
+    getline(cin, path);
+
+    Solution obj;
+    cout << obj.simplifyPath(path);
+
+    return 0;
+}
+```
+
+> 分割最好还是用`stringstream`，之前还只是在空格分割中使用：
+>
+> ```cpp
+> #include <iostream>
+> #include <sstream>
+> #include <string>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     string simplifyPath(string path) {
+>         vector<string> dirs;
+>         stringstream ss(path);
+>         string dir;
+> 
+>         while (getline(ss, dir, '/')) {
+>             if (dir == "" || dir == ".") {
+>                 continue;
+>             }
+>             if (dir == "..") {
+>                 if (!dirs.empty()) {
+>                     dirs.pop_back();
+>                 }
+>             } else {
+>                 dirs.push_back(dir);
+>             }
+>         }
+> 
+>         string res;
+>         for (const string& d : dirs) {
+>             res += "/" + d;
+>         }
+> 
+>         return res.empty() ? "/" : res;
+>     }
+> };
+> ```
+>
+> 
+
+
+
+#### 53.3 解析
+
+这个问题其实是遍历时需要先入后出，转化字符串时需要先入先出，这个时候单纯的`stack`限制太大了，反而使用`vector`能完美模拟它。
+
+
+
+### 54. 最小栈*（@）
+
+#### 54.1 题目
+
+设计一个支持 `push` ，`pop` ，`top` 操作，并能在常数时间内检索到最小元素的栈。
+
+实现 `MinStack` 类:
+
+- `MinStack()` 初始化堆栈对象。
+- `void push(int val)` 将元素val推入堆栈。
+- `void pop()` 删除堆栈顶部的元素。
+- `int top()` 获取堆栈顶部的元素。
+- `int getMin()` 获取堆栈中的最小元素。
+
+ 
+
+**示例 1:**
+
+```
+输入：
+["MinStack","push","push","push","getMin","pop","top","getMin"]
+[[],[-2],[0],[-3],[],[],[],[]]
+
+输出：
+[null,null,null,null,-3,null,0,-2]
+
+解释：
+MinStack minStack = new MinStack();
+minStack.push(-2);
+minStack.push(0);
+minStack.push(-3);
+minStack.getMin();   --> 返回 -3.
+minStack.pop();
+minStack.top();      --> 返回 0.
+minStack.getMin();   --> 返回 -2.
+```
+
+ 
+
+**提示：**
+
+- `-231 <= val <= 231 - 1`
+- `pop`、`top` 和 `getMin` 操作总是在 **非空栈** 上调用
+- `push`, `pop`, `top`, and `getMin`最多被调用 `3 * 104` 次
+
+
+
+#### 54.2 解法
+
+**时间复杂度**：$O(1)$，**空间复杂度**：$O(N)$。
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class MinStack {
+private:
+    vector<int> stack;
+    vector<int> minStack;
+
+public:
+    MinStack() {}
+
+    void push(int val) {
+        stack.push_back(val);
+        if (minStack.empty() || val <= minStack.back()) {
+            minStack.push_back(val);
+        }
+    }
+
+    void pop() {
+        if (stack.back() == minStack.back()) {
+            minStack.pop_back();
+        }
+        stack.pop_back();
+    }
+
+    int top() {
+        return stack.back();
+    }
+
+    int getMin() {
+        return minStack.back();
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (cin >> n) {
+        MinStack minStack;
+        for (int i = 0; i < n; i++) {
+            string cmd;
+            cin >> cmd;
+
+            if (cmd == "MinStack") {
+                cout << "null ";
+            } else if (cmd == "push") {
+                int val;
+                cin >> val;
+                minStack.push(val);
+                cout << "null ";
+            } else if (cmd == "pop") {
+                minStack.pop();
+                cout << "null ";
+            } else if (cmd == "top") {
+                cout << minStack.top() << " ";
+            } else if (cmd == "getMin") {
+                cout << minStack.getMin() << " ";
+            }
+        }
+        cout << "\n";
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 54.3 解析
+
+这道题最关键是利用一个**辅助栈（向量）**，因为栈的先入后出的特点，如果后进的元素比前一个大，那么它的出栈不会影响最小值，所以不需要存它；反之则需要存，这就是`minStack`。
+
+此外，还有一种高内聚的方案，理论上差不多，工程上可能更安全：
+
+```cpp
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
+class MinStack {
+private:
+    // pair结构，类似定长为2的数组
+    vector<pair<int, int>> st;
+
+public:
+    MinStack() {}
+
+    void push(int val) {
+        if (st.empty()) {
+            st.push_back({val, val});
+        } else {
+            st.push_back({val, min(val, st.back().second)});
+        }
+    }
+
+    void pop() {
+        st.pop_back();
+    }
+
+    int top() {
+        return st.back().first;
+    }
+
+    int getMin() {
+        return st.back().second;
+    }
+};
+```
+
