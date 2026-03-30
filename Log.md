@@ -9768,3 +9768,461 @@ public:
 };
 ```
 
+
+
+### 55. 逆波兰表达式求值*
+
+#### 55.1 题目
+
+给你一个字符串数组 `tokens` ，表示一个根据 [逆波兰表示法](https://baike.baidu.com/item/逆波兰式/128437) 表示的算术表达式。
+
+请你计算该表达式。返回一个表示表达式值的整数。
+
+**注意：**
+
+- 有效的算符为 `'+'`、`'-'`、`'*'` 和 `'/'` 。
+- 每个操作数（运算对象）都可以是一个整数或者另一个表达式。
+- 两个整数之间的除法总是 **向零截断** 。
+- 表达式中不含除零运算。
+- 输入是一个根据逆波兰表示法表示的算术表达式。
+- 答案及所有中间计算结果可以用 **32 位** 整数表示。
+
+ 
+
+**示例 1：**
+
+```
+输入：tokens = ["2","1","+","3","*"]
+输出：9
+解释：该算式转化为常见的中缀算术表达式为：((2 + 1) * 3) = 9
+```
+
+**示例 2：**
+
+```
+输入：tokens = ["4","13","5","/","+"]
+输出：6
+解释：该算式转化为常见的中缀算术表达式为：(4 + (13 / 5)) = 6
+```
+
+**示例 3：**
+
+```
+输入：tokens = ["10","6","9","3","+","-11","*","/","*","17","+","5","+"]
+输出：22
+解释：该算式转化为常见的中缀算术表达式为：
+  ((10 * (6 / ((9 + 3) * -11))) + 17) + 5
+= ((10 * (6 / (12 * -11))) + 17) + 5
+= ((10 * (6 / -132)) + 17) + 5
+= ((10 * 0) + 17) + 5
+= (0 + 17) + 5
+= 17 + 5
+= 22
+```
+
+ 
+
+**提示：**
+
+- `1 <= tokens.length <= 104`
+- `tokens[i]` 是一个算符（`"+"`、`"-"`、`"*"` 或 `"/"`），或是在范围 `[-200, 200]` 内的一个整数
+
+ 
+
+**逆波兰表达式：**
+
+逆波兰表达式是一种后缀表达式，所谓后缀就是指算符写在后面。
+
+- 平常使用的算式则是一种中缀表达式，如 `( 1 + 2 ) * ( 3 + 4 )` 。
+- 该算式的逆波兰表达式写法为 `( ( 1 2 + ) ( 3 4 + ) * )` 。
+
+逆波兰表达式主要有以下两个优点：
+
+- 去掉括号后表达式无歧义，上式即便写成 `1 2 + 3 4 + * `也可以依据次序计算出正确结果。
+- 适合用栈操作运算：遇到数字则入栈；遇到算符则取出栈顶两个数字进行计算，并将结果压入栈中
+
+
+
+#### 55.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+class Solution {
+   public:
+    int evalRPN(vector<string>& tokens) {
+        int n = tokens.size();
+        vector<int> stack;
+
+        for (int i = 0; i < n; i++) {
+            if (tokens[i] == "+" || tokens[i] == "-" || tokens[i] == "*" || tokens[i] == "/") {
+                int b = stack.back();
+                stack.pop_back();
+                int a = stack.back();
+                stack[stack.size() - 1] = calculate(a, b, tokens[i]);
+            } else {
+                stack.push_back(stoi(tokens[i]));
+            }
+        }
+
+        return stack.back();
+    }
+
+    int calculate(int a, int b, string cal) {
+        if (cal == "*") {
+            return a * b;
+        }
+        if (cal == "/") {
+            return a / b;
+        }
+        if (cal == "+") {
+            return a + b;
+        }
+        if (cal == "-") {
+            return a - b;
+        }
+
+        return 1;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<string> s(n);
+    for (int i = 0; i < n; i++) {
+        cin >> s[i];
+    }
+
+    Solution obj;
+    cout << obj.evalRPN(s);
+
+    return 0;
+}
+```
+
+> 在数字判断上的优化：
+>
+> ```cpp
+> #include <iostream>
+> #include <string>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int evalRPN(vector<string>& tokens) {
+>         vector<long long> st;
+>         
+>         for (const string& s : tokens) {
+>             // 如果负数，条件一；如果正数，条件二
+>             if (s.size() > 1 || isdigit(s[0])) {
+>                 st.push_back(stoll(s));
+>             } else {
+>                 long long b = st.back();
+>                 st.pop_back();
+>                 long long a = st.back();
+>                 
+>                 // 直接用back就行
+>                 if (s == "+") st.back() = a + b;
+>                 else if (s == "-") st.back() = a - b;
+>                 else if (s == "*") st.back() = a * b;
+>                 else if (s == "/") st.back() = a / b;
+>             }
+>         }
+>         
+>         return st.back();
+>     }
+> };
+> ```
+
+
+
+#### 55.3 解析
+
+这道题就是用栈做的，也是逆波兰表达式的本质。不过此外，还有一种比较优雅的解法：
+
+```cpp
+#include <functional>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int evalRPN(vector<string>& tokens) {
+        // 计算符号到函数（lambda）的映射
+        unordered_map<string, function<long long(long long, long long)>> ops = {
+            {"+", [](long long a, long long b) { return a + b; }},
+            {"-", [](long long a, long long b) { return a - b; }},
+            {"*", [](long long a, long long b) { return a * b; }},
+            {"/", [](long long a, long long b) { return a / b; }}
+        };
+
+        vector<long long> st;
+
+        for (const string& s : tokens) {
+            // 由于map记录所有符号，直接count，十分巧妙
+            if (ops.count(s)) {
+                long long b = st.back();
+                st.pop_back();
+                long long a = st.back();
+                st.back() = ops[s](a, b);
+            } else {
+                st.push_back(stoll(s));
+            }
+        }
+
+        return st.back();
+    }
+};
+```
+
+
+
+### 56. 基本计算器*
+
+#### 56.1 题目
+
+给你一个字符串表达式 `s` ，请你实现一个基本计算器来计算并返回它的值。
+
+注意:不允许使用任何将字符串作为数学表达式计算的内置函数，比如 `eval()` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：s = "1 + 1"
+输出：2
+```
+
+**示例 2：**
+
+```
+输入：s = " 2-1 + 2 "
+输出：3
+```
+
+**示例 3：**
+
+```
+输入：s = "(1+(4+5+2)-3)+(6+8)"
+输出：23
+```
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 3 * 105`
+- `s` 由数字、`'+'`、`'-'`、`'('`、`')'`、和 `' '` 组成
+- `s` 表示一个有效的表达式
+- `'+'` 不能用作一元运算(例如， `"+1"` 和 `"+(2 + 3)"` 无效)
+- `'-'` 可以用作一元运算(即 `"-1"` 和 `"-(2 + 3)"` 是有效的)
+- 输入中不存在两个连续的操作符
+- 每个数字和运行的计算将适合于一个有符号的 32位 整数
+
+
+
+#### 56.2 解法
+
+时间复杂度：接近 **O(N)**，空间复杂度：**O(N)**
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int calculate(string s) {
+        int n = s.size();
+        long long sum = 0;
+        bool sign = true;
+        vector<bool> bracket;
+
+        for (int i = 0; i < n; i++) {
+            if (s[i] == '-' || s[i] == '+') {
+                if (!bracket.empty() && !bracket.back()) {
+                    sign = s[i] == '-';
+                } else {
+                    sign = s[i] == '+';
+                }
+            } else if (s[i] == '(') {
+                int index = i;
+                while (index > 0 && s[--index] == ' ');
+                bracket.push_back(sign);
+            } else if (s[i] == ')') {
+                bracket.pop_back();
+            } else if (s[i] == ' ') {
+                continue;
+            } else {
+                int st = i;
+                while (i < n - 1 && isdigit(s[++i]));
+                long long num;
+                if (i == n - 1) {
+                    num = stol(s.substr(st, n - st));
+                    sum += (sign ? num : -num);
+                    break;
+                } else {
+                    num = stol(s.substr(st, i - st));
+                    sum += (sign ? num : -num);
+                    i--;
+                }
+            }
+        }
+
+        return sum;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    string s;
+    getline(cin, s);
+
+    Solution obj;
+    cout << obj.calculate(s);
+    return 0;
+}
+```
+
+> 才发现我那个`while`是残留的旧方法的代码，没什么用；另外，`stoi`也拖累了速度：
+>
+> ```cpp
+> #include <iostream>
+> #include <stack>
+> #include <string>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     int calculate(string s) {
+>         // 默认先置一个正号，节省了后面的一堆判断
+>         stack<int> ops;
+>         ops.push(1);
+>         int sign = 1;
+>         int res = 0;
+>         int n = s.length();
+>         int i = 0;
+>         
+>         while (i < n) {
+>             if (s[i] == ' ') {
+>                 i++;
+>             } else if (s[i] == '+') {
+>                 sign = ops.top();
+>                 i++;
+>             } else if (s[i] == '-') {
+>                 sign = -ops.top();
+>                 i++;
+>             } else if (s[i] == '(') {
+>                 ops.push(sign);
+>                 i++;
+>             } else if (s[i] == ')') {
+>                 ops.pop();
+>                 i++;
+>             } else {
+>                 long long num = 0;
+>                 while (i < n && isdigit(s[i])) {
+>                     num = num * 10 + (s[i] - '0');
+>                     i++;
+>                 }
+>                 res += sign * num;
+>             }
+>         }
+>         return res;
+>     }
+> };
+> ```
+
+
+
+#### 56.3 解析
+
+算是等效最优解，这道题的关键在于注意到这是只有加减的计算，也就是只要展开括号即可。此外还有一种更通用的**双栈状态保存法**：
+
+- 当左括号 ，将**当前的累加结果 `res`** 和 **括号前的符号 `sign`** 压入栈中封存起来，然后把 `res` 清零，计算下一层括号结果。
+-  等遇到右括号 ，再把存起来的老结果和老符号弹出来，跟刚刚算出的括号内的值合并。
+
+即：
+
+```cpp
+#include <iostream>
+#include <stack>
+#include <string>
+
+using namespace std;
+
+class Solution {
+public:
+    int calculate(string s) {
+        stack<int> st;
+        int res = 0;
+        int sign = 1;
+        int n = s.length();
+        int i = 0;
+
+        while (i < n) {
+            if (isdigit(s[i])) {
+                long long num = 0;
+                while (i < n && isdigit(s[i])) {
+                    num = num * 10 + (s[i] - '0');
+                    i++;
+                }
+                res += sign * num;
+            } else if (s[i] == '+') {
+                sign = 1;
+                i++;
+            } else if (s[i] == '-') {
+                sign = -1;
+                i++;
+            } else if (s[i] == '(') {
+                // 括号前压栈
+                st.push(res);
+                st.push(sign);
+                res = 0;
+                sign = 1;
+                i++;
+            } else if (s[i] == ')') {
+                // 括号后合并
+                int prevSign = st.top();
+                st.pop();
+                int prevRes = st.top();
+                st.pop();
+                res = prevRes + prevSign * res;
+                i++;
+            } else {
+                i++;
+            }
+        }
+        return res;
+    }
+};
+```
+
