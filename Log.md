@@ -10226,3 +10226,347 @@ public:
 };
 ```
 
+
+
+## 八、链表
+
+### 57. 环形链表*
+
+#### 57.1 题目
+
+给你一个链表的头节点 `head` ，判断链表中是否有环。
+
+如果链表中有某个节点，可以通过连续跟踪 `next` 指针再次到达，则链表中存在环。 为了表示给定链表中的环，评测系统内部使用整数 `pos` 来表示链表尾连接到链表中的位置（索引从 0 开始）。**注意：`pos` 不作为参数进行传递** 。仅仅是为了标识链表的实际情况。
+
+*如果链表中存在环* ，则返回 `true` 。 否则，返回 `false` 。
+
+ 
+
+**示例 1：**
+
+![img](./assets/circularlinkedlist.png)
+
+```
+输入：head = [3,2,0,-4], pos = 1
+输出：true
+解释：链表中有一个环，其尾部连接到第二个节点。
+```
+
+**示例 2：**
+
+![img](./assets/circularlinkedlist_test2.png)
+
+```
+输入：head = [1,2], pos = 0
+输出：true
+解释：链表中有一个环，其尾部连接到第一个节点。
+```
+
+**示例 3：**
+
+![img](./assets/circularlinkedlist_test3.png)
+
+```
+输入：head = [1], pos = -1
+输出：false
+解释：链表中没有环。
+```
+
+ 
+
+**提示：**
+
+- 链表中节点的数目范围是 `[0, 104]`
+- `-105 <= Node.val <= 105`
+- `pos` 为 `-1` 或者链表中的一个 **有效索引** 。
+
+ 
+
+**进阶：**你能用 `O(1)`（即，常量）内存解决此问题吗？
+
+
+
+#### 57.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode(int x) : val(x), next(NULL) {}
+};
+
+class Solution {
+   public:
+    bool hasCycle(ListNode* head) {
+        if (head == NULL || head->next == NULL) return false;
+        ListNode *fast = head->next, *slow = head;
+        while (fast != NULL && fast->next != NULL) {
+            if (fast == slow) {
+                return true;
+            }
+            fast = fast->next->next;
+            slow = slow->next;
+        }
+
+        return false;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (cin >> n) {
+        if (n == 0) {
+            cout << "false\n";
+            return 0;
+        }
+
+        vector<ListNode*> nodes;
+        for (int i = 0; i < n; i++) {
+            int val;
+            cin >> val;
+            nodes.push_back(new ListNode(val));
+        }
+
+        for (int i = 0; i < n - 1; i++) {
+            nodes[i]->next = nodes[i + 1];
+        }
+
+        int pos;
+        cin >> pos;
+        if (pos >= 0 && pos < n) {
+            nodes[n - 1]->next = nodes[pos];
+        }
+
+        Solution obj;
+        cout << (obj.hasCycle(nodes[0]) ? "true" : "false") << "\n";
+    }
+
+    return 0;
+}
+```
+
+> 可以把起跑线统一，只需要把移动前置：
+>
+> ```cpp
+> class Solution {
+> public:
+>     bool hasCycle(ListNode *head) {
+>         ListNode *fast = head;
+>         ListNode *slow = head;
+>         
+>         while (fast != NULL && fast->next != NULL) {
+>             fast = fast->next->next;
+>             slow = slow->next;
+>             
+>             if (fast == slow) {
+>                 return true;
+>             }
+>         }
+>         return false;
+>     }
+> };
+> ```
+
+
+
+#### 57.3 解析
+
+这种Floyd判圈法在`T45_快乐数`中就有提及，这里就是最优解。
+
+
+
+### 58. 两数相加*（@）
+
+#### 58.1 题目
+
+给你两个 **非空** 的链表，表示两个非负的整数。它们每位数字都是按照 **逆序** 的方式存储的，并且每个节点只能存储 **一位** 数字。
+
+请你将两个数相加，并以相同形式返回一个表示和的链表。
+
+你可以假设除了数字 0 之外，这两个数都不会以 0 开头。
+
+ 
+
+**示例 1：**
+
+![img](./assets/addtwonumber1.jpg)
+
+```
+输入：l1 = [2,4,3], l2 = [5,6,4]
+输出：[7,0,8]
+解释：342 + 465 = 807.
+```
+
+**示例 2：**
+
+```
+输入：l1 = [0], l2 = [0]
+输出：[0]
+```
+
+**示例 3：**
+
+```
+输入：l1 = [9,9,9,9,9,9,9], l2 = [9,9,9,9]
+输出：[8,9,9,9,0,0,0,1]
+```
+
+ 
+
+**提示：**
+
+- 每个链表中的节点数在范围 `[1, 100]` 内
+- `0 <= Node.val <= 9`
+- 题目数据保证列表表示的数字不含前导零
+
+
+
+#### 58.2 解法
+
+**时间复杂度**：$O(\max(M, N))$，**空间复杂度**：$O(\max(M, N))$。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        ListNode* result = new ListNode();
+        ListNode *l1Cur = l1, *l2Cur = l2, *resCur = result;
+        bool st = true;
+        int c = 0;
+
+        while (l1Cur != nullptr || l2Cur != nullptr) {
+            int sum = c;
+            if (l1Cur != nullptr && l2Cur != nullptr) {
+                sum += l1Cur->val + l2Cur->val;
+                l1Cur = l1Cur->next;
+                l2Cur = l2Cur->next;
+            } else if (l1Cur == nullptr) {
+                sum += l2Cur->val;
+                l2Cur = l2Cur->next;
+            } else {
+                sum += l1Cur->val;
+                l1Cur = l1Cur->next;
+            }
+
+            c = sum / 10;
+
+            if (st) {
+                resCur->val = sum % 10;
+                st = false;
+            } else {
+                resCur->next = new ListNode(sum % 10);
+                resCur = resCur->next;
+            }
+        }
+
+        if (c > 0) {
+            resCur->next = new ListNode(c);
+        }
+
+        return result;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    if (cin >> n >> m) {
+        ListNode dummy1(0), dummy2(0);
+        ListNode *cur1 = &dummy1, *cur2 = &dummy2;
+
+        for (int i = 0; i < n; i++) {
+            int val;
+            cin >> val;
+            cur1->next = new ListNode(val);
+            cur1 = cur1->next;
+        }
+
+        for (int i = 0; i < m; i++) {
+            int val;
+            cin >> val;
+            cur2->next = new ListNode(val);
+            cur2 = cur2->next;
+        }
+
+        Solution obj;
+        ListNode* res = obj.addTwoNumbers(dummy1.next, dummy2.next);
+
+        while (res != nullptr) {
+            cout << res->val << " ";
+            res = res->next;
+        }
+        cout << "\n";
+    }
+
+    return 0;
+}
+```
+
+> 在首节点和分支判断上还有不少优化空间，如：
+>
+> ```cpp
+> #include <iostream>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+>         // 直接用l1、l2作为指针
+>         ListNode dummy(0); //dummy 哑节点在栈上，函数结束后自动销毁，那么它的next就成了head
+>         ListNode* curr = &dummy;
+>         int carry = 0;
+>         
+>         // 把carry也算作条件，就不需要额外判断了
+>         while (l1 != nullptr || l2 != nullptr || carry != 0) {
+>             // 如果为空直接赋0
+>             int val1 = (l1 != nullptr) ? l1->val : 0;
+>             int val2 = (l2 != nullptr) ? l2->val : 0;
+>             
+>             int sum = val1 + val2 + carry;
+>             carry = sum / 10;
+>             
+>             curr->next = new ListNode(sum % 10);
+>             curr = curr->next;
+>             
+>             // 非空移动
+>             if (l1 != nullptr) l1 = l1->next;
+>             if (l2 != nullptr) l2 = l2->next;
+>         }
+>         
+>         return dummy.next; //返回的是next
+>     }
+> };
+> ```
+
+
+
+#### 58.3 解析
+
+题目并不难，重点在于提供了链表乃至很多指针操作的范式，故标注`@`。理论上这道题能够 $O(1)$ 解决，但是没有什么实际意义，不赘述。
