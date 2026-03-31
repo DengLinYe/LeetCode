@@ -10570,3 +10570,380 @@ int main() {
 #### 58.3 解析
 
 题目并不难，重点在于提供了链表乃至很多指针操作的范式，故标注`@`。理论上这道题能够 $O(1)$ 解决，但是没有什么实际意义，不赘述。
+
+
+
+### 59. 合并两个有序链表*
+
+#### 59.1 题目
+
+将两个升序链表合并为一个新的 **升序** 链表并返回。新链表是通过拼接给定的两个链表的所有节点组成的。 
+
+ 
+
+**示例 1：**
+
+![img](./assets/merge_ex1.jpg)
+
+```
+输入：l1 = [1,2,4], l2 = [1,3,4]
+输出：[1,1,2,3,4,4]
+```
+
+**示例 2：**
+
+```
+输入：l1 = [], l2 = []
+输出：[]
+```
+
+**示例 3：**
+
+```
+输入：l1 = [], l2 = [0]
+输出：[0]
+```
+
+ 
+
+**提示：**
+
+- 两个链表的节点数目范围是 `[0, 50]`
+- `-100 <= Node.val <= 100`
+- `l1` 和 `l2` 均按 **非递减顺序** 排列
+
+
+
+#### 59.2 解法
+
+时间复杂度： $O(N + M)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   public:
+    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+        if (list1 == nullptr) return list2;
+        if (list2 == nullptr) return list1;
+
+        ListNode *base, *cur, *pre;
+        bool flag = false;
+        if (list2->val > list1->val) {
+            base = list1;
+            cur = list2;
+            flag = true;
+        } else {
+            base = list2;
+            cur = list1;
+        }
+        pre = base;
+        while (cur != nullptr) {
+            while (cur->val >= base->val) {
+                if (base->next == nullptr) {
+                    base->next = cur;
+                    return flag ? list1 : list2;
+                }
+                pre = base;
+                base = base->next;
+            }
+            ListNode* temp = base;
+            pre->next = cur;
+            cur = cur->next;
+            pre->next->next = temp;
+            pre = pre->next;
+        }
+
+        return flag ? list1 : list2;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    return 0;
+}
+```
+
+> 同样用哑节点能省不少事情，但是另一方面就不是原地地合并了：
+>
+> ```cpp
+> #include <iostream>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {
+>         ListNode dummy(0);
+>         ListNode* cur = &dummy;
+>         
+>         while (list1 != nullptr && list2 != nullptr) {
+>             if (list1->val <= list2->val) {
+>                 cur->next = list1;
+>                 list1 = list1->next;
+>             } else {
+>                 cur->next = list2;
+>                 list2 = list2->next;
+>             }
+>             cur = cur->next;
+>         }
+>         
+>         cur->next = (list1 != nullptr) ? list1 : list2;
+>         
+>         return dummy.next;
+>     }
+> };
+> ```
+
+
+
+#### 59.3 解析
+
+我这个和优化版的都可以算是最优解吧，因为原不原地实际上只是看需求。
+
+
+
+### 60. 随机链表的复制**
+
+#### 60.1 题目
+
+给你一个长度为 `n` 的链表，每个节点包含一个额外增加的随机指针 `random` ，该指针可以指向链表中的任何节点或空节点。
+
+构造这个链表的 **[深拷贝](https://baike.baidu.com/item/深拷贝/22785317?fr=aladdin)**。 深拷贝应该正好由 `n` 个 **全新** 节点组成，其中每个新节点的值都设为其对应的原节点的值。新节点的 `next` 指针和 `random` 指针也都应指向复制链表中的新节点，并使原链表和复制链表中的这些指针能够表示相同的链表状态。**复制链表中的指针都不应指向原链表中的节点** 。
+
+例如，如果原链表中有 `X` 和 `Y` 两个节点，其中 `X.random --> Y` 。那么在复制链表中对应的两个节点 `x` 和 `y` ，同样有 `x.random --> y` 。
+
+返回复制链表的头节点。
+
+用一个由 `n` 个节点组成的链表来表示输入/输出中的链表。每个节点用一个 `[val, random_index]` 表示：
+
+- `val`：一个表示 `Node.val` 的整数。
+- `random_index`：随机指针指向的节点索引（范围从 `0` 到 `n-1`）；如果不指向任何节点，则为 `null` 。
+
+你的代码 **只** 接受原链表的头节点 `head` 作为传入参数。
+
+ 
+
+**示例 1：**
+
+![img](./assets/e1.png)
+
+```
+输入：head = [[7,null],[13,0],[11,4],[10,2],[1,0]]
+输出：[[7,null],[13,0],[11,4],[10,2],[1,0]]
+```
+
+**示例 2：**
+
+![img](./assets/e2.png)
+
+```
+输入：head = [[1,1],[2,1]]
+输出：[[1,1],[2,1]]
+```
+
+**示例 3：**
+
+**![img](./assets/e3.png)**
+
+```
+输入：head = [[3,null],[3,0],[3,null]]
+输出：[[3,null],[3,0],[3,null]]
+```
+
+ 
+
+**提示：**
+
+- `0 <= n <= 1000`
+- `-104 <= Node.val <= 104`
+- `Node.random` 为 `null` 或指向链表中的节点。
+
+
+
+#### 60.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(N)$。
+
+```cpp
+#include <iostream>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Node {
+public:
+    int val;
+    Node* next;
+    Node* random;
+    
+    Node(int _val) {
+        val = _val;
+        next = nullptr;
+        random = nullptr;
+    }
+};
+
+class Solution {
+public:
+    Node* copyRandomList(Node* head) {
+        if (head == nullptr) return head;
+        
+        unordered_map<Node*, Node*> o2n;
+        Node dummy(0);
+        Node *curr = &dummy, *oldCurr = head;
+        
+        while(oldCurr != nullptr){
+            curr->next = new Node(oldCurr->val);
+            o2n[oldCurr] = curr->next;
+            curr = curr->next;
+            oldCurr = oldCurr->next;
+        }
+        
+        curr = dummy.next;
+        oldCurr = head;
+        while(oldCurr != nullptr){
+            curr->random = o2n[oldCurr->random];
+            curr = curr->next;
+            oldCurr = oldCurr->next;
+        }
+        
+        return dummy.next;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (cin >> n) {
+        if (n == 0) {
+            cout << "[]\n";
+            return 0;
+        }
+
+        vector<Node*> originalNodes(n);
+        vector<int> randomIndices(n);
+
+        for (int i = 0; i < n; i++) {
+            int val, randomIndex;
+            cin >> val >> randomIndex;
+            originalNodes[i] = new Node(val);
+            randomIndices[i] = randomIndex;
+        }
+
+        for (int i = 0; i < n - 1; i++) {
+            originalNodes[i]->next = originalNodes[i + 1];
+        }
+
+        for (int i = 0; i < n; i++) {
+            if (randomIndices[i] != -1) {
+                originalNodes[i]->random = originalNodes[randomIndices[i]];
+            }
+        }
+
+        Solution obj;
+        Node* copiedHead = obj.copyRandomList(originalNodes[0]);
+
+        Node* temp = copiedHead;
+        unordered_map<Node*, int> nodeToIndex;
+        int idx = 0;
+        while (temp != nullptr) {
+            nodeToIndex[temp] = idx++;
+            temp = temp->next;
+        }
+
+        temp = copiedHead;
+        cout << "[";
+        while (temp != nullptr) {
+            cout << "[" << temp->val << ",";
+            if (temp->random == nullptr) {
+                cout << "null]";
+            } else {
+                cout << nodeToIndex[temp->random] << "]";
+            }
+            if (temp->next != nullptr) cout << ",";
+            temp = temp->next;
+        }
+        cout << "]\n";
+    }
+
+    return 0;
+}
+```
+
+> 不得不提的是，我没注意到当`unordered_map`键值是`nullptr`时候的情况，但由于其自动初始化的特点，自然而然地就解决了，但是为了可读性，可以加上：
+>
+> ```cpp
+> if (oldCurr->random != nullptr) curr->random = o2n[oldCurr->random];
+> ```
+
+
+
+#### 60.3 解析
+
+我这个不算最优解，其实直觉上是能够看出可以到$O(1)$的空间复杂度的，但确实是没想出来。
+
+最优解的思路比较巧妙，本质上是给每一位之后插入一个自己的副本，如此就不会扰乱原本的顺序，并且能够轻易寻址`random`了：
+
+1. **分身穿插**：遍历原链表，每走到一个节点 $A$，就创建一个分身 $A'$，并把 $A'$ 直接插在 $A$ 的后面。此时链表变成：$A \rightarrow A' \rightarrow B \rightarrow B' \rightarrow C \rightarrow C'$。
+2. **拷贝随机指针**：再次遍历这个变长的链表。显然`A'->random = A->random->next`就是随机指针。
+3. **剥离还原**：最后遍历一次，把奇数位置的节点连起来还原原链表，把偶数位置的节点连起来抽出拷贝链表。
+
+```cpp
+class Solution {
+public:
+    Node* copyRandomList(Node* head) {
+        if (head == nullptr) return nullptr;
+
+        Node* curr = head;
+        while (curr != nullptr) {
+            Node* clone = new Node(curr->val);
+            clone->next = curr->next;
+            curr->next = clone;
+            curr = clone->next;
+        }
+
+        curr = head;
+        while (curr != nullptr) {
+            if (curr->random != nullptr) {
+                curr->next->random = curr->random->next;
+            }
+            curr = curr->next->next;
+        }
+
+        curr = head;
+        Node* cloneHead = head->next;
+        while (curr != nullptr) {
+            Node* clone = curr->next;
+            curr->next = clone->next;
+            if (clone->next != nullptr) {
+                clone->next = clone->next->next;
+            }
+            curr = curr->next;
+        }
+
+        return cloneHead;
+    }
+};
+```
+
