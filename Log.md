@@ -10947,3 +10947,394 @@ public:
 };
 ```
 
+
+
+### 61. 反转链表II*
+
+#### 61.1 题目
+
+给你单链表的头指针 `head` 和两个整数 `left` 和 `right` ，其中 `left <= right` 。请你反转从位置 `left` 到位置 `right` 的链表节点，返回 **反转后的链表** 。
+
+ 
+
+**示例 1：**
+
+![img](./assets/rev2ex2.jpg)
+
+```
+输入：head = [1,2,3,4,5], left = 2, right = 4
+输出：[1,4,3,2,5]
+```
+
+**示例 2：**
+
+```
+输入：head = [5], left = 1, right = 1
+输出：[5]
+```
+
+ 
+
+**提示：**
+
+- 链表中节点数目为 `n`
+- `1 <= n <= 500`
+- `-500 <= Node.val <= 500`
+- `1 <= left <= right <= n`
+
+ 
+
+**进阶：** 你可以使用一趟扫描完成反转吗？
+
+
+
+#### 61.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   public:
+    ListNode* reverseBetween(ListNode* head, int left, int right) {
+        ListNode *pre = head, *base, *tail, *curr = head;
+        bool rev = false;
+        while (curr != nullptr) {
+            ListNode* next = curr->next;
+            left--;
+            right--;
+
+            if (left == 0) {
+                base = curr == head ? nullptr : pre;
+                tail = curr;
+                rev = true;
+            } else if (rev) {
+                if (right >= 0) {
+                    curr->next = pre;
+                }
+                if (right == 0) {
+                    if (base != nullptr) {
+                        base->next = curr;
+                    } else {
+                        head = curr;
+                    }
+
+                    tail->next = next;
+
+                    break;
+                }
+            }
+
+            pre = curr;
+            curr = next;
+        }
+
+        return head;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    while (cin >> n) {
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        for (int i = 0; i < n; i++) {
+            int val;
+            cin >> val;
+
+            curr->next = new ListNode(val);
+            curr = curr->next;
+        }
+
+        int left, right;
+        cin >> left >> right;
+
+        Solution obj;
+        ListNode* rev = obj.reverseBetween(dummy.next, left, right);
+
+        curr = rev;
+        while (curr != nullptr) {
+            cout << curr->val << " ";
+            curr = curr->next;
+        }
+    }
+
+    return 0;
+```
+
+> 用上哑节点同样会省不少功夫，不过这次是在已有链表之前添加：
+>
+> ```cpp
+> #include <iostream>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     ListNode* reverseBetween(ListNode* head, int left, int right) {
+>         ListNode dummy(0);
+>         dummy.next = head;
+>         ListNode* pre = &dummy;
+> 
+>         // 先跑到开始
+>         for (int i = 0; i < left - 1; i++) {
+>             pre = pre->next;
+>         }
+> 
+>         // 定义开始时的curr
+>         ListNode* curr = pre->next;
+>         ListNode* prev = nullptr; 
+>         for (int i = 0; i < right - left + 1; i++) {
+>             ListNode* nextTemp = curr->next;
+>             curr->next = prev;
+>             prev = curr;
+>             curr = nextTemp;
+>         }
+> 
+>         pre->next->next = curr;
+>         pre->next = prev;
+> 
+>         return dummy.next;
+>     }
+> };
+> ```
+
+
+
+#### 61.3 解析
+
+我这种先内部翻转，在连接首尾的办法也还可以，但是另有一种**头插法**，更加清晰：在遍历的过程中，把要反转的节点一个个摘下来，直接插到 `pre` 节点的后面：
+
+```cpp
+class Solution {
+public:
+    ListNode* reverseBetween(ListNode* head, int left, int right) {
+        // 公式化哑节点避免头空
+        ListNode dummy(0);
+        dummy.next = head;
+        ListNode* pre = &dummy;
+
+        // 跑到开始
+        for (int i = 0; i < left - 1; i++) {
+            pre = pre->next;
+        }
+        ListNode* curr = pre->next;
+        
+        // curr 不动（就是换之后的尾巴）
+        for (int i = 0; i < right - left; i++) {
+            // 把curr->next插入到pre后
+            ListNode* nextTemp = curr->next;
+            curr->next = nextTemp->next;
+            nextTemp->next = pre->next;
+            pre->next = nextTemp;
+        }
+
+        return dummy.next;
+    }
+};
+```
+
+
+
+### 62. K个一组翻转链表*
+
+#### 62.1 题目
+
+给你链表的头节点 `head` ，每 `k` 个节点一组进行翻转，请你返回修改后的链表。
+
+`k` 是一个正整数，它的值小于或等于链表的长度。如果节点总数不是 `k` 的整数倍，那么请将最后剩余的节点保持原有顺序。
+
+你不能只是单纯的改变节点内部的值，而是需要实际进行节点交换。
+
+ 
+
+**示例 1：**
+
+![img](./assets/reverse_ex1.jpg)
+
+```
+输入：head = [1,2,3,4,5], k = 2
+输出：[2,1,4,3,5]
+```
+
+**示例 2：**
+
+![img](./assets/reverse_ex2.jpg)
+
+```
+输入：head = [1,2,3,4,5], k = 3
+输出：[3,2,1,4,5]
+```
+
+ 
+
+**提示：**
+
+- 链表中的节点数目为 `n`
+- `1 <= k <= n <= 5000`
+- `0 <= Node.val <= 1000`
+
+ 
+
+**进阶：**你可以设计一个只用 `O(1)` 额外内存空间的算法解决此问题吗？
+
+
+
+#### 62.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   public:
+    ListNode* reverseKGroup(ListNode* head, int k) {
+        ListNode dummy(0);
+        dummy.next = head;
+
+        ListNode *curr = dummy.next, *base = dummy.next, *pre = &dummy;
+        int kGroup = k;
+
+        while (curr != nullptr) {
+            ListNode* nextIndex = curr->next;
+            k--;
+
+            if (k == 0) {
+                k = kGroup;
+                ListNode* currTemp = pre->next;
+
+                while (base->next != nextIndex) {
+                    ListNode* nextTemp = base->next;
+                    base->next = nextTemp->next;
+                    nextTemp->next = pre->next;
+                    pre->next = nextTemp;
+                }
+
+                pre = currTemp;
+                base = nextIndex;
+            }
+
+            curr = nextIndex;
+        }
+
+        return dummy.next;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    while (cin >> n) {
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        for (int i = 0; i < n; i++) {
+            int val;
+            cin >> val;
+
+            curr->next = new ListNode(val);
+            curr = curr->next;
+        }
+
+        int k;
+        cin >> k;
+
+        Solution obj;
+        ListNode* rev = obj.reverseKGroup(dummy.next, k);
+
+        curr = rev;
+        while (curr != nullptr) {
+            cout << curr->val << " ";
+            curr = curr->next;
+        }
+    }
+
+    return 0;
+}
+```
+
+> `currTemp`其实就是`base`，可以删掉：
+>
+> ```cpp
+> #include <iostream>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     ListNode* reverseKGroup(ListNode* head, int k) {
+>         ListNode dummy(0);
+>         dummy.next = head;
+> 
+>         ListNode *curr = head, *pre = &dummy;
+>         int count = 0;
+> 
+>         while (curr != nullptr) {
+>             count++;
+>             ListNode* nextGroupHead = curr->next;
+> 
+>             if (count == k) {
+>                 ListNode* groupTail = pre->next;
+>                 
+>                 while (groupTail->next != nextGroupHead) {
+>                     ListNode* nextTemp = groupTail->next;
+>                     groupTail->next = nextTemp->next;
+>                     nextTemp->next = pre->next;
+>                     pre->next = nextTemp;
+>                 }
+> 
+>                 pre = groupTail;
+>                 count = 0;
+>             }
+> 
+>             curr = nextGroupHead;
+>         }
+> 
+>         return dummy.next;
+>     }
+> };
+> ```
+
+
+
+#### 62.3 解析
+
+我这个解法就是最优解了，其实是上一题的延续。此外还能用递归，但是看不出来有什么优势。
