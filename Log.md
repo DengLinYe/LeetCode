@@ -11338,3 +11338,365 @@ int main() {
 #### 62.3 解析
 
 我这个解法就是最优解了，其实是上一题的延续。此外还能用递归，但是看不出来有什么优势。
+
+
+
+
+
+### 63. 删除链表的倒数第N个节点*
+
+#### 63.1 题目
+
+给你一个链表，删除链表的倒数第 `n` 个结点，并且返回链表的头结点。
+
+ 
+
+**示例 1：**
+
+![img](./assets/remove_ex1.jpg)
+
+```
+输入：head = [1,2,3,4,5], n = 2
+输出：[1,2,3,5]
+```
+
+**示例 2：**
+
+```
+输入：head = [1], n = 1
+输出：[]
+```
+
+**示例 3：**
+
+```
+输入：head = [1,2], n = 1
+输出：[1]
+```
+
+ 
+
+**提示：**
+
+- 链表中结点的数目为 `sz`
+- `1 <= sz <= 30`
+- `0 <= Node.val <= 100`
+- `1 <= n <= sz`
+
+ 
+
+**进阶：**你能尝试使用一趟扫描实现吗？
+
+
+
+#### 63.2 解法
+
+**时间复杂度**：O(N)，**空间复杂度**：O(1)。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   public:
+    ListNode* removeNthFromEnd(ListNode* head, int n) {
+        ListNode dummy(0);
+        dummy.next = head;
+        ListNode *curr = &dummy, *preN = &dummy;
+        int count = 0;
+
+        while (curr != nullptr) {
+            if (count < n) {
+                count++;
+                curr = curr->next;
+            } else {
+                if (curr->next == nullptr) {
+                    break;
+                }
+                curr = curr->next;
+                preN = preN->next;
+            }
+        }
+
+        preN->next = preN->next->next;
+
+        return dummy.next;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    while (cin >> n) {
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        for (int i = 0; i < n; i++) {
+            int val;
+            cin >> val;
+
+            curr->next = new ListNode(val);
+            curr = curr->next;
+        }
+
+        int k;
+        cin >> k;
+
+        Solution obj;
+        ListNode* head = obj.removeNthFromEnd(dummy.next, k);
+
+        curr = head;
+        while (curr != nullptr) {
+            cout << curr->val << " ";
+
+            curr = curr->next;
+        }
+    }
+
+    return 0;
+}
+```
+
+> 其实**一次遍历两个循环**在之前的优化建议中已经出现了很多次了，这种办法能够更清晰地表征两种遍历逻辑而不需要分支语句：
+>
+> ```cpp
+> #include <iostream>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     ListNode* removeNthFromEnd(ListNode* head, int n) {
+>         ListNode dummy(0);
+>         dummy.next = head;
+>         ListNode *fast = &dummy;
+>         ListNode *slow = &dummy;
+> 
+>         // 拉开间距
+>         for (int i = 0; i <= n; i++) {
+>             fast = fast->next;
+>         }
+> 
+>         // 并进
+>         while (fast != nullptr) {
+>             fast = fast->next;
+>             slow = slow->next;
+>         }
+> 
+>         slow->next = slow->next->next;
+> 
+>         return dummy.next;
+>     }
+> };
+> ```
+
+
+
+#### 63.3 解析
+
+这道题初看确实有点吓人，但结合之前这么多的双指针经验，其实不难发现这个解法，我大致的思路是：一个`vector`另存全部`index` -> 没必要全部存，有没有办法只存倒数第N个 -> 用`pre`表征前一个，那么用N个`pre`即可 -> 用`preN`不就可以只存前第N个，至此解出。
+
+
+
+
+
+### 64. 删除排序链表中的重复元素II*
+
+#### 64.1 题目
+
+给定一个已排序的链表的头 `head` ， *删除原始链表中所有重复数字的节点，只留下不同的数字* 。返回 *已排序的链表* 。
+
+ 
+
+**示例 1：**
+
+![img](./assets/linkedlist1.jpg)
+
+```
+输入：head = [1,2,3,3,4,4,5]
+输出：[1,2,5]
+```
+
+**示例 2：**
+
+![img](./assets/linkedlist2.jpg)
+
+```
+输入：head = [1,1,1,2,3]
+输出：[2,3]
+```
+
+ 
+
+**提示：**
+
+- 链表中节点数目在范围 `[0, 300]` 内
+- `-100 <= Node.val <= 100`
+- 题目数据保证链表已经按升序 **排列**
+
+
+
+#### 64.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   public:
+    ListNode* deleteDuplicates(ListNode* head) {
+        if (head == nullptr) return head;
+
+        ListNode dummy(0);
+        dummy.next = head;
+        ListNode *pre = &dummy, *curr = head->next;
+
+        while (curr != nullptr) {
+            int nowVal = pre->next->val;
+            if (curr->val == nowVal) {
+                while (curr != nullptr && curr->val == nowVal) {
+                    pre->next = curr->next;
+                    curr = curr->next;
+                }
+                if (curr == nullptr || curr->next == nullptr) {
+                    break;
+                }
+                curr = curr->next;
+            } else {
+                pre = pre->next;
+                curr = curr->next;
+            }
+        }
+
+        return dummy.next;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    while (cin >> n) {
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        for (int i = 0; i < n; i++) {
+            int val;
+            cin >> val;
+
+            curr->next = new ListNode(val);
+            curr = curr->next;
+        }
+
+        Solution obj;
+        ListNode* head = obj.deleteDuplicates(dummy.next);
+
+        curr = head;
+        while (curr != nullptr) {
+            cout << curr->val << " ";
+
+            curr = curr->next;
+        }
+    }
+
+    return 0;
+}
+```
+
+> 依旧修修补补的逻辑，捋顺之后是这样：
+>
+> ```cpp
+> #include <iostream>
+> 
+> using namespace std;
+> 
+> class Solution {
+> public:
+>     ListNode* deleteDuplicates(ListNode* head) {
+>         ListNode dummy(0);
+>         dummy.next = head;
+>         
+>         ListNode* pre = &dummy;
+>         ListNode* curr = head;
+> 
+>         while (curr != nullptr && curr->next != nullptr) {
+>             if (curr->val == curr->next->val) {
+>                 int duplicateVal = curr->val;
+>                 while (curr != nullptr && curr->val == duplicateVal) {
+>                     curr = curr->next;
+>                 }
+>                 pre->next = curr;
+>             } else {
+>                 pre = pre->next;
+>                 curr = curr->next;
+>             }
+>         }
+> 
+>         return dummy.next;
+>     }
+> };
+> ```
+>
+> 
+
+
+
+#### 64.3 解析
+
+我这个解法自然是最优解。但是最近几道题，都可以用递归解决，递归的缺点是递归调用的额外消耗，优点可能是比较简洁，但是在可读性上又差了不少，我更倾向于在不得不使用时使用。本题的递归解法参考：
+
+```cpp
+class Solution {
+public:
+    ListNode* deleteDuplicates(ListNode* head) {
+        if (head == nullptr || head->next == nullptr) {
+            return head;
+        }
+
+        if (head->val == head->next->val) {
+            int duplicateVal = head->val;
+            while (head != nullptr && head->val == duplicateVal) {
+                head = head->next;
+            }
+            return deleteDuplicates(head);
+        } else {
+            head->next = deleteDuplicates(head->next);
+            return head;
+        }
+    }
+};
+```
+
