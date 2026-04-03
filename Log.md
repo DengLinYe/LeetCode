@@ -11700,3 +11700,337 @@ public:
 };
 ```
 
+
+
+### 65. 旋转链表*
+
+#### 65.1 题目
+
+给你一个链表的头节点 `head` ，旋转链表，将链表每个节点向右移动 `k` 个位置。
+
+ 
+
+**示例 1：**
+
+![img](./assets/rotate1.jpg)
+
+```
+输入：head = [1,2,3,4,5], k = 2
+输出：[4,5,1,2,3]
+```
+
+**示例 2：**
+
+![img](./assets/roate2.jpg)
+
+```
+输入：head = [0,1,2], k = 4
+输出：[2,0,1]
+```
+
+ 
+
+**提示：**
+
+- 链表中节点的数目在范围 `[0, 500]` 内
+- `-100 <= Node.val <= 100`
+- `0 <= k <= 2 * 109`
+
+
+
+#### 65.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
+};
+
+class Solution {
+public:
+    ListNode* rotateRight(ListNode* head, int k) {
+        if (head == nullptr) return head;
+        
+        ListNode dummy(0);
+        dummy.next = head;
+        ListNode *slow = &dummy, *fast = &dummy;
+        int n = 0;
+        
+        while (fast->next != nullptr) {
+            n++;
+            fast = fast->next;
+        }
+        
+        k = k % n;
+        if (k == 0) return head;
+        
+        fast = &dummy;
+        for (int i = 0; i < k; i++) {
+            fast = fast->next;
+        }
+        
+        while (fast->next != nullptr) {
+            fast = fast->next;
+            slow = slow->next;
+        }
+        
+        fast->next = dummy.next;
+        dummy.next = slow->next;
+        slow->next = nullptr;
+        
+        return dummy.next;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (cin >> n) {
+        if (n == 0) {
+            cout << "\n";
+            return 0;
+        }
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+        for (int i = 0; i < n; i++) {
+            int val;
+            cin >> val;
+            curr->next = new ListNode(val);
+            curr = curr->next;
+        }
+        int k;
+        cin >> k;
+
+        Solution obj;
+        ListNode* res = obj.rotateRight(dummy.next, k);
+
+        while (res != nullptr) {
+            cout << res->val << " ";
+            res = res->next;
+        }
+        cout << "\n";
+    }
+
+    return 0;
+}
+```
+
+> 这里其实有点冗余，因为走过一遍统计`n`大小，所以倒数第`k`个其实就是正数第`n-k`个。
+
+
+
+#### 65.3 解析
+
+无论是我这种，还是别的等效的解法，本质上都是先连成环，后定位新尾部并截断。下面是优化版：
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    ListNode* rotateRight(ListNode* head, int k) {
+        if (head == nullptr || head->next == nullptr || k == 0) {
+            return head;
+        }
+
+        ListNode* tail = head;
+        int n = 1;
+        while (tail->next != nullptr) {
+            tail = tail->next;
+            n++;
+        }
+
+        k = k % n;
+        if (k == 0) {
+            return head;
+        }
+
+        tail->next = head;
+
+        ListNode* newTail = head;
+        for (int i = 0; i < n - k - 1; i++) {
+            newTail = newTail->next;
+        }
+
+        ListNode* newHead = newTail->next;
+        newTail->next = nullptr;
+
+        return newHead;
+    }
+};
+```
+
+
+
+
+
+### 66. 分隔链表*
+
+#### 66.1 题目
+
+给你一个链表的头节点 `head` 和一个特定值 `x` ，请你对链表进行分隔，使得所有 **小于** `x` 的节点都出现在 **大于或等于** `x` 的节点之前。
+
+你应当 **保留** 两个分区中每个节点的初始相对位置。
+
+ 
+
+**示例 1：**
+
+![img](./assets/partition.jpg)
+
+```
+输入：head = [1,4,3,2,5,2], x = 3
+输出：[1,2,2,4,3,5]
+```
+
+**示例 2：**
+
+```
+输入：head = [2,1], x = 2
+输出：[1,2]
+```
+
+ 
+
+**提示：**
+
+- 链表中节点的数目在范围 `[0, 200]` 内
+- `-100 <= Node.val <= 100`
+- `-200 <= x <= 200`
+
+
+
+#### 66.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode *next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode *next) : val(x), next(next) {}
+};
+
+class Solution {
+public:
+    ListNode* partition(ListNode* head, int x) {
+        if (head == nullptr) return head;
+        
+        ListNode dummy(0);
+        dummy.next = head;
+        ListNode *curr = &dummy, *pre = &dummy;
+        
+        while (curr->next != nullptr && curr == pre && curr->next->val < x) {
+            pre = pre->next;
+            curr = curr->next;
+        }
+        
+        while (curr != nullptr && curr->next != nullptr) {
+            if (curr->next->val < x) {
+                ListNode *temp = curr->next;
+                curr->next = temp->next;
+                temp->next = pre->next;
+                pre->next = temp;
+                pre = pre->next;
+            } else {
+                curr = curr->next;
+            }
+        }
+        
+        return dummy.next;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (cin >> n) {
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        for (int i = 0; i < n; i++) {
+            int val;
+            cin >> val;
+            curr->next = new ListNode(val);
+            curr = curr->next;
+        }
+
+        int x;
+        cin >> x;
+
+        Solution obj;
+        ListNode* res = obj.partition(dummy.next, x);
+
+        while (res != nullptr) {
+            cout << res->val << " ";
+            res = res->next;
+        }
+        cout << "\n";
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 66.3 解析
+
+本质上也是之前一个题的变式，把后面的节点抽出并插入到一个节点上。这里面有两点比较关键：一个是抽出的点恰好是要插入的位置的下一个点，这样会造成自环；另一个是如果抽出之后直接进入下一个节点，那么就会忽略“连续几个都小于x”的这种情况，造成错误。
+
+总的来说我这种办法思维负担还是比较大的，而利用链表的特点，其实可以直接弄两个链表，最后合并即可：
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    ListNode* partition(ListNode* head, int x) {
+        ListNode smallDummy(0);
+        ListNode largeDummy(0);
+        ListNode* small = &smallDummy;
+        ListNode* large = &largeDummy;
+        
+        while (head != nullptr) {
+            if (head->val < x) {
+                small->next = head;
+                small = small->next;
+            } else {
+                large->next = head;
+                large = large->next;
+            }
+            head = head->next;
+        }
+        
+        large->next = nullptr;
+        small->next = largeDummy.next;
+        
+        return smallDummy.next;
+    }
+};
+```
+
