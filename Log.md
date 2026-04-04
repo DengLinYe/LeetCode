@@ -12034,3 +12034,400 @@ public:
 };
 ```
 
+
+
+### 67. LRU缓存*
+
+#### 67.1 题目
+
+请你设计并实现一个满足 [LRU (最近最少使用) 缓存](https://baike.baidu.com/item/LRU) 约束的数据结构。
+
+实现 `LRUCache` 类：
+
+- `LRUCache(int capacity)` 以 **正整数** 作为容量 `capacity` 初始化 LRU 缓存
+- `int get(int key)` 如果关键字 `key` 存在于缓存中，则返回关键字的值，否则返回 `-1` 。
+- `void put(int key, int value)` 如果关键字 `key` 已经存在，则变更其数据值 `value` ；如果不存在，则向缓存中插入该组 `key-value` 。如果插入操作导致关键字数量超过 `capacity` ，则应该 **逐出** 最久未使用的关键字。
+
+函数 `get` 和 `put` 必须以 `O(1)` 的平均时间复杂度运行。
+
+ 
+
+**示例：**
+
+```
+输入
+["LRUCache", "put", "put", "get", "put", "get", "put", "get", "get", "get"]
+[[2], [1, 1], [2, 2], [1], [3, 3], [2], [4, 4], [1], [3], [4]]
+输出
+[null, null, null, 1, null, -1, null, -1, 3, 4]
+
+解释
+LRUCache lRUCache = new LRUCache(2);
+lRUCache.put(1, 1); // 缓存是 {1=1}
+lRUCache.put(2, 2); // 缓存是 {1=1, 2=2}
+lRUCache.get(1);    // 返回 1
+lRUCache.put(3, 3); // 该操作会使得关键字 2 作废，缓存是 {1=1, 3=3}
+lRUCache.get(2);    // 返回 -1 (未找到)
+lRUCache.put(4, 4); // 该操作会使得关键字 1 作废，缓存是 {4=4, 3=3}
+lRUCache.get(1);    // 返回 -1 (未找到)
+lRUCache.get(3);    // 返回 3
+lRUCache.get(4);    // 返回 4
+```
+
+ 
+
+**提示：**
+
+- `1 <= capacity <= 3000`
+- `0 <= key <= 10000`
+- `0 <= value <= 105`
+- 最多调用 `2 * 105` 次 `get` 和 `put`
+
+
+
+#### 67.2 解法
+
+**时间复杂度**：$O(1)$，**空间复杂度**：$O(Capacity)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct Pages {
+    int key;
+    int val;
+    Pages* pre;
+    Pages* next;
+
+    Pages() : key(-1), val(-1), pre(nullptr), next(nullptr) {}
+    Pages(int key, int val) : key(key), val(val), pre(nullptr), next(nullptr) {}
+};
+
+class LRUCache {
+   private:
+    int cap, size;
+    unordered_map<int, Pages*> cache;
+    Pages* CahceHead;
+    Pages* CacheTail;
+
+   public:
+    LRUCache(int capacity) {
+        size = 0;
+        cap = capacity;
+        CahceHead = new Pages();
+        CacheTail = new Pages();
+        CacheTail->pre = CahceHead;
+        CahceHead->next = CacheTail;
+    }
+
+    int get(int key) {
+        if (!cache.count(key)) {
+            return -1;
+        } else {
+            moveToHead(cache[key]);
+
+            return cache[key]->val;
+        }
+    }
+
+    void put(int key, int value) {
+        if (!cache.count(key)) {
+            size++;
+            Pages* temp = CahceHead->next;
+            CahceHead->next = new Pages(key, value);
+            CahceHead->next->next = temp;
+            temp->pre = CahceHead->next;
+            CahceHead->next->pre = CahceHead;
+            cache[key] = CahceHead->next;
+
+            if (size > cap) {
+                removeTail();
+                size--;
+            }
+        } else {
+            cache[key]->val = value;
+            moveToHead(cache[key]);
+        }
+    }
+
+   private:
+    void moveToHead(Pages* curr) {
+        curr->pre->next = curr->next;
+        curr->next->pre = curr->pre;
+
+        Pages* temp = CahceHead->next;
+        CahceHead->next = curr;
+        curr->pre = CahceHead;
+        curr->next = temp;
+        temp->pre = curr;
+    }
+
+    void removeTail() {
+        cache.erase(CacheTail->pre->key);
+        Pages* temp = CacheTail->pre;
+        temp->pre->next = CacheTail;
+        CacheTail->pre = temp->pre;
+        delete temp;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    LRUCache* lRUCache = nullptr;
+
+    for (int i = 0; i < n; ++i) {
+        string op;
+        cin >> op;
+        if (op == "LRUCache") {
+            int capacity;
+            cin >> capacity;
+            lRUCache = new LRUCache(capacity);
+            cout << "null ";
+        } else if (op == "put") {
+            int key, value;
+            cin >> key >> value;
+            lRUCache->put(key, value);
+            cout << "null ";
+        } else if (op == "get") {
+            int key;
+            cin >> key;
+            cout << lRUCache->get(key) << " ";
+        }
+    }
+    cout << endl;
+
+    return 0;
+}
+```
+
+> 可以把两个辅助函数猜得更开一些，比如一个`addToHead`和一个`remove`等
+
+
+
+#### 67.3 解析
+
+这个思路基本上就是最优解，但是还可以写得更容易一些，`STL`的`list`就存在$O(1)$时间复杂度的移动函数：
+
+```cpp
+#include <list>
+#include <unordered_map>
+
+class LRUCache {
+    int cap;
+    list<pair<int, int>> l; // 存储 {key, value}
+    unordered_map<int, list<pair<int, int>>::iterator> m; // key 映射到 list 的迭代器
+
+public:
+    LRUCache(int capacity) : cap(capacity) {}
+
+    int get(int key) {
+        if (m.find(key) == m.end()) return -1;
+        // splice 将元素移动到链表头部
+        l.splice(l.begin(), l, m[key]);
+        return m[key]->second;
+    }
+
+    void put(int key, int value) {
+        if (m.find(key) != m.end()) {
+            l.splice(l.begin(), l, m[key]);
+            m[key]->second = value;
+            return;
+        }
+        if (l.size() == cap) {
+            auto d_key = l.back().first;
+            l.pop_back();
+            m.erase(d_key);
+        }
+        l.push_front({key, value});
+        m[key] = l.begin();
+    }
+};
+```
+
+
+
+## 九、二叉树
+
+### 68. 二叉树的最大深度*/**
+
+#### 68.1 题目
+
+给定一个二叉树 `root` ，返回其最大深度。
+
+二叉树的 **最大深度** 是指从根节点到最远叶子节点的最长路径上的节点数。
+
+ 
+
+**示例 1：**
+
+![img](./assets/tmp-tree.jpg)
+
+ 
+
+```
+输入：root = [3,9,20,null,null,15,7]
+输出：3
+```
+
+**示例 2：**
+
+```
+输入：root = [1,null,2]
+输出：2
+```
+
+ 
+
+**提示：**
+
+- 树中节点的数量在 `[0, 104]` 区间内。
+- `-100 <= Node.val <= 100`
+
+
+
+#### 68.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(H)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+public:
+    int maxDepth(TreeNode* root) { 
+        return DeepCount(root, 0); 
+    }
+
+private:
+    int DeepCount(TreeNode* node, int depth) {
+        if (node == nullptr) {
+            return depth;
+        } else {
+            return max(DeepCount(node->left, depth + 1), DeepCount(node->right, depth + 1));
+        }
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (cin >> n) {
+        if (n == 0) {
+            cout << 0 << "\n";
+            return 0;
+        }
+
+        vector<string> vals(n);
+        for (int i = 0; i < n; i++) {
+            cin >> vals[i];
+        }
+
+        TreeNode* root = new TreeNode(stoi(vals[0]));
+        queue<TreeNode*> q;
+        q.push(root);
+        int i = 1;
+
+        while (!q.empty() && i < n) {
+            TreeNode* curr = q.front();
+            q.pop();
+
+            if (i < n && vals[i] != "-1") {
+                curr->left = new TreeNode(stoi(vals[i]));
+                q.push(curr->left);
+            }
+            i++;
+
+            if (i < n && vals[i] != "-1") {
+                curr->right = new TreeNode(stoi(vals[i]));
+                q.push(curr->right);
+            }
+            i++;
+        }
+
+        Solution obj;
+        cout << obj.maxDepth(root) << "\n";
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 68.3 解析
+
+递归虽然空间复杂度差，写起来难，但是确实很漂亮！我这个算是很基础的版本，另外最简单的递归是这样的：
+
+```cpp
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+        if (root == nullptr) return 0;
+        return max(maxDepth(root->left), maxDepth(root->right)) + 1;
+    }
+};
+```
+
+十分漂亮的代码，完全体现了数学的美感。当然在工程上搞这些意义不大，传统非递归算法在这一块更权威：
+
+```cpp
+#include <algorithm>
+#include <queue>
+
+using namespace std;
+
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+        if (root == nullptr) return 0;
+        
+        queue<TreeNode*> q;
+        q.push(root);
+        int depth = 0;
+        
+        while (!q.empty()) {
+            int levelSize = q.size();
+            for (int i = 0; i < levelSize; i++) {
+                TreeNode* node = q.front();
+                q.pop();
+                
+                if (node->left != nullptr) q.push(node->left);
+                if (node->right != nullptr) q.push(node->right);
+            }
+            depth++;
+        }
+        
+        return depth;
+    }
+};
+```
+
+这就是大名鼎鼎的**广度优先搜索**。
