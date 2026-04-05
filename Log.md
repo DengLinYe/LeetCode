@@ -12431,3 +12431,401 @@ public:
 ```
 
 这就是大名鼎鼎的**广度优先搜索**。
+
+
+
+
+
+### 69. 相同的树*
+
+#### 69.1 题目
+
+给你两棵二叉树的根节点 `p` 和 `q` ，编写一个函数来检验这两棵树是否相同。
+
+如果两个树在结构上相同，并且节点具有相同的值，则认为它们是相同的。
+
+ 
+
+**示例 1：**
+
+![img](./assets/ex1.jpg)
+
+```
+输入：p = [1,2,3], q = [1,2,3]
+输出：true
+```
+
+**示例 2：**
+
+![img](./assets/ex2.jpg)
+
+```
+输入：p = [1,2], q = [1,null,2]
+输出：false
+```
+
+**示例 3：**
+
+![img](./assets/ex3.jpg)
+
+```
+输入：p = [1,2,1], q = [1,1,2]
+输出：false
+```
+
+ 
+
+**提示：**
+
+- 两棵树上的节点数目都在范围 `[0, 100]` 内
+- `-104 <= Node.val <= 104`
+
+
+
+#### 69.2 解法
+
+**时间复杂度**：$O(\min(N, M))$，**空间复杂度**：$O(\min(H_1, H_2))$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+        if (p == nullptr && q == nullptr) {
+            return true;
+        } else if (p == nullptr || q == nullptr) {
+            return false;
+        } else if (p->val != q->val) {
+            return false;
+        } else {
+            return isSameTree(p->left, q->left) && isSameTree(p->right, q->right);
+        }
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    if (!(cin >> n >> m)) return 0;
+
+    if (n == 0 && m == 0) {
+        cout << "true\n";
+        return 0;
+    }
+
+    vector<string> pNum(n), qNum(m);
+    for (int i = 0; i < n; i++) cin >> pNum[i];
+    for (int i = 0; i < m; i++) cin >> qNum[i];
+
+    TreeNode* pRoot = n > 0 ? new TreeNode(stoi(pNum[0])) : nullptr;
+    TreeNode* qRoot = m > 0 ? new TreeNode(stoi(qNum[0])) : nullptr;
+
+    if (pRoot != nullptr) {
+        queue<TreeNode*> p;
+        p.push(pRoot);
+        int i = 1;
+        while (!p.empty() && i < n) {
+            TreeNode* curr = p.front();
+            p.pop();
+            if (i < n && pNum[i] != "-1") {
+                curr->left = new TreeNode(stoi(pNum[i]));
+                p.push(curr->left);
+            }
+            i++;
+            if (i < n && pNum[i] != "-1") {
+                curr->right = new TreeNode(stoi(pNum[i]));
+                p.push(curr->right);
+            }
+            i++;
+        }
+    }
+
+    if (qRoot != nullptr) {
+        queue<TreeNode*> q;
+        q.push(qRoot);
+        int i = 1;
+        while (!q.empty() && i < m) {
+            TreeNode* curr = q.front();
+            q.pop();
+            if (i < m && qNum[i] != "-1") {
+                curr->left = new TreeNode(stoi(qNum[i]));
+                q.push(curr->left);
+            }
+            i++;
+            if (i < m && qNum[i] != "-1") {
+                curr->right = new TreeNode(stoi(qNum[i]));
+                q.push(curr->right);
+            }
+            i++;
+        }
+    }
+
+    Solution obj;
+    cout << (obj.isSameTree(pRoot, qRoot) ? "true" : "false") << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 69.3 解析
+
+同样地，也能用广度优先搜索：
+
+```cpp
+#include <queue>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+        queue<TreeNode*> qu;
+        qu.push(p);
+        qu.push(q);
+
+        while (!qu.empty()) {
+            TreeNode* node1 = qu.front(); 
+            qu.pop();
+            TreeNode* node2 = qu.front(); 
+            qu.pop();
+
+            if (node1 == nullptr && node2 == nullptr) {
+                continue;
+            }
+            if (node1 == nullptr || node2 == nullptr || node1->val != node2->val) {
+                return false;
+            }
+
+            qu.push(node1->left);
+            qu.push(node2->left);
+            
+            qu.push(node1->right);
+            qu.push(node2->right);
+        }
+
+        return true;
+    }
+};
+```
+
+
+
+### 70. 翻转二叉树*
+
+#### 70.1 题目
+
+给你一棵二叉树的根节点 `root` ，翻转这棵二叉树，并返回其根节点。
+
+ 
+
+**示例 1：**
+
+![img](./assets/invert1-tree.jpg)
+
+```
+输入：root = [4,2,7,1,3,6,9]
+输出：[4,7,2,9,6,3,1]
+```
+
+**示例 2：**
+
+![img](./assets/invert2-tree.jpg)
+
+```
+输入：root = [2,1,3]
+输出：[2,3,1]
+```
+
+**示例 3：**
+
+```
+输入：root = []
+输出：[]
+```
+
+ 
+
+**提示：**
+
+- 树中节点数目范围在 `[0, 100]` 内
+- `-100 <= Node.val <= 100`
+
+
+
+#### 70.2 解法
+
+**时间复杂度**：$O(N)$， **空间复杂度**：$O(H)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+public:
+    TreeNode* invertTree(TreeNode* root) {
+        if (root == nullptr) {
+            return root;
+        } else {
+            TreeNode* temp = root->left;
+            root->left = root->right;
+            root->right = temp;
+            invertTree(root->right);
+            invertTree(root->left);
+        }
+
+        return root;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+    if (n == 0) return 0;
+
+    vector<string> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(nums[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && nums[i] != "-1") {
+            curr->left = new TreeNode(stoi(nums[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && nums[i] != "-1") {
+            curr->right = new TreeNode(stoi(nums[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    root = obj.invertTree(root);
+    
+    queue<TreeNode*> outQ;
+    if (root != nullptr) {
+        outQ.push(root);
+    }
+
+    while (!outQ.empty()) {
+        TreeNode* curr = outQ.front();
+        outQ.pop();
+        
+        cout << curr->val << " ";
+        
+        if (curr->left != nullptr) {
+            outQ.push(curr->left);
+        }
+        if (curr->right != nullptr) {
+            outQ.push(curr->right);
+        }
+    }
+    cout << "\n";
+
+    return 0;
+}
+```
+
+> `swap`也能用：
+>
+> ```cpp
+> #include <algorithm>
+> 
+> class Solution {
+> public:
+>     TreeNode* invertTree(TreeNode* root) {
+>         if (root == nullptr) return nullptr;
+>         
+>         invertTree(root->left);
+>         invertTree(root->right);
+>         
+>         std::swap(root->left, root->right);
+>         
+>         return root;
+>     }
+> };
+> ```
+
+
+
+#### 70.1 解析
+
+同样地也能广度优先搜索：
+
+```cpp
+#include <queue>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+public:
+    TreeNode* invertTree(TreeNode* root) {
+        if (root == nullptr) return nullptr;
+        
+        queue<TreeNode*> q;
+        q.push(root);
+        
+        while (!q.empty()) {
+            TreeNode* curr = q.front();
+            q.pop();
+            
+            swap(curr->left, curr->right);
+            
+            if (curr->left != nullptr) q.push(curr->left);
+            if (curr->right != nullptr) q.push(curr->right);
+        }
+        
+        return root;
+    }
+};
+```
+
