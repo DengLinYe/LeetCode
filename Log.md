@@ -12829,3 +12829,435 @@ public:
 };
 ```
 
+
+
+
+
+### 71. 对称二叉树*
+
+#### 71.1 题目
+
+给你一个二叉树的根节点 `root` ， 检查它是否轴对称。
+
+ 
+
+**示例 1：**
+
+![img](./assets/1698026966-JDYPDU-image.png)
+
+```
+输入：root = [1,2,2,3,4,4,3]
+输出：true
+```
+
+**示例 2：**
+
+![img](./assets/1698027008-nPFLbM-image.png)
+
+```
+输入：root = [1,2,2,null,3,null,3]
+输出：false
+```
+
+ 
+
+**提示：**
+
+- 树中节点数目在范围 `[1, 1000]` 内
+- `-100 <= Node.val <= 100`
+
+ 
+
+**进阶：**你可以运用递归和迭代两种方法解决这个问题吗？
+
+
+
+#### 71.2 解法
+
+**时间复杂度**：**$O(N)$**，**空间复杂度**：**$O(H)$**。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    bool isSymmetric(TreeNode* root) {
+        if (root == nullptr) {
+            return true;
+        } else {
+            return compareNodes(root->left, root->right);
+        }
+    }
+
+   private:
+    bool compareNodes(TreeNode* left, TreeNode* right) {
+        if (left == nullptr && right == nullptr) {
+            return true;
+        } else if (left == nullptr || right == nullptr) {
+            return false;
+        } else {
+            if (left->val == right->val) {
+                return compareNodes(left->left, right->right) && compareNodes(left->right, right->left);
+            } else {
+                return false;
+            }
+        }
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    if (n <= 0) return 0;
+
+    vector<string> nodes(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nodes[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(nodes[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && nodes[i] != "null") {
+            curr->left = new TreeNode(stoi(nodes[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && nodes[i] != "null") {
+            curr->right = new TreeNode(stoi(nodes[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    cout << obj.isSymmetric(root);
+
+    return 0;
+}
+```
+
+> 逻辑可以写得再简洁些（少用else、else if）：
+>
+> ```cpp
+> class Solution {
+> public:
+>     bool isSymmetric(TreeNode* root) {
+>         if (root == nullptr) return true;
+>         return compareNodes(root->left, root->right);
+>     }
+> 
+> private:
+>     bool compareNodes(TreeNode* left, TreeNode* right) {
+>         if (left == nullptr && right == nullptr) return true;
+>         if (left == nullptr || right == nullptr) return false;
+>         
+>         return (left->val == right->val) && 
+>                compareNodes(left->left, right->right) && 
+>                compareNodes(left->right, right->left);
+>     }
+> };
+> ```
+
+
+
+#### 71.3 解析
+
+题目的迭代法，其实就是**BFS**：
+
+```cpp
+#include <queue>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isSymmetric(TreeNode* root) {
+        if (root == nullptr) return true;
+        
+        queue<TreeNode*> q;
+        q.push(root->left);
+        q.push(root->right);
+        
+        while (!q.empty()) {
+            TreeNode* leftNode = q.front();
+            q.pop();
+            TreeNode* rightNode = q.front();
+            q.pop();
+            
+            if (leftNode == nullptr && rightNode == nullptr) continue;
+            
+            if (leftNode == nullptr || rightNode == nullptr || leftNode->val != rightNode->val) {
+                return false;
+            }
+            
+            // 按比较需求成对入队
+            q.push(leftNode->left);
+            q.push(rightNode->right);
+            
+            q.push(leftNode->right);
+            q.push(rightNode->left);
+        }
+        
+        return true;
+    }
+};
+```
+
+
+
+### 72. 从前序与中序遍历序列构造二叉树**（@）
+
+#### 72.1 题目
+
+给定两个整数数组 `preorder` 和 `inorder` ，其中 `preorder` 是二叉树的**先序遍历**， `inorder` 是同一棵树的**中序遍历**，请构造二叉树并返回其根节点。
+
+ 
+
+**示例 1:**
+
+![img](./assets/tree.jpg)
+
+```
+输入: preorder = [3,9,20,15,7], inorder = [9,3,15,20,7]
+输出: [3,9,20,null,null,15,7]
+```
+
+**示例 2:**
+
+```
+输入: preorder = [-1], inorder = [-1]
+输出: [-1]
+```
+
+ 
+
+**提示:**
+
+- `1 <= preorder.length <= 3000`
+- `inorder.length == preorder.length`
+- `-3000 <= preorder[i], inorder[i] <= 3000`
+- `preorder` 和 `inorder` 均 **无重复** 元素
+- `inorder` 均出现在 `preorder`
+- `preorder` **保证** 为二叉树的前序遍历序列
+- `inorder` **保证** 为二叉树的中序遍历序列
+
+
+
+#### 72.2 解法
+
+**时间复杂度**：$O(N^2)$，**空间复杂度**：$O(N^2)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+        TreeNode* root = new TreeNode();
+        buildSubTree(root, preorder, inorder);
+
+        return root;
+    }
+
+   private:
+    void buildSubTree(TreeNode* root, vector<int>& preorder, vector<int>& inorder) {
+        root->val = preorder[0];
+        auto mid = find(inorder.begin(), inorder.end(), preorder[0]);
+        int midIndex = distance(inorder.begin(), mid);
+
+        if (mid != inorder.begin()) {
+            root->left = new TreeNode();
+            vector<int> preLeftSub(preorder.begin() + 1, preorder.begin() + 1 + midIndex);
+            vector<int> inLeftSub(inorder.begin(), mid);
+            buildSubTree(root->left, preLeftSub, inLeftSub);
+        }
+        if (mid != inorder.end() - 1) {
+            root->right = new TreeNode();
+            vector<int> preRightSub(preorder.begin() + 1 + midIndex, preorder.end());
+            vector<int> inRightSub(mid + 1, inorder.end());
+            buildSubTree(root->right, preRightSub, inRightSub);
+        }
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<int> preorder(n), inorder(n);
+    for (int i = 0; i < n; i++) {
+        cin >> preorder[i];
+    }
+    for (int i = 0; i < n; i++) {
+        cin >> inorder[i];
+    }
+
+    Solution obj;
+    TreeNode* root = obj.buildTree(preorder, inorder);
+    queue<TreeNode*> q;
+    q.push(root);
+    cout << root->val << " ";
+
+    while (!q.empty()) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (curr->left != nullptr) {
+            cout << curr->left->val << " ";
+            q.push(curr->left);
+        } else {
+            cout << "null ";
+        }
+
+        if (curr->right != nullptr) {
+            cout << curr->right->val << " ";
+            q.push(curr->right);
+        } else {
+            cout << "null ";
+        }
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 72.3 解析
+
+递归的办法不错，但是在定位（用了find）和切割（用了拷贝）两个部分的选择失误导致了复杂度飙升，而若使用哈希表和零拷贝，即可解决这两问题：
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+private:
+    unordered_map<int, int> index_map;
+
+    // 只传下标，不拷贝
+    TreeNode* myBuildTree(const vector<int>& preorder, int pre_left, int pre_right, 
+                          int in_left, int in_right) {
+        if (pre_left > pre_right) return nullptr;
+
+        // 前序遍历的第一个节点就是根节点
+        int root_val = preorder[pre_left];
+        TreeNode* root = new TreeNode(root_val);
+        
+        // 在中序遍历中定位根节点
+        int in_root_index = index_map[root_val];
+        
+        // 计算左子树节点个数
+        int left_subtree_size = in_root_index - in_left;
+
+        // 递归构造左子树
+        root->left = myBuildTree(preorder, pre_left + 1, pre_left + left_subtree_size, 
+                                 in_left, in_root_index - 1);
+        
+        // 递归构造右子树
+        root->right = myBuildTree(preorder, pre_left + left_subtree_size + 1, pre_right, 
+                                  in_root_index + 1, in_right);
+        
+        return root;
+    }
+
+public:
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+        int n = preorder.size();
+        for (int i = 0; i < n; i++) {
+            index_map[inorder[i]] = i;
+        }
+        return myBuildTree(preorder, 0, n - 1, 0, n - 1);
+    }
+};
+```
+
+此外，迭代法也是可行的：
+
+```cpp
+#include <stack>
+
+class Solution {
+public:
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+        if (preorder.empty()) return nullptr;
+
+        TreeNode* root = new TreeNode(preorder[0]);
+        // 栈压入中间节点（左）
+        stack<TreeNode*> st;
+        st.push(root);
+        int inorderIndex = 0;
+
+        for (int i = 1; i < preorder.size(); i++) {
+            int preorderVal = preorder[i];
+            TreeNode* node = st.top();
+            
+            // 如果栈顶元素等于中序遍历数组的当前元素，说明需要转向添加右边节点，否则一直添加左节点。
+            if (node->val != inorder[inorderIndex]) {
+                node->left = new TreeNode(preorderVal);
+                st.push(node->left);
+            } else {
+                while (!st.empty() && st.top()->val == inorder[inorderIndex]) {
+                    node = st.top();
+                    st.pop();
+                    inorderIndex++;
+                }
+                node->right = new TreeNode(preorderVal);
+                st.push(node->right);
+            }
+        }
+        return root;
+    }
+};
+```
+
