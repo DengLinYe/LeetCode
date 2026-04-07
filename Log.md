@@ -13261,3 +13261,571 @@ public:
 };
 ```
 
+
+
+### 73. 从中序与后序遍历序列构造二叉树*
+
+#### 73.1 题目
+
+给定两个整数数组 `inorder` 和 `postorder` ，其中 `inorder` 是二叉树的中序遍历， `postorder` 是同一棵树的后序遍历，请你构造并返回这颗 *二叉树* 。
+
+ 
+
+**示例 1:**
+
+![img](./assets/tree-1775524726678-1.jpg)
+
+```
+输入：inorder = [9,3,15,20,7], postorder = [9,15,7,20,3]
+输出：[3,9,20,null,null,15,7]
+```
+
+**示例 2:**
+
+```
+输入：inorder = [-1], postorder = [-1]
+输出：[-1]
+```
+
+ 
+
+**提示:**
+
+- `1 <= inorder.length <= 3000`
+- `postorder.length == inorder.length`
+- `-3000 <= inorder[i], postorder[i] <= 3000`
+- `inorder` 和 `postorder` 都由 **不同** 的值组成
+- `postorder` 中每一个值都在 `inorder` 中
+- `inorder` **保证**是树的中序遍历
+- `postorder` **保证**是树的后序遍历
+
+
+
+#### 73.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   private:
+    unordered_map<int, int> index;
+
+    TreeNode* buildSubTree(const vector<int>& postorder, int inLeft, int inRight, int postLeft, int postRight) {
+        if (postLeft > postRight) return nullptr;
+
+        int rootVal = postorder[postRight];
+        TreeNode* root = new TreeNode(rootVal);
+
+        int inRootIndex = index[rootVal];
+        int leftSize = inRootIndex - inLeft;
+
+        root->left = buildSubTree(postorder, inLeft, inRootIndex - 1, postLeft, postLeft + leftSize - 1);
+        root->right = buildSubTree(postorder, inRootIndex + 1, inRight, postLeft + leftSize, postRight - 1);
+
+        return root;
+    }
+
+   public:
+    TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+        int n = inorder.size();
+        for (int i = 0; i < n; i++) {
+            index[inorder[i]] = i;
+        }
+        return buildSubTree(postorder, 0, n - 1, 0, n - 1);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<int> inorder(n), postorder(n);
+    for (int i = 0; i < n; i++) {
+        cin >> inorder[i];
+    }
+    for (int i = 0; i < n; i++) {
+        cin >> postorder[i];
+    }
+
+    Solution obj;
+    TreeNode* root = obj.buildTree(inorder, postorder);
+    queue<TreeNode*> q;
+    q.push(root);
+    cout << root->val << " ";
+
+    while (!q.empty()) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (curr->left != nullptr) {
+            cout << curr->left->val << " ";
+            q.push(curr->left);
+        } else {
+            cout << "null ";
+        }
+
+        if (curr->right != nullptr) {
+            cout << curr->right->val << " ";
+            q.push(curr->right);
+        } else {
+            cout << "null ";
+        }
+    }
+
+    return 0;
+}
+```
+
+> 如果调用的是同一个`Solution`，那么`index`表会残留很多键值对：
+>
+> ```cpp
+> #include <iostream>
+> #include <vector>
+> #include <unordered_map>
+> #include <queue>
+> 
+> using namespace std;
+> 
+> struct TreeNode {
+>     int val;
+>     TreeNode* left;
+>     TreeNode* right;
+>     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+>     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+>     TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+> };
+> 
+> class Solution {
+> private:
+>     TreeNode* buildSubTree(const vector<int>& postorder, int inLeft, int inRight, 
+>                            int postLeft, int postRight, unordered_map<int, int>& index) {
+>         if (postLeft > postRight) return nullptr;
+> 
+>         int rootVal = postorder[postRight];
+>         TreeNode* root = new TreeNode(rootVal);
+> 
+>         int inRootIndex = index[rootVal];
+>         int leftSize = inRootIndex - inLeft;
+> 
+>         root->left = buildSubTree(postorder, inLeft, inRootIndex - 1, 
+>                                   postLeft, postLeft + leftSize - 1, index);
+>         root->right = buildSubTree(postorder, inRootIndex + 1, inRight, 
+>                                    postLeft + leftSize, postRight - 1, index);
+> 
+>         return root;
+>     }
+> 
+> public:
+>     TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+>         unordered_map<int, int> index;
+>         int n = inorder.size();
+>         for (int i = 0; i < n; i++) {
+>             index[inorder[i]] = i;
+>         }
+>         return buildSubTree(postorder, 0, n - 1, 0, n - 1, index);
+>     }
+> };
+> ```
+
+
+
+#### 73.3 解析
+
+就是上一题的变式，同样有迭代法：
+
+```cpp
+#include <stack>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+        if (postorder.empty()) return nullptr;
+
+        TreeNode* root = new TreeNode(postorder.back());
+        stack<TreeNode*> st;
+        st.push(root);
+        int inorderIndex = inorder.size() - 1;
+
+        for (int i = postorder.size() - 2; i >= 0; i--) {
+            int postorderVal = postorder[i];
+            TreeNode* node = st.top();
+
+            if (node->val != inorder[inorderIndex]) {
+                node->right = new TreeNode(postorderVal);
+                st.push(node->right);
+            } else {
+                while (!st.empty() && st.top()->val == inorder[inorderIndex]) {
+                    node = st.top();
+                    st.pop();
+                    inorderIndex--;
+                }
+                node->left = new TreeNode(postorderVal);
+                st.push(node->left);
+            }
+        }
+        return root;
+    }
+};
+```
+
+
+
+### 74. 填充每个节点的下一个右侧节点指针II*
+
+#### 74.1 题目
+
+给定一个二叉树：
+
+```
+struct Node {
+  int val;
+  Node *left;
+  Node *right;
+  Node *next;
+}
+```
+
+填充它的每个 next 指针，让这个指针指向其下一个右侧节点。如果找不到下一个右侧节点，则将 next 指针设置为 `NULL` 。
+
+初始状态下，所有 next 指针都被设置为 `NULL` 。
+
+ 
+
+**示例 1：**
+
+![img](./assets/117_sample.png)
+
+```
+输入：root = [1,2,3,4,5,null,7]
+输出：[1,#,2,3,#,4,5,7,#]
+解释：给定二叉树如图 A 所示，你的函数应该填充它的每个 next 指针，以指向其下一个右侧节点，如图 B 所示。序列化输出按层序遍历顺序（由 next 指针连接），'#' 表示每层的末尾。
+```
+
+**示例 2：**
+
+```
+输入：root = []
+输出：[]
+```
+
+ 
+
+**提示：**
+
+- 树中的节点数在范围 `[0, 6000]` 内
+- `-100 <= Node.val <= 100`
+
+**进阶：**
+
+- 你只能使用常量级额外空间。
+- 使用递归解题也符合要求，本题中递归程序的隐式栈空间不计入额外空间复杂度。
+
+
+
+#### 74.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Node {
+   public:
+    int val;
+    Node* left;
+    Node* right;
+    Node* next;
+
+    Node() : val(0), left(NULL), right(NULL), next(NULL) {}
+
+    Node(int _val) : val(_val), left(NULL), right(NULL), next(NULL) {}
+
+    Node(int _val, Node* _left, Node* _right, Node* _next) : val(_val), left(_left), right(_right), next(_next) {}
+};
+
+class Solution {
+   public:
+    Node* connect(Node* root) {
+        if (root == nullptr) return root;
+
+        Node *base = root, *curr = nullptr, *start = nullptr;
+        while (base != nullptr || start != nullptr) {
+            if (base == nullptr) {
+                base = start;
+                start = nullptr;
+                curr = nullptr;
+            }
+            if (start == nullptr) {
+                start = base->left != nullptr ? base->left : (base->right != nullptr ? base->right : nullptr);
+                curr = start;
+                if (curr != nullptr && curr == base->left) {
+                    curr->next = base->right;
+                    if (curr->next != nullptr) curr = curr->next;
+                }
+            } else {
+                curr->next = base->left;
+                if (curr->next != nullptr) curr = curr->next;
+                curr->next = base->right;
+                if (curr->next != nullptr) curr = curr->next;
+            }
+
+            base = base->next;
+        }
+
+        return root;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int n;
+    if (!(cin >> n)) return 0;
+    if (n == 0) return 0;
+
+    vector<string> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Node* root = new Node(stoi(nums[0]));
+    queue<Node*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        Node* curr = q.front();
+        q.pop();
+
+        if (i < n && nums[i] != "null") {
+            curr->left = new Node(stoi(nums[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && nums[i] != "null") {
+            curr->right = new Node(stoi(nums[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    root = obj.connect(root);
+
+    Node *start = nullptr, *curr = root;
+    while (start != nullptr || curr != nullptr) {
+        if (curr == nullptr) {
+            cout << "# ";
+            curr = start;
+            start = nullptr;
+        }
+        if (start == nullptr) {
+            start = curr->left;
+        }
+        if (start == nullptr) {
+            start = curr->right;
+        }
+        cout << curr->val << " ";
+        curr = curr->next;
+    }
+    cout << "#";
+
+    return 0;
+}
+```
+
+> 可以用哑节点优化逻辑：
+>
+> ```cpp
+> #include <iostream>
+> #include <queue>
+> #include <string>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Node {
+> public:
+>     int val;
+>     Node* left;
+>     Node* right;
+>     Node* next;
+> 
+>     Node() : val(0), left(nullptr), right(nullptr), next(nullptr) {}
+>     Node(int _val) : val(_val), left(nullptr), right(nullptr), next(nullptr) {}
+>     Node(int _val, Node* _left, Node* _right, Node* _next) : val(_val), left(_left), right(_right), next(_next) {}
+> };
+> 
+> class Solution {
+> public:
+>     Node* connect(Node* root) {
+>         if (root == nullptr) return nullptr;
+>         
+>         Node* currLevel = root;
+>         
+>         while (currLevel != nullptr) {
+>             // 每一层相当于一个链表，给链表的起始创建一个哑节点
+>             Node dummy(0);
+>             Node* tail = &dummy;
+>             
+>             while (currLevel != nullptr) {
+>                 if (currLevel->left != nullptr) {
+>                     tail->next = currLevel->left;
+>                     tail = tail->next;
+>                 }
+>                 if (currLevel->right != nullptr) {
+>                     tail->next = currLevel->right;
+>                     tail = tail->next;
+>                 }
+>                 currLevel = currLevel->next;
+>             }
+>             
+>             // 直接dummy.next就是链表的head，也就是这一层的最左侧节点
+>             currLevel = dummy.next;
+>         }
+>         
+>         return root;
+>     }
+> };
+> 
+> int main() {
+>     ios::sync_with_stdio(false);
+>     cin.tie(nullptr);
+>     
+>     int n;
+>     if (!(cin >> n)) return 0;
+>     if (n == 0) return 0;
+> 
+>     vector<string> nums(n);
+>     for (int i = 0; i < n; i++) {
+>         cin >> nums[i];
+>     }
+> 
+>     Node* root = new Node(stoi(nums[0]));
+>     queue<Node*> q;
+>     q.push(root);
+>     int i = 1;
+> 
+>     while (!q.empty() && i < n) {
+>         Node* curr = q.front();
+>         q.pop();
+> 
+>         if (i < n && nums[i] != "null") {
+>             curr->left = new Node(stoi(nums[i]));
+>             q.push(curr->left);
+>         }
+>         i++;
+> 
+>         if (i < n && nums[i] != "null") {
+>             curr->right = new Node(stoi(nums[i]));
+>             q.push(curr->right);
+>         }
+>         i++;
+>     }
+> 
+>     Solution obj;
+>     root = obj.connect(root);
+> 
+>     Node* levelStart = root;
+>     while (levelStart != nullptr) {
+>         Node* curr = levelStart;
+>         levelStart = nullptr;
+>         
+>         while (curr != nullptr) {
+>             cout << curr->val << " ";
+>             
+>             if (levelStart == nullptr) {
+>                 if (curr->left != nullptr) levelStart = curr->left;
+>                 else if (curr->right != nullptr) levelStart = curr->right;
+>             }
+>             
+>             curr = curr->next;
+>         }
+>         cout << "# ";
+>     }
+>     cout << "\n";
+> 
+>     return 0;
+> }
+> ```
+>
+> 
+
+
+
+#### 74.3 解析
+
+这题的关键在于认识到可以用刚刚做好的`next`来进行上一层的遍历，而不需要借助`queue`。同样也有递归方法，核心也在于借助`next`:
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    Node* connect(Node* root) {
+        if (root == nullptr) return nullptr;
+
+        if (root->left != nullptr) {
+            if (root->right != nullptr) {
+                root->left->next = root->right;
+            } else {
+                root->left->next = findNext(root->next);
+            }
+        }
+
+        if (root->right != nullptr) {
+            root->right->next = findNext(root->next);
+        }
+
+        connect(root->right);
+        connect(root->left);
+
+        return root;
+    }
+
+private:
+    Node* findNext(Node* node) {
+        while (node != nullptr) {
+            if (node->left != nullptr) return node->left;
+            if (node->right != nullptr) return node->right;
+            node = node->next;
+        }
+        return nullptr;
+    }
+};
+```
+
