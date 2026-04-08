@@ -13829,3 +13829,431 @@ private:
 };
 ```
 
+
+
+### 75. 二叉树展开为链表**
+
+#### 75.1 题目
+
+给你二叉树的根结点 `root` ，请你将它展开为一个单链表：
+
+- 展开后的单链表应该同样使用 `TreeNode` ，其中 `right` 子指针指向链表中下一个结点，而左子指针始终为 `null` 。
+- 展开后的单链表应该与二叉树 [**先序遍历**](https://baike.baidu.com/item/先序遍历/6442839?fr=aladdin) 顺序相同。
+
+ 
+
+**示例 1：**
+
+![img](./assets/flaten.jpg)
+
+```
+输入：root = [1,2,5,3,4,null,6]
+输出：[1,null,2,null,3,null,4,null,5,null,6]
+```
+
+**示例 2：**
+
+```
+输入：root = []
+输出：[]
+```
+
+**示例 3：**
+
+```
+输入：root = [0]
+输出：[0]
+```
+
+ 
+
+**提示：**
+
+- 树中结点数在范围 `[0, 2000]` 内
+- `-100 <= Node.val <= 100`
+
+ 
+
+**进阶：**你可以使用原地算法（`O(1)` 额外空间）展开这棵树吗？
+
+
+
+#### 75.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(H)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    void flatten(TreeNode* root) { subFlatten(root); }
+
+   private:
+    TreeNode* subFlatten(TreeNode* root) {
+        if (root == nullptr) return root;
+
+        TreeNode *right = subFlatten(root->right), *subRight = subFlatten(root->left);
+        if (subRight != nullptr) {
+            TreeNode* oldRight = root->right;
+            root->right = root->left;
+            subRight->right = oldRight;
+            root->left = nullptr;
+
+            if (right == nullptr) {
+                right = subRight;
+            }
+        } else if (right == nullptr) {
+            right = root;
+        }
+
+        return right;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+    if (n == 0) return 0;
+
+    vector<string> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(nums[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && nums[i] != "null") {
+            curr->left = new TreeNode(stoi(nums[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && nums[i] != "null") {
+            curr->right = new TreeNode(stoi(nums[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    obj.flatten(root);
+
+    queue<TreeNode*> outQ;
+    if (root != nullptr) {
+        outQ.push(root);
+        cout << root->val << " ";
+    }
+
+    while (!outQ.empty()) {
+        TreeNode* curr = outQ.front();
+        outQ.pop();
+
+        if (curr->left != nullptr) {
+            outQ.push(curr->left);
+            cout << curr->left->val << " ";
+        } else {
+            cout << "null ";
+        }
+        if (curr->right != nullptr) {
+            outQ.push(curr->right);
+            cout << curr->right->val << " ";
+        } else {
+            cout << "null ";
+        }
+    }
+    cout << "\n";
+
+    return 0;
+}
+```
+
+> 写得更漂亮一点就是：
+>
+> ```cpp
+> class Solution {
+> public:
+>     void flatten(TreeNode* root) { 
+>         getTail(root); 
+>     }
+> 
+> private:
+>     TreeNode* getTail(TreeNode* root) {
+>         if (root == nullptr) return nullptr;
+> 
+>         TreeNode* leftTail = getTail(root->left);
+>         TreeNode* rightTail = getTail(root->right);
+> 
+>         if (leftTail != nullptr) {
+>             leftTail->right = root->right;
+>             root->right = root->left;
+>             root->left = nullptr;
+>         }
+> 
+>         if (rightTail != nullptr) return rightTail;
+>         if (leftTail != nullptr) return leftTail;
+>         return root;
+>     }
+> };
+> ```
+
+
+
+#### 75.3 解析
+
+如果用递归的话，还有一种不用返回的解法：
+
+```cpp
+class Solution {
+private:
+    TreeNode* prev = nullptr;
+
+public:
+    void flatten(TreeNode* root) {
+        if (root == nullptr) return;
+        
+        flatten(root->right);
+        flatten(root->left);
+        
+        root->right = prev;
+        root->left = nullptr;
+        prev = root;
+    }
+};
+```
+
+这个解法很巧妙，`prev`实际上是处理到该节点时，按先序遍历排列的链表中在它之后的部分的`head`，即反向地进行了先序遍历（右-左-根），从后往前挂链表。
+
+但是用了递归就不可能还是常量空间，所以还有一种类似 **Morris 遍历**的办法，即：找到左子树中最右下角的节点，然后把右子树接到上面去，再把左子树移动到右子树上后清空左子树，接着`root->right`地遍历下去，逐步捋平。（思路有点类似上面的办法）：
+
+```cpp
+class Solution {
+public:
+    void flatten(TreeNode* root) {
+        TreeNode* curr = root;
+        
+        while (curr != nullptr) {
+            if (curr->left != nullptr) {
+                TreeNode* next = curr->left;
+                TreeNode* predecessor = next;
+                
+                while (predecessor->right != nullptr) {
+                    predecessor = predecessor->right;
+                }
+                
+                predecessor->right = curr->right;
+                curr->left = nullptr;
+                curr->right = next;
+            }
+            curr = curr->right;
+        }
+    }
+};
+```
+
+这种空间复杂度为 $O(1)$。
+
+
+
+### 76. 路径总和*
+
+#### 76.1 题目
+
+给你二叉树的根节点 `root` 和一个表示目标和的整数 `targetSum` 。判断该树中是否存在 **根节点到叶子节点** 的路径，这条路径上所有节点值相加等于目标和 `targetSum` 。如果存在，返回 `true` ；否则，返回 `false` 。
+
+**叶子节点** 是指没有子节点的节点。
+
+ 
+
+**示例 1：**
+
+![img](./assets/pathsum1.jpg)
+
+```
+输入：root = [5,4,8,11,null,13,4,7,2,null,null,null,1], targetSum = 22
+输出：true
+解释：等于目标和的根节点到叶节点路径如上图所示。
+```
+
+**示例 2：**
+
+![img](./assets/pathsum2.jpg)
+
+```
+输入：root = [1,2,3], targetSum = 5
+输出：false
+解释：树中存在两条根节点到叶子节点的路径：
+(1 --> 2): 和为 3
+(1 --> 3): 和为 4
+不存在 sum = 5 的根节点到叶子节点的路径。
+```
+
+**示例 3：**
+
+```
+输入：root = [], targetSum = 0
+输出：false
+解释：由于树是空的，所以不存在根节点到叶子节点的路径。
+```
+
+ 
+
+**提示：**
+
+- 树中节点的数目在范围 `[0, 5000]` 内
+- `-1000 <= Node.val <= 1000`
+- `-1000 <= targetSum <= 1000`
+
+
+
+#### 76.2 解法
+
+**空间复杂度**：$O(H)$，**时间复杂度**：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        if (root == nullptr) return false;
+
+        int sub = targetSum - root->val;
+
+        if (sub == 0 && root->left == nullptr && root->right == nullptr) {
+            return true;
+        }
+
+        return hasPathSum(root->left, sub) || hasPathSum(root->right, sub);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, targetSum;
+    cin >> n >> targetSum;
+
+    if (n == 0) {
+        cout << 0 << "\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    cout << obj.hasPathSum(root, targetSum) << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 76.3 解析
+
+其实标准还是很统一的，我把如果有我没想到的更好的解的情况标为**，比如上一题。而类似这题不一样，虽然递归永远不可能是最优解，但是BFS在思维层面上没有更优，所以视为等效的解。BFS：
+
+```cpp
+#include <queue>
+#include <utility>
+
+using namespace std;
+
+class Solution {
+public:
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        if (root == nullptr) return false;
+        
+        queue<pair<TreeNode*, int>> q;
+        q.push({root, root->val});
+        
+        while (!q.empty()) {
+            auto [node, currentSum] = q.front();
+            q.pop();
+            
+            if (node->left == nullptr && node->right == nullptr && currentSum == targetSum) {
+                return true;
+            }
+            
+            if (node->left != nullptr) {
+                q.push({node->left, currentSum + node->left->val});
+            }
+            if (node->right != nullptr) {
+                q.push({node->right, currentSum + node->right->val});
+            }
+        }
+        
+        return false;
+    }
+};
+```
+
