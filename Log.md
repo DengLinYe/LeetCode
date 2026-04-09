@@ -14257,3 +14257,328 @@ public:
 };
 ```
 
+
+
+### 77. 求根节点到叶子节点数字之和*
+
+#### 77.1 题目
+
+给你一个二叉树的根节点 `root` ，树中每个节点都存放有一个 `0` 到 `9` 之间的数字。
+
+每条从根节点到叶节点的路径都代表一个数字：
+
+- 例如，从根节点到叶节点的路径 `1 -> 2 -> 3` 表示数字 `123` 。
+
+计算从根节点到叶节点生成的 **所有数字之和** 。
+
+**叶节点** 是指没有子节点的节点。
+
+ 
+
+**示例 1：**
+
+![img](./assets/num1tree.jpg)
+
+```
+输入：root = [1,2,3]
+输出：25
+解释：
+从根到叶子节点路径 1->2 代表数字 12
+从根到叶子节点路径 1->3 代表数字 13
+因此，数字总和 = 12 + 13 = 25
+```
+
+**示例 2：**
+
+![img](./assets/num2tree.jpg)
+
+```
+输入：root = [4,9,0,5,1]
+输出：1026
+解释：
+从根到叶子节点路径 4->9->5 代表数字 495
+从根到叶子节点路径 4->9->1 代表数字 491
+从根到叶子节点路径 4->0 代表数字 40
+因此，数字总和 = 495 + 491 + 40 = 1026
+```
+
+ 
+
+**提示：**
+
+- 树中节点的数目在范围 `[1, 1000]` 内
+- `0 <= Node.val <= 9`
+- 树的深度不超过 `10`
+
+
+
+#### 77.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(H)$。
+
+```cpp
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+public:
+    int sumNumbers(TreeNode* root) {
+        if(root == nullptr) return 0;
+        return layerSum(root, 0);
+    }
+private:
+    int layerSum(TreeNode* root, int layer){
+        if(root == nullptr) return 0;
+        layer *= 10;
+        int sum = layer + root->val;
+        if(root->left == nullptr && root->right == nullptr) return sum;
+        return layerSum(root->left, sum) + layerSum(root->right, sum);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    if (n == 0) {
+        cout << 0 << "\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    cout << obj.sumNumbers(root) << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 77.3 解析
+
+同样也能用迭代法，同样也会用到额外空间：
+
+```cpp
+#include <queue>
+#include <utility>
+
+using namespace std;
+
+class Solution {
+public:
+    int sumNumbers(TreeNode* root) {
+        if (root == nullptr) return 0;
+
+        int totalSum = 0;
+        queue<pair<TreeNode*, int>> q;
+        q.push({root, root->val});
+
+        while (!q.empty()) {
+            auto [node, currentNum] = q.front();
+            q.pop();
+
+            if (node->left == nullptr && node->right == nullptr) {
+                totalSum += currentNum;
+            } else {
+                if (node->left != nullptr) {
+                    q.push({node->left, currentNum * 10 + node->left->val});
+                }
+                if (node->right != nullptr) {
+                    q.push({node->right, currentNum * 10 + node->right->val});
+                }
+            }
+        }
+
+        return totalSum;
+    }
+};
+```
+
+
+
+### 78. 二叉树的最大路径和***
+
+#### 78.1 题目
+
+二叉树中的 **路径** 被定义为一条节点序列，序列中每对相邻节点之间都存在一条边。同一个节点在一条路径序列中 **至多出现一次** 。该路径 **至少包含一个** 节点，且不一定经过根节点。
+
+**路径和** 是路径中各节点值的总和。
+
+给你一个二叉树的根节点 `root` ，返回其 **最大路径和** 。
+
+ 
+
+**示例 1：**
+
+![img](./assets/exx1.jpg)
+
+```
+输入：root = [1,2,3]
+输出：6
+解释：最优路径是 2 -> 1 -> 3 ，路径和为 2 + 1 + 3 = 6
+```
+
+**示例 2：**
+
+![img](./assets/exx2.jpg)
+
+```
+输入：root = [-10,9,20,null,null,15,7]
+输出：42
+解释：最优路径是 15 -> 20 -> 7 ，路径和为 15 + 20 + 7 = 42
+```
+
+ 
+
+**提示：**
+
+- 树中节点数目范围是 `[1, 3 * 104]`
+- `-1000 <= Node.val <= 1000`
+
+
+
+#### 78.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(H)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+#include <climits> // 引入 INT_MIN
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+private:
+    int maxSum = INT_MIN;
+    
+    int subNodeSelect(TreeNode *root) {
+        if (root == nullptr) return 0;
+        
+        // 如果子树路径和为负，则收益为 0（即不走那条分支）
+        int left = max(subNodeSelect(root->left), 0);
+        int right = max(subNodeSelect(root->right), 0);
+        
+        // 计算以当前节点为最高点的“拱形”路径和
+        int nowSum = root->val + left + right;
+        maxSum = max(maxSum, nowSum);
+        
+        // 向上层父节点提供单分支最大收益
+        return root->val + max(left, right);
+    }
+    
+public:
+    int maxPathSum(TreeNode* root) {
+        maxSum = INT_MIN; // 修复状态污染（非常重要）
+        subNodeSelect(root);
+        return maxSum;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+    if (n == 0) {
+        cout << 0 << "\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    cout << obj.maxPathSum(root) << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 78.3 解析
+
+看了提示才写出来，算三颗星吧。但是题目解法本身不太难，就是思维没打开：其实最重要的是外部的`maxSum`记录，而不是像上一题一样递归计算，我就是陷入了这个误区，一直没能想出来；之后就是`return`值，不能直接`return`和，而应该是`left`和`right`的`max`，又由于它们各自已经和 0 `max`过了，所以 `root->val + max(left, right)`是另一关键。
+
+此外，在这里的迭代法没太大意义，这是`左右中`遍历，不太好维护队列。
