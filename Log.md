@@ -14490,7 +14490,7 @@ public:
 #include <queue>
 #include <string>
 #include <vector>
-#include <climits> // 引入 INT_MIN
+#include <climits>
 
 using namespace std;
 
@@ -14510,21 +14510,18 @@ private:
     int subNodeSelect(TreeNode *root) {
         if (root == nullptr) return 0;
         
-        // 如果子树路径和为负，则收益为 0（即不走那条分支）
         int left = max(subNodeSelect(root->left), 0);
         int right = max(subNodeSelect(root->right), 0);
         
-        // 计算以当前节点为最高点的“拱形”路径和
         int nowSum = root->val + left + right;
         maxSum = max(maxSum, nowSum);
         
-        // 向上层父节点提供单分支最大收益
         return root->val + max(left, right);
     }
     
 public:
     int maxPathSum(TreeNode* root) {
-        maxSum = INT_MIN; // 修复状态污染（非常重要）
+        maxSum = INT_MIN;
         subNodeSelect(root);
         return maxSum;
     }
@@ -14582,3 +14579,397 @@ int main() {
 看了提示才写出来，算三颗星吧。但是题目解法本身不太难，就是思维没打开：其实最重要的是外部的`maxSum`记录，而不是像上一题一样递归计算，我就是陷入了这个误区，一直没能想出来；之后就是`return`值，不能直接`return`和，而应该是`left`和`right`的`max`，又由于它们各自已经和 0 `max`过了，所以 `root->val + max(left, right)`是另一关键。
 
 此外，在这里的迭代法没太大意义，这是`左右中`遍历，不太好维护队列。
+
+
+
+### 79. 二叉搜索树迭代器*
+
+#### 79.1 题目
+
+实现一个二叉搜索树迭代器类`BSTIterator` ，表示一个按中序遍历二叉搜索树（BST）的迭代器：
+
+- `BSTIterator(TreeNode root)` 初始化 `BSTIterator` 类的一个对象。BST 的根节点 `root` 会作为构造函数的一部分给出。指针应初始化为一个不存在于 BST 中的数字，且该数字小于 BST 中的任何元素。
+- `boolean hasNext()` 如果向指针右侧遍历存在数字，则返回 `true` ；否则返回 `false` 。
+- `int next()`将指针向右移动，然后返回指针处的数字。
+
+注意，指针初始化为一个不存在于 BST 中的数字，所以对 `next()` 的首次调用将返回 BST 中的最小元素。
+
+你可以假设 `next()` 调用总是有效的，也就是说，当调用 `next()` 时，BST 的中序遍历中至少存在一个下一个数字。
+
+ 
+
+**示例：**
+
+![img](./assets/bst-tree.png)
+
+```
+输入
+["BSTIterator", "next", "next", "hasNext", "next", "hasNext", "next", "hasNext", "next", "hasNext"]
+[[[7, 3, 15, null, null, 9, 20]], [], [], [], [], [], [], [], [], []]
+输出
+[null, 3, 7, true, 9, true, 15, true, 20, false]
+
+解释
+BSTIterator bSTIterator = new BSTIterator([7, 3, 15, null, null, 9, 20]);
+bSTIterator.next();    // 返回 3
+bSTIterator.next();    // 返回 7
+bSTIterator.hasNext(); // 返回 True
+bSTIterator.next();    // 返回 9
+bSTIterator.hasNext(); // 返回 True
+bSTIterator.next();    // 返回 15
+bSTIterator.hasNext(); // 返回 True
+bSTIterator.next();    // 返回 20
+bSTIterator.hasNext(); // 返回 False
+```
+
+ 
+
+**提示：**
+
+- 树中节点的数目在范围 `[1, 105]` 内
+- `0 <= Node.val <= 106`
+- 最多调用 `105` 次 `hasNext` 和 `next` 操作
+
+ 
+
+**进阶：**
+
+- 你可以设计一个满足下述条件的解决方案吗？`next()` 和 `hasNext()` 操作均摊时间复杂度为 `O(1)` ，并使用 `O(h)` 内存。其中 `h` 是树的高度。
+
+
+
+#### 79.2 解法
+
+**时间复杂度**：均摊 $O(1)$，**空间复杂度**：$O(h)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class BSTIterator {
+   private:
+    vector<TreeNode*> pre;
+    TreeNode* r;
+    TreeNode* interator;
+
+   public:
+    BSTIterator(TreeNode* root) {
+        r = root;
+
+        while (root != nullptr) {
+            pre.push_back(root);
+            root = root->left;
+        }
+
+        interator = new TreeNode(pre.back()->val - 1);
+    }
+
+    int next() {
+        if (interator->right != nullptr) {
+            interator = interator->right;
+            while (interator->left != nullptr) {
+                pre.push_back(interator);
+                interator = interator->left;
+            }
+        } else if (!pre.empty()) {
+            interator = pre.back();
+            pre.pop_back();
+        }
+
+        return interator->val;
+    }
+
+    bool hasNext() {
+        if (pre.empty() && interator->right == nullptr) {
+            return false;
+        }
+
+        return true;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int m;
+    if (!(cin >> m)) return 0;
+
+    vector<string> ops(m);
+    for (int i = 0; i < m; ++i) {
+        cin >> ops[i];
+    }
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    TreeNode* root = nullptr;
+    if (n > 0) {
+        vector<string> nodes(n);
+        for (int i = 0; i < n; ++i) {
+            cin >> nodes[i];
+        }
+
+        if (nodes[0] != "null") {
+            root = new TreeNode(stoi(nodes[0]));
+            queue<TreeNode*> q;
+            q.push(root);
+            int i = 1;
+            while (!q.empty() && i < n) {
+                TreeNode* curr = q.front();
+                q.pop();
+                if (i < n && nodes[i] != "null") {
+                    curr->left = new TreeNode(stoi(nodes[i]));
+                    q.push(curr->left);
+                }
+                i++;
+                if (i < n && nodes[i] != "null") {
+                    curr->right = new TreeNode(stoi(nodes[i]));
+                    q.push(curr->right);
+                }
+                i++;
+            }
+        }
+    }
+
+    BSTIterator* obj = nullptr;
+
+    for (int i = 0; i < m; ++i) {
+        if (ops[i] == "BSTIterator") {
+            obj = new BSTIterator(root);
+            cout << "null ";
+        } else if (ops[i] == "next") {
+            cout << obj->next() << " ";
+        } else if (ops[i] == "hasNext") {
+            cout << (obj->hasNext() ? "true" : "false") << " ";
+        }
+    }
+    cout << "\n";
+
+    return 0;
+}
+```
+
+> 如果把最左端也入栈，会省不少功夫：
+>
+> ```cpp
+> class BSTIterator {
+> private:
+>     stack<TreeNode*> st;
+> 
+>     void pushAllLeft(TreeNode* node) {
+>         while (node != nullptr) {
+>             st.push(node);
+>             node = node->left;
+>         }
+>     }
+> 
+> public:
+>     BSTIterator(TreeNode* root) {
+>         pushAllLeft(root);
+>     }
+>     
+>     int next() {
+>         TreeNode* topNode = st.top();
+>         st.pop();
+>         
+>         if (topNode->right != nullptr) {
+>             pushAllLeft(topNode->right);
+>         }
+>         
+>         return topNode->val;
+>     }
+>     
+>     bool hasNext() {
+>         return !st.empty();
+>     }
+> };
+> ```
+
+
+
+#### 79.3 解析
+
+在题目进阶限制下，并没有其他解法。
+
+
+
+### 80. 完全二叉树的节点个数**
+
+#### 80.1 题目
+
+给你一棵 **完全二叉树** 的根节点 `root` ，求出该树的节点个数。
+
+[完全二叉树](https://baike.baidu.com/item/完全二叉树/7773232?fr=aladdin) 的定义如下：在完全二叉树中，除了最底层节点可能没填满外，其余每层节点数都达到最大值，并且最下面一层的节点都集中在该层最左边的若干位置。若最底层为第 `h` 层（从第 0 层开始），则该层包含 `1~ 2h` 个节点。
+
+ 
+
+**示例 1：**
+
+![img](./assets/complete.jpg)
+
+```
+输入：root = [1,2,3,4,5,6]
+输出：6
+```
+
+**示例 2：**
+
+```
+输入：root = []
+输出：0
+```
+
+**示例 3：**
+
+```
+输入：root = [1]
+输出：1
+```
+
+ 
+
+**提示：**
+
+- 树中节点的数目范围是`[0, 5 * 104]`
+- `0 <= Node.val <= 5 * 104`
+- 题目数据保证输入的树是 **完全二叉树**
+
+ 
+
+**进阶：**遍历树来统计节点是一种时间复杂度为 `O(n)` 的简单解决方案。你可以设计一个更快的算法吗？
+
+
+
+#### 80.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(\log N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    int countNodes(TreeNode* root) {
+        if (root == nullptr) return 0;
+
+        return 1 + countNodes(root->left) + countNodes(root->right);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    if (n == 0) {
+        cout << 0 << "\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    cout << obj.countNodes(root) << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 80.3 解析
+
+这个方法最简单，但是显然还有更好的办法：
+
+```cpp
+class Solution {
+public:
+    int countNodes(TreeNode* root) {
+        if (root == nullptr) return 0;
+        
+        // 分别计算左右子树的高度
+        int leftHeight = getDepth(root->left);
+        int rightHeight = getDepth(root->right);
+        
+        // 逻辑分支：必定有一半是满二叉树，直接位运算秒算
+        if (leftHeight == rightHeight) {
+            // 左子树是满二叉树: 2^leftHeight 个节点 (包含了根节点) + 递归计算右子树
+            return (1 << leftHeight) + countNodes(root->right);
+        } else {
+            // 右子树是满二叉树: 2^rightHeight 个节点 (包含了根节点) + 递归计算左子树
+            return (1 << rightHeight) + countNodes(root->left);
+        }
+    }
+
+private:
+    // 计算完全二叉树的高度（只用沿左边界走到底即可，O(logN)时间）
+    int getDepth(TreeNode* node) {
+        int depth = 0;
+        while (node != nullptr) {
+            depth++;
+            node = node->left;
+        }
+        return depth;
+    }
+};
+```
+
+这里有一个核心点：**至少一半是满的**。如果高度相同，那么是右边缺了，左边肯定是满的；若不同，那么一定是左边不满（多出几个），但是右边肯定是满的。
