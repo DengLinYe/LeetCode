@@ -14973,3 +14973,401 @@ private:
 ```
 
 这里有一个核心点：**至少一半是满的**。如果高度相同，那么是右边缺了，左边肯定是满的；若不同，那么一定是左边不满（多出几个），但是右边肯定是满的。
+
+
+
+### 81. 二叉树的最近公共祖先*
+
+#### 81.1 题目
+
+给定一个二叉树, 找到该树中两个指定节点的最近公共祖先。
+
+[百度百科](https://baike.baidu.com/item/最近公共祖先/8918834?fr=aladdin)中最近公共祖先的定义为：“对于有根树 T 的两个节点 p、q，最近公共祖先表示为一个节点 x，满足 x 是 p、q 的祖先且 x 的深度尽可能大（**一个节点也可以是它自己的祖先**）。”
+
+ 
+
+**示例 1：**
+
+![img](./assets/binarytree.png)
+
+```
+输入：root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 1
+输出：3
+解释：节点 5 和节点 1 的最近公共祖先是节点 3 。
+```
+
+**示例 2：**
+
+![img](./assets/binarytree.png)
+
+```
+输入：root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 4
+输出：5
+解释：节点 5 和节点 4 的最近公共祖先是节点 5 。因为根据定义最近公共祖先节点可以为节点本身。
+```
+
+**示例 3：**
+
+```
+输入：root = [1,2], p = 1, q = 2
+输出：1
+```
+
+ 
+
+**提示：**
+
+- 树中节点数目在范围 `[2, 105]` 内。
+- `-109 <= Node.val <= 109`
+- 所有 `Node.val` `互不相同` 。
+- `p != q`
+- `p` 和 `q` 均存在于给定的二叉树中。
+
+
+
+#### 81.2 解法
+
+**时间复杂度**：**O(N)**，**空间复杂度**：**O(H)**。
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <queue>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
+
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        if(root == nullptr) return root;
+        if(p == q) return p;
+        
+        vector<pair<TreeNode*,bool>> findStack;
+        TreeNode* find = nullptr;
+        bool findOne = false;
+        while(root != nullptr || !findStack.empty()){
+            while(root != nullptr){
+                findStack.push_back({root, !findOne});
+                find = findOne ? find : root;
+                
+                if(root== p || root == q){
+                    if(findOne){
+                        return find;
+                    }else{
+                        findOne = true;
+                    }
+                }
+                root = root->left;
+            }
+            root = findStack.back().first;
+            find = findStack.back().second ? root : find;
+            findStack.pop_back();
+            root = root->right;
+        }
+        
+        return find;
+    }
+};
+
+TreeNode* findNode(TreeNode* root, int val) {
+    if (root == nullptr) return nullptr;
+    if (root->val == val) return root;
+    TreeNode* leftRes = findNode(root->left, val);
+    if (leftRes != nullptr) return leftRes;
+    return findNode(root->right, val);
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, p_val, q_val;
+    if (!(cin >> n >> p_val >> q_val)) return 0;
+
+    if (n == 0) return 0;
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q_tree;
+    q_tree.push(root);
+    int i = 1;
+
+    while (!q_tree.empty() && i < n) {
+        TreeNode* curr = q_tree.front();
+        q_tree.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q_tree.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q_tree.push(curr->right);
+        }
+        i++;
+    }
+
+    TreeNode* p = findNode(root, p_val);
+    TreeNode* q = findNode(root, q_val);
+
+    Solution obj;
+    TreeNode* lca = obj.lowestCommonAncestor(root, p, q);
+    
+    if (lca != nullptr) {
+        cout << lca->val << "\n";
+    } else {
+        cout << "null\n";
+    }
+
+    return 0;
+}
+```
+
+> 代码写复杂了，关键在于`findOne`之后的一些操作，实际上我走的先序遍历不太好，因为走右子树时候`root`就不在栈里面了，这样就没办法在代码之外遍历栈去找第一个标记不是`true`的节点，所以我给融入到遍历之中了。
+>
+> 更清晰的其实是后序遍历，也就是走右边不先把父节点出栈。
+
+
+
+#### 81.3 解析
+
+Gemini 3.1 Pro 最开始还误判了我的解法，而DeepSeek更是没有理解，这一块写得太复杂了，但是好在时空复杂度不复杂，也算达到了最优解水平。
+
+迭代法部分，我的固然是一种解法，另外还有一种用哈希表的，时间复杂度是 $O(N)$，就不放了。
+
+然后是递归部分，一到复杂的逻辑就不敢写递归，也是我的一个问题，这道题其实有一个很好的递归解法：
+
+```cpp
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+        // 1. 递归终止条件：越界，或者找到了目标
+        if (root == nullptr || root == p || root == q) {
+            return root;
+        }
+        
+        // 2. 去左边找
+        TreeNode* left = lowestCommonAncestor(root->left, p, q);
+        // 3. 去右边找
+        TreeNode* right = lowestCommonAncestor(root->right, p, q);
+        
+        // 4. 如果左右两边都能找到，说明 p 和 q 分居当前节点的两侧，当前节点就是 LCA
+        if (left != nullptr && right != nullptr) {
+            return root;
+        }
+        
+        // 5. 如果只在某一边找到，就把那一边找到的节点一路送上去
+        return left != nullptr ? left : right;
+    }
+};
+```
+
+这道题核心思想就是**层层上报**，比一般的递归稍微复杂一点，但是逻辑上其实差不太多。返回条件是空和找到目标，空的话到时加个判断过滤一下就行，重点是上报的被找到的节点。如果一个节点，同时在左子树方向和右子树方向都有非空的返回，那么它就是要找的那个祖先。此外，如果另一个节点是一个节点的子节点，那么到了后者时会直接返回，这时候最终结果就是后者，逻辑自洽。
+
+
+
+### 82. 二叉树的右视图
+
+#### 82.1 题目
+
+给定一个二叉树的 **根节点** `root`，想象自己站在它的右侧，按照从顶部到底部的顺序，返回从右侧所能看到的节点值。
+
+ 
+
+**示例 1：**
+
+**输入：**root = [1,2,3,null,5,null,4]
+
+**输出：**[1,3,4]
+
+**解释：**
+
+![img](./assets/tmpd5jn43fs-1.png)
+
+**示例 2：**
+
+**输入：**root = [1,2,3,4,null,null,null,5]
+
+**输出：**[1,3,4,5]
+
+**解释：**
+
+![img](./assets/tmpkpe40xeh-1.png)
+
+**示例 3：**
+
+**输入：**root = [1,null,3]
+
+**输出：**[1,3]
+
+**示例 4：**
+
+**输入：**root = []
+
+**输出：**[]
+
+ 
+
+**提示:**
+
+- 二叉树的节点个数的范围是 `[0,100]`
+- `-100 <= Node.val <= 100` 
+
+
+
+#### 82.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(H)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   private:
+    vector<int> result;
+
+   public:
+    vector<int> rightSideView(TreeNode* root) {
+        result.resize(0);
+        findRightest(root, 0);
+        return result;
+    }
+
+   private:
+    void findRightest(TreeNode* root, int layer) {
+        if (root == nullptr) return;
+
+        if (layer == result.size()) {
+            result.push_back(root->val);
+        }
+
+        findRightest(root->right, layer + 1);
+        findRightest(root->left, layer + 1);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    if (n == 0) {
+        cout << "\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    vector<int> res = obj.rightSideView(root);
+
+    for (int val : res) {
+        cout << val << " ";
+    }
+    cout << "\n";
+
+    return 0;
+}
+```
+
+> 这里用 `clear()`替代` resize(0)`更好；当然，如果传引用到递归函数更好。
+
+
+
+#### 83.3 解析
+
+依旧是递归最优解，此外，迭代的话：
+
+```cpp
+#include <queue>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> rightSideView(TreeNode* root) {
+        vector<int> result;
+        if (root == nullptr) return result;
+        
+        queue<TreeNode*> q;
+        q.push(root);
+        
+        while (!q.empty()) {
+            int levelSize = q.size();
+            
+            for (int i = 0; i < levelSize; i++) {
+                TreeNode* node = q.front();
+                q.pop();
+                
+                // 如果是当前层的最后一个节点，记录到结果中
+                if (i == levelSize - 1) {
+                    result.push_back(node->val);
+                }
+                
+                if (node->left != nullptr) q.push(node->left);
+                if (node->right != nullptr) q.push(node->right);
+            }
+        }
+        
+        return result;
+    }
+};
+```
+
