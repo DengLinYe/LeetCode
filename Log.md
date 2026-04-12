@@ -15180,7 +15180,7 @@ public:
 
 
 
-### 82. 二叉树的右视图
+### 82. 二叉树的右视图*
 
 #### 82.1 题目
 
@@ -15367,6 +15367,351 @@ public:
         }
         
         return result;
+    }
+};
+```
+
+
+
+
+
+### 83. 二叉树的层平均值*
+
+#### 83.1 题目
+
+给定一个非空二叉树的根节点 `root` , 以数组的形式返回每一层节点的平均值。与实际答案相差 `10-5` 以内的答案可以被接受。
+
+ 
+
+**示例 1：**
+
+![img](./assets/avg1-tree.jpg)
+
+```
+输入：root = [3,9,20,null,null,15,7]
+输出：[3.00000,14.50000,11.00000]
+解释：第 0 层的平均值为 3,第 1 层的平均值为 14.5,第 2 层的平均值为 11 。
+因此返回 [3, 14.5, 11] 。
+```
+
+**示例 2:**
+
+![img](./assets/avg2-tree.jpg)
+
+```
+输入：root = [3,9,20,15,7]
+输出：[3.00000,14.50000,11.00000]
+```
+
+ 
+
+**提示：**
+
+
+
+- 树中节点数量在 `[1, 104]` 范围内
+- `-231 <= Node.val <= 231 - 1`
+
+
+
+#### 83.2 解法
+
+ **时间复杂度**：$O(N)$，**空间复杂度**：$O(M)$。
+
+```cpp
+#include <algorithm>
+#include <iomanip>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    vector<double> averageOfLevels(TreeNode* root) {
+        vector<double> avg;
+        if (root == nullptr) return avg;
+
+        queue<TreeNode*> layer;
+        layer.push(root);
+
+        while (!layer.empty()) {
+            int layerSize = layer.size();
+            double sum = 0;
+
+            for (int i = 0; i < layerSize; i++) {
+                TreeNode* curr = layer.front();
+                layer.pop();
+
+                sum += curr->val;
+
+                if (curr->left) layer.push(curr->left);
+                if (curr->right) layer.push(curr->right);
+            }
+            avg.push_back(sum / layerSize);
+        }
+
+        return avg;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    if (n == 0) {
+        cout << "\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    vector<double> res = obj.averageOfLevels(root);
+
+    cout << fixed << setprecision(5);
+    for (double avg : res) {
+        cout << avg << " ";
+    }
+    cout << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 83.3 解析
+
+这回跑去写迭代了，因为很直观，如果用递归的话也不难，但是没啥必要。
+
+
+
+### 84. 二叉树的层序遍历*
+
+#### 84.1 题目
+
+给你二叉树的根节点 `root` ，返回其节点值的 **层序遍历** 。 （即逐层地，从左到右访问所有节点）。
+
+ 
+
+**示例 1：**
+
+![img](./assets/tree1.jpg)
+
+```
+输入：root = [3,9,20,null,null,15,7]
+输出：[[3],[9,20],[15,7]]
+```
+
+**示例 2：**
+
+```
+输入：root = [1]
+输出：[[1]]
+```
+
+**示例 3：**
+
+```
+输入：root = []
+输出：[]
+```
+
+ 
+
+**提示：**
+
+- 树中节点数目在范围 `[0, 2000]` 内
+- `-1000 <= Node.val <= 1000`
+
+
+
+#### 84.2 解法
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <utility>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        if (root == nullptr) return {};
+
+        vector<vector<int>> layers;
+        queue<TreeNode*> q;
+        q.push(root);
+
+        while (!q.empty()) {
+            int layerSize = q.size();
+            vector<int> everyLayer;
+
+            everyLayer.reserve(layerSize);
+
+            for (int i = 0; i < layerSize; i++) {
+                TreeNode* curr = q.front();
+                q.pop();
+
+                everyLayer.push_back(curr->val);
+
+                if (curr->left) q.push(curr->left);
+                if (curr->right) q.push(curr->right);
+            }
+
+            layers.push_back(std::move(everyLayer));
+        }
+
+        return layers;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    if (n == 0) {
+        cout << "[]\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    vector<vector<int>> res = obj.levelOrder(root);
+
+    cout << "[";
+    for (size_t r = 0; r < res.size(); ++r) {
+        cout << "[";
+        for (size_t c = 0; c < res[r].size(); ++c) {
+            cout << res[r][c];
+            if (c < res[r].size() - 1) cout << ",";
+        }
+        cout << "]";
+        if (r < res.size() - 1) cout << ",";
+    }
+    cout << "]\n";
+
+    return 0;
+}
+```
+
+> 两个复合向量的性能优化办法：
+>
+> 1. 预分配内存（比如我们的`everyLayer`预先知道大小，可以用`reverse`（不影响`push_back`使用，与初始化分配有点区别）
+> 2. `move`避免拷贝
+
+
+
+#### 84.3 解析
+
+依旧较为直观的迭代法层序遍历，此外，递归的话：
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        vector<vector<int>> res;
+        dfs(root, 0, res);
+        return res;
+    }
+    
+private:
+    void dfs(TreeNode* root, int level, vector<vector<int>>& res) {
+        if (root == nullptr) return;
+        
+        // 当 depth 等于 res 的大小，说明我们到达了一个新的、还未被触及的深度
+        if (level == res.size()) {
+            res.push_back(vector<int>()); // 为新的一层开辟空间
+        }
+        
+        // 将当前节点塞入对应深度的数组中
+        res[level].push_back(root->val);
+        
+        // 继续带着深度信息往下挖
+        dfs(root->left, level + 1, res);
+        dfs(root->right, level + 1, res);
     }
 };
 ```
