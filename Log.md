@@ -15716,3 +15716,415 @@ private:
 };
 ```
 
+
+
+
+
+### 85. 二叉树的锯齿形层序遍历*
+
+#### 85.1 题目
+
+给你二叉树的根节点 `root` ，返回其节点值的 **锯齿形层序遍历** 。（即先从左往右，再从右往左进行下一层遍历，以此类推，层与层之间交替进行）。
+
+ 
+
+**示例 1：**
+
+![img](./assets/tree1-1776058078247-1.jpg)
+
+```
+输入：root = [3,9,20,null,null,15,7]
+输出：[[3],[20,9],[15,7]]
+```
+
+**示例 2：**
+
+```
+输入：root = [1]
+输出：[[1]]
+```
+
+**示例 3：**
+
+```
+输入：root = []
+输出：[]
+```
+
+ 
+
+**提示：**
+
+- 树中节点数目在范围 `[0, 2000]` 内
+- `-100 <= Node.val <= 100`
+
+
+
+#### 85.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <utility>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    vector<vector<int>> zigzagLevelOrder(TreeNode* root) {
+        if (root == nullptr) return {};
+
+        bool ward = true;
+        vector<vector<int>> res;
+        queue<TreeNode*> q;
+        q.push(root);
+
+        while (!q.empty()) {
+            int layerSize = q.size();
+            vector<int> layer(layerSize);
+
+            for (int i = 0; i < layerSize; i++) {
+                TreeNode* curr = q.front();
+                q.pop();
+
+                int index = ward ? i : layerSize - 1 - i;
+                layer[index] = curr->val;
+
+                if (curr->left != nullptr) q.push(curr->left);
+                if (curr->right != nullptr) q.push(curr->right);
+            }
+
+            res.push_back(std::move(layer));
+            ward = !ward;
+        }
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    if (n == 0) {
+        cout << "[]\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    vector<vector<int>> res = obj.zigzagLevelOrder(root);
+
+    cout << "[";
+    for (size_t r = 0; r < res.size(); ++r) {
+        cout << "[";
+        for (size_t c = 0; c < res[r].size(); ++c) {
+            cout << res[r][c];
+            if (c < res[r].size() - 1) cout << ",";
+        }
+        cout << "]";
+        if (r < res.size() - 1) cout << ",";
+    }
+    cout << "]\n";
+
+    return 0;
+}
+```
+
+
+
+#### 85.3 解析
+
+我最初是想改入栈顺序，但是假如还是依序遍历的话，多几层之后就完全乱了；而这种不同遍历顺序的办法，核心不在于`curr`出队列的顺序，而是赋值给数组的顺序。
+
+此外，递归也是能做的，要多一步翻转：
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> zigzagLevelOrder(TreeNode* root) {
+        vector<vector<int>> res;
+        dfs(root, 0, res); // 先正常收集所有层的数据
+        
+        // 后处理：仅对奇数层（从右向左的层）进行原地翻转
+        for (int i = 1; i < res.size(); i += 2) {
+            reverse(res[i].begin(), res[i].end());
+        }
+        return res;
+    }
+    
+private:
+    void dfs(TreeNode* root, int level, vector<vector<int>>& res) {
+        if (!root) return;
+        
+        if (level == res.size()) {
+            res.push_back(vector<int>());
+        }
+        
+        res[level].push_back(root->val); // 永远从左往右 push
+        
+        dfs(root->left, level + 1, res);
+        dfs(root->right, level + 1, res);
+    }
+};
+```
+
+
+
+### 86. 二叉搜索树的最小绝对差*
+
+#### 86.1 题目
+
+给你一个二叉搜索树的根节点 `root` ，返回 **树中任意两不同节点值之间的最小差值** 。
+
+差值是一个正数，其数值等于两值之差的绝对值。
+
+ 
+
+**示例 1：**
+
+![img](./assets/bst1.jpg)
+
+```
+输入：root = [4,2,6,1,3]
+输出：1
+```
+
+**示例 2：**
+
+![img](./assets/bst2.jpg)
+
+```
+输入：root = [1,0,48,null,null,12,49]
+输出：1
+```
+
+ 
+
+**提示：**
+
+- 树中节点的数目范围是 `[2, 104]`
+- `0 <= Node.val <= 105`
+
+ 
+
+**注意：**本题与 783 https://leetcode.cn/problems/minimum-distance-between-bst-nodes/ 相同
+
+
+
+#### 86.2 解法
+
+**时间复杂度**：$O(N)$，**空间复杂度**：$O(H)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+#include <climits>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+private:
+    int minSub;
+
+    void midSeek(TreeNode* root, int& pre) {
+        if (root == nullptr) {
+            return;
+        }
+        
+        midSeek(root->left, pre);
+        
+        if (pre == -1) {
+            pre = root->val;
+        } else {
+            minSub = min(minSub, root->val - pre);
+            pre = root->val;
+        }
+        
+        midSeek(root->right, pre);
+    }
+
+public:
+    int getMinimumDifference(TreeNode* root) {
+        minSub = INT_MAX; 
+        int pre = -1;
+        midSeek(root, pre);
+        return minSub;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    if (n == 0) return 0;
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    cout << obj.getMinimumDifference(root) << "\n";
+
+    return 0;
+}
+```
+
+> 两个问题，一是用`private`记录最大值，容易被污染；一是用`-1`标记空，限制很大：
+>
+> ```cpp
+> class Solution {
+> public:
+>     int getMinimumDifference(TreeNode* root) {
+>         int minSub = INT_MAX;
+>         TreeNode* prev = nullptr; // 完美替代 int pre = -1
+>         
+>         inorder(root, prev, minSub);
+>         
+>         return minSub;
+>     }
+> 
+> private:
+>     void inorder(TreeNode* curr, TreeNode*& prev, int& minSub) {
+>         if (curr == nullptr) return;
+>         
+>         inorder(curr->left, prev, minSub);
+>         
+>         if (prev != nullptr) {
+>             minSub = min(minSub, curr->val - prev->val);
+>         }
+>         prev = curr;
+>         
+>         inorder(curr->right, prev, minSub);
+>     }
+> };
+> ```
+
+
+
+#### 86.3 解析
+
+这道题的核心就是认识到中序遍历后的二叉搜索树实际上就是一个非递减的数组。此外迭代法也是可以的：
+
+```cpp
+#include <stack>
+#include <algorithm>
+#include <climits>
+
+using namespace std;
+
+class Solution {
+public:
+    int getMinimumDifference(TreeNode* root) {
+        int minSub = INT_MAX;
+        TreeNode* prev = nullptr;
+        TreeNode* curr = root;
+        stack<TreeNode*> st;
+        
+        while (curr != nullptr || !st.empty()) {
+            // 一路向左走到底
+            while (curr != nullptr) {
+                st.push(curr);
+                curr = curr->left;
+            }
+            
+            // 弹出栈顶元素（这就是当前中序序列中最小的一个）
+            curr = st.top();
+            st.pop();
+            
+            // 处理逻辑
+            if (prev != nullptr) {
+                minSub = min(minSub, curr->val - prev->val);
+            }
+            prev = curr;
+            
+            // 转向右边
+            curr = curr->right;
+        }
+        
+        return minSub;
+    }
+};
+```
+
