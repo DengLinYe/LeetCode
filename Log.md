@@ -16128,3 +16128,415 @@ public:
 };
 ```
 
+
+
+
+
+### 87. 二叉搜索树中第k小的元素*
+
+#### 87.1 题目
+
+给定一个二叉搜索树的根节点 `root` ，和一个整数 `k` ，请你设计一个算法查找其中第 `k` 小的元素（`k` 从 1 开始计数）。
+
+ 
+
+**示例 1：**
+
+![img](https://assets.leetcode.com/uploads/2021/01/28/kthtree1.jpg)
+
+```
+输入：root = [3,1,4,null,2], k = 1
+输出：1
+```
+
+**示例 2：**
+
+![img](https://assets.leetcode.com/uploads/2021/01/28/kthtree2.jpg)
+
+```
+输入：root = [5,3,6,2,4,null,null,1], k = 3
+输出：3
+```
+
+ 
+
+ 
+
+**提示：**
+
+- 树中的节点数为 `n` 。
+- `1 <= k <= n <= 104`
+- `0 <= Node.val <= 104`
+
+ 
+
+**进阶：**如果二叉搜索树经常被修改（插入/删除操作）并且你需要频繁地查找第 `k` 小的值，你将如何优化算法？
+
+
+
+#### 87.2 解法
+
+**时间复杂度**：$O(H + k)$，**空间复杂度**：$O(H)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   public:
+    int kthSmallest(TreeNode* root, int k) { return helper(root, k); }
+
+   private:
+    int helper(TreeNode* root, int& k) {
+        if (root == nullptr) return -1;
+
+        int num = helper(root->left, k);
+        if (num != -1) return num;
+
+        k--;
+        if (k == 0) return root->val;
+
+        num = helper(root->right, k);
+        if (num != -1) return num;
+
+        return -1;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, k;
+    if (!(cin >> n >> k)) return 0;
+
+    if (n == 0) return 0;
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    cout << obj.kthSmallest(root, k) << "\n";
+
+    return 0;
+}
+```
+
+> 用`-1`标识没有找到，不太工程化：
+>
+> ```cpp
+> class Solution {
+> private:
+>     int result = 0; // 存放最终答案
+>     int count = 0;  // 记录当前遍历到了第几个
+> 
+>     void inorder(TreeNode* root, int k) {
+>         if (root == nullptr) return;
+>         
+>         inorder(root->left, k);
+>         
+>         // 核心剪枝操作：如果已经找到了，后续的递归直接秒退
+>         if (count >= k) return; 
+>         
+>         count++;
+>         if (count == k) {
+>             result = root->val;
+>             return;
+>         }
+>         
+>         inorder(root->right, k);
+>     }
+> 
+> public:
+>     int kthSmallest(TreeNode* root, int k) {
+>         inorder(root, k);
+>         return result;
+>     }
+> };
+> ```
+
+
+
+#### 87.3 解析
+
+这里用迭代法会更好：
+
+```cpp
+#include <stack>
+
+using namespace std;
+
+class Solution {
+public:
+    int kthSmallest(TreeNode* root, int k) {
+        stack<TreeNode*> st;
+        TreeNode* curr = root;
+        
+        while (curr != nullptr || !st.empty()) {
+            // 1. 左子树入栈
+            while (curr != nullptr) {
+                st.push(curr);
+                curr = curr->left;
+            }
+            
+            // 2. 弹出当前最小的元素
+            curr = st.top();
+            st.pop();
+            
+            // 3. 查找
+            k--;
+            if (k == 0) {
+                return curr->val;
+            }
+            
+            // 4. 转向右子树
+            curr = curr->right;
+        }
+        
+        return -1; // 理论上不可能走到这里，除非 k 大于树的节点总数
+    }
+};
+```
+
+
+
+### 88. 验证二叉搜索树*
+
+#### 88.1 题目
+
+给你一个二叉树的根节点 `root` ，判断其是否是一个有效的二叉搜索树。
+
+**有效** 二叉搜索树定义如下：
+
+- 节点的左子树只包含 **严格小于** 当前节点的数。
+- 节点的右子树只包含 **严格大于** 当前节点的数。
+- 所有左子树和右子树自身必须也是二叉搜索树。
+
+ 
+
+**示例 1：**
+
+![img](./assets/tree1-1776221095742-1.jpg)
+
+```
+输入：root = [2,1,3]
+输出：true
+```
+
+**示例 2：**
+
+![img](./assets/tree2.jpg)
+
+```
+输入：root = [5,1,4,null,null,3,6]
+输出：false
+解释：根节点的值是 5 ，但是右子节点的值是 4 。
+```
+
+ 
+
+**提示：**
+
+- 树中节点数目范围在`[1, 104]` 内
+- `-231 <= Node.val <= 231 - 1`
+
+
+
+#### 88.2 解法
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   private:
+    TreeNode* pre;
+
+   public:
+    bool isValidBST(TreeNode* root) {
+        pre = nullptr;
+        return inorder(root);
+    }
+
+    bool inorder(TreeNode* root) {
+        if (root == nullptr) return true;
+
+        bool leftSon = inorder(root->left);
+        if (!leftSon) return leftSon;
+
+        bool self = true;
+        if (pre != nullptr) self = root->val <= pre->val ? false : true;
+        if (!self) return self;
+        pre = root;
+
+        bool rightSon = inorder(root->right);
+        if (!rightSon) return rightSon;
+
+        return true;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    if (n == 0) {
+        cout << "true\n";
+        return 0;
+    }
+
+    vector<string> vals(n);
+    for (int i = 0; i < n; i++) {
+        cin >> vals[i];
+    }
+
+    TreeNode* root = new TreeNode(stoi(vals[0]));
+    queue<TreeNode*> q;
+    q.push(root);
+    int i = 1;
+
+    while (!q.empty() && i < n) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        if (i < n && vals[i] != "null") {
+            curr->left = new TreeNode(stoi(vals[i]));
+            q.push(curr->left);
+        }
+        i++;
+
+        if (i < n && vals[i] != "null") {
+            curr->right = new TreeNode(stoi(vals[i]));
+            q.push(curr->right);
+        }
+        i++;
+    }
+
+    Solution obj;
+    cout << (obj.isValidBST(root) ? "true" : "false") << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 88.3 解析
+
+此外，也能迭代：
+
+```cpp
+#include <stack>
+
+class Solution {
+public:
+    bool isValidBST(TreeNode* root) {
+        stack<TreeNode*> st;
+        TreeNode* curr = root;
+        TreeNode* pre = nullptr;
+        
+        while (curr != nullptr || !st.empty()) {
+            while (curr != nullptr) {
+                st.push(curr);
+                curr = curr->left;
+            }
+            
+            curr = st.top();
+            st.pop();
+            
+            // 核心验证逻辑
+            if (pre != nullptr && curr->val <= pre->val) {
+                return false;
+            }
+            pre = curr;
+            
+            curr = curr->right;
+        }
+        return true;
+    }
+};
+```
+
+而递归也有另一种思路：
+
+```cpp
+class Solution {
+public:
+    bool isValidBST(TreeNode* root) {
+        // 初始状态，根节点的上下限都是“无限制”
+        return validate(root, nullptr, nullptr);
+    }
+
+private:
+    bool validate(TreeNode* node, TreeNode* lower, TreeNode* upper) {
+        // 空节点自然是合法的
+        if (node == nullptr) return true;
+        
+        // 检查是否越过下限
+        if (lower != nullptr && node->val <= lower->val) return false;
+        // 检查是否越过上限
+        if (upper != nullptr && node->val >= upper->val) return false;
+        
+        // 往左走：下限不变，上限变成当前节点
+        // 往右走：上限不变，下限变成当前节点
+        return validate(node->left, lower, node) && 
+               validate(node->right, node, upper);
+    }
+};
+```
+
