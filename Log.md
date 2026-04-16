@@ -16540,3 +16540,424 @@ private:
 };
 ```
 
+
+
+
+
+## 十、图
+
+### 89. 岛屿数量***（@）
+
+#### 89.1 题目
+
+给你一个由 `'1'`（陆地）和 `'0'`（水）组成的的二维网格，请你计算网格中岛屿的数量。
+
+岛屿总是被水包围，并且每座岛屿只能由水平方向和/或竖直方向上相邻的陆地连接形成。
+
+此外，你可以假设该网格的四条边均被水包围。
+
+ 
+
+**示例 1：**
+
+```
+输入：grid = [
+  ['1','1','1','1','0'],
+  ['1','1','0','1','0'],
+  ['1','1','0','0','0'],
+  ['0','0','0','0','0']
+]
+输出：1
+```
+
+**示例 2：**
+
+```
+输入：grid = [
+  ['1','1','0','0','0'],
+  ['1','1','0','0','0'],
+  ['0','0','1','0','0'],
+  ['0','0','0','1','1']
+]
+输出：3
+```
+
+ 
+
+**提示：**
+
+- `m == grid.length`
+- `n == grid[i].length`
+- `1 <= m, n <= 300`
+- `grid[i][j]` 的值为 `'0'` 或 `'1'`
+
+
+
+#### 89.2 解法
+
+**时间复杂度**：$O(M \times N)$，**空间复杂度**：$O(M \times N)$。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int numIslands(vector<vector<char>>& grid) {
+        int n = grid.size(), m = grid[0].size(), sum = 0;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (grid[i][j] == '1') {
+                    // cout<<i <<" "<< j <<endl;
+                    sum++;
+                    DFS(grid, i, j);
+                    // cout<<endl;
+                }
+            }
+        }
+        // cout<<endl;
+
+        return sum;
+    }
+
+   private:
+    void DFS(vector<vector<char>>& grid, int i, int j) {
+        // cout<<i <<" "<< j <<endl;
+
+        grid[i][j] = '0';
+
+        if (i - 1 >= 0 && grid[i - 1][j] == '1') DFS(grid, i - 1, j);
+        if (j - 1 >= 0 && grid[i][j - 1] == '1') DFS(grid, i, j - 1);
+        if (i + 1 < grid.size() && grid[i + 1][j] == '1') DFS(grid, i + 1, j);
+        if (j + 1 < grid[0].size() && grid[i][j + 1] == '1') DFS(grid, i, j + 1);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    if (!(cin >> n >> m)) return 0;
+    if (n == 0 || m == 0) {
+        cout << 0 << "\n";
+        return 0;
+    }
+
+    vector<vector<char>> grid(n, vector<char>(m));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> grid[i][j];
+        }
+    }
+
+    Solution obj;
+    cout << obj.numIslands(grid) << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 89.3 解析
+
+这个图这一块，之前真没怎么接触过，基本上没太多思路，看了提示之后才写出来，就标了三星。此外，这题的解法，我看来也比较有参考性，也就是用深度优先搜索或者广度优先搜索的次数作为所谓的“岛数”，其本质上就是联通的图的数量，这是最关键的一点。然后就是深度优先、广度优先的模板写法了，其实和树的基本形式是一样的，只是更加复杂一些。
+
+那么广度优先搜索版本：
+
+```cpp
+#include <queue>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int numIslands(vector<vector<char>>& grid) {
+        int n = grid.size();
+        if (n == 0) return 0;
+        int m = grid[0].size();
+        int islands = 0;
+        
+        // 方向数组，常用于简化网格搜索的四周扩散逻辑
+        int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < m; ++j) {
+                if (grid[i][j] == '1') {
+                    islands++;
+                    grid[i][j] = '0'; // 发现岛屿，立即原位标记
+                    
+                    queue<pair<int, int>> q;
+                    q.push({i, j});
+                    
+                    // BFS 扩散
+                    while (!q.empty()) {
+                        auto [r, c] = q.front();
+                        q.pop();
+                        
+                        for (auto& dir : directions) {
+                            int nr = r + dir[0];
+                            int nc = c + dir[1];
+                            
+                            // 检查越界和是否为陆地
+                            if (nr >= 0 && nr < n && nc >= 0 && nc < m && grid[nr][nc] == '1') {
+                                grid[nr][nc] = '0'; // 入队时立即标记，防止将同一个节点多次推入队列
+                                q.push({nr, nc});
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return islands;
+    }
+};
+```
+
+
+
+### 90. 被围绕的区域*(@)
+
+#### 90.1 题目
+
+给你一个 `m x n` 的矩阵 `board` ，由若干字符 `'X'` 和 `'O'` 组成，**捕获** 所有 **被围绕的区域**：
+
+- **连接：**一个单元格与水平或垂直方向上相邻的单元格连接。
+- **区域：连接所有** `'O'` 的单元格来形成一个区域。
+- **围绕：**如果一个区域中的所有 `'O'` 单元格都不在棋盘的边缘，则该区域被包围。这样的区域 **完全** 被 `'X'` 单元格包围。
+
+通过 **原地** 将输入矩阵中的所有 `'O'` 替换为 `'X'` 来 **捕获被围绕的区域**。你不需要返回任何值。
+
+ 
+
+**示例 1：**
+
+**输入：**board = [['X','X','X','X'],['X','O','O','X'],['X','X','O','X'],['X','O','X','X']]
+
+**输出：**[['X','X','X','X'],['X','X','X','X'],['X','X','X','X'],['X','O','X','X']]
+
+**解释：**
+
+![img](./assets/1718167191-XNjUTG-image.png)
+
+在上图中，底部的区域没有被捕获，因为它在 board 的边缘并且不能被围绕。
+
+**示例 2：**
+
+**输入：**board = [['X']]
+
+**输出：**[['X']]
+
+ 
+
+**提示：**
+
+- `m == board.length`
+- `n == board[i].length`
+- `1 <= m, n <= 200`
+- `board[i][j]` 为 `'X'` 或 `'O'`
+
+
+
+#### 90.2 解法
+
+**时间复杂度**：$O(M \times N)$，**空间复杂度**：$O(M \times N)$。
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    void solve(vector<vector<char>>& board) {
+        if (board.empty()) return;
+        int n = board.size(), m = board[0].size();
+
+        for (int i = 0; i < n; i++) {
+            if (board[i][0] == 'O') {
+                DFS(board, i, 0, 'B');
+            }
+            if (board[i][m - 1] == 'O') {
+                DFS(board, i, m - 1, 'B');
+            }
+        }
+
+        for (int i = 0; i < m; i++) {
+            if (board[0][i] == 'O') {
+                DFS(board, 0, i, 'B');
+            }
+            if (board[n - 1][i] == 'O') {
+                DFS(board, n - 1, i, 'B');
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (board[i][j] == 'O') {
+                    DFS(board, i, j, 'X');
+                }
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (board[i][j] == 'B') {
+                    board[i][j] = 'O';
+                }
+            }
+        }
+    }
+
+   private:
+    void DFS(vector<vector<char>>& grid, int i, int j, char modify) {
+        grid[i][j] = modify;
+
+        if (i - 1 >= 0 && grid[i - 1][j] == 'O') DFS(grid, i - 1, j, modify);
+        if (j - 1 >= 0 && grid[i][j - 1] == 'O') DFS(grid, i, j - 1, modify);
+        if (i + 1 < grid.size() && grid[i + 1][j] == 'O') DFS(grid, i + 1, j, modify);
+        if (j + 1 < grid[0].size() && grid[i][j + 1] == 'O') DFS(grid, i, j + 1, modify);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    if (!(cin >> n >> m)) return 0;
+    if (n == 0 || m == 0) return 0;
+
+    vector<vector<char>> board(n, vector<char>(m));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> board[i][j];
+        }
+    }
+
+    Solution obj;
+    obj.solve(board);
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cout << board[i][j] << " ";
+        }
+        cout << "\n";
+    }
+
+    return 0;
+}
+```
+
+> 第三次循环，其实不需要再DFS 了，可以与第四次合并：
+>
+> ```cpp
+> for (int i = 0; i < n; i++) {
+>     for (int j = 0; j < m; j++) {
+>         if (board[i][j] == 'O') {
+>             board[i][j] = 'X'; // 内部必死，直接改
+>         } else if (board[i][j] == 'B') {
+>             board[i][j] = 'O'; // 边缘幸存，还原
+>         }
+>     }
+> }
+> ```
+
+
+
+#### 90.3 解析
+
+这次核心在于怎么判断有没有擦到边界，这里需要明白的一点是，假如要基于之前的解法，不可避免地面临实时修改与实时扫描的矛盾：还没扫完不能确定能不能改……所以必须做一种标记，标记扫过的节点，额外空间当然是一种思路，但是原地修改的话会更好。
+
+此外，还有一种方法叫做**并查集**:
+
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class UnionFind {
+private:
+    vector<int> parent;
+public:
+    // 初始化数组的值就是index，也即各自的root都是自己，互不连通
+    UnionFind(int n) {
+        parent.resize(n);
+        for (int i = 0; i < n; ++i) {
+            parent[i] = i;
+        }
+    }
+
+    // 递归找到最初的parent，类似于root
+    int find(int i) {
+        if (parent[i] != i) {
+            parent[i] = find(parent[i]);
+        }
+        return parent[i];
+    }
+
+    //找i、j的root，如果不相同，就连接上，即parent[rootI] = rootJ
+    void unite(int i, int j) {
+        int rootI = find(i);
+        int rootJ = find(j);
+        if (rootI != rootJ) {
+            parent[rootI] = rootJ;
+        }
+    }
+
+    //看看root相不相同，如果相同必然联通，否则不连通。
+    bool connected(int i, int j) {
+        return find(i) == find(j);
+    }
+};
+
+class Solution {
+public:
+    void solve(vector<vector<char>>& board) {
+        if (board.empty() || board[0].empty()) return;
+        
+        int n = board.size();
+        int m = board[0].size();
+        
+        //为每个节点都预留了空间
+        UnionFind uf(n * m + 1);
+        int dummy = n * m;
+        
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < m; ++j) {
+                if (board[i][j] == 'O') {
+                    //边界的O默认全部链接进去，也就是和一个dummy链接，dummy是用来锚定边界O的，也就是说，如果最后和dummy同root的节点，那么一定是与边界O联通的
+                    if (i == 0 || i == n - 1 || j == 0 || j == m - 1) {
+                        uf.unite(i * m + j, dummy);
+                    }
+                    // 只看左边、上边（按遍历顺序）
+                    if (i > 0 && board[i - 1][j] == 'O') {
+                        uf.unite(i * m + j, (i - 1) * m + j);
+                    }
+                    if (j > 0 && board[i][j - 1] == 'O') {
+                        uf.unite(i * m + j, i * m + (j - 1));
+                    }
+                }
+            }
+        }
+        
+        //同上述，如果不和dummy同root，那么就是独立的，直接X
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < m; ++j) {
+                if (board[i][j] == 'O' && !uf.connected(i * m + j, dummy)) {
+                    board[i][j] = 'X';
+                }
+            }
+        }
+    }
+};
+```
+
