@@ -16961,3 +16961,549 @@ public:
 };
 ```
 
+
+
+
+
+### 91. 克隆图*/**（@）
+
+#### 91.1 题目
+
+给你无向 **[连通](https://baike.baidu.com/item/连通图/6460995?fr=aladdin)** 图中一个节点的引用，请你返回该图的 [**深拷贝**](https://baike.baidu.com/item/深拷贝/22785317?fr=aladdin)（克隆）。
+
+图中的每个节点都包含它的值 `val`（`int`） 和其邻居的列表（`list[Node]`）。
+
+```
+class Node {
+    public int val;
+    public List<Node> neighbors;
+}
+```
+
+ 
+
+**测试用例格式：**
+
+简单起见，每个节点的值都和它的索引相同。例如，第一个节点值为 1（`val = 1`），第二个节点值为 2（`val = 2`），以此类推。该图在测试用例中使用邻接列表表示。
+
+**邻接列表** 是用于表示有限图的无序列表的集合。每个列表都描述了图中节点的邻居集。
+
+给定节点将始终是图中的第一个节点（值为 1）。你必须将 **给定节点的拷贝** 作为对克隆图的引用返回。
+
+ 
+
+**示例 1：**
+
+![img](./assets/133_clone_graph_question.png)
+
+```
+输入：adjList = [[2,4],[1,3],[2,4],[1,3]]
+输出：[[2,4],[1,3],[2,4],[1,3]]
+解释：
+图中有 4 个节点。
+节点 1 的值是 1，它有两个邻居：节点 2 和 4 。
+节点 2 的值是 2，它有两个邻居：节点 1 和 3 。
+节点 3 的值是 3，它有两个邻居：节点 2 和 4 。
+节点 4 的值是 4，它有两个邻居：节点 1 和 3 。
+```
+
+**示例 2：**
+
+![img](./assets/graph.png)
+
+```
+输入：adjList = [[]]
+输出：[[]]
+解释：输入包含一个空列表。该图仅仅只有一个值为 1 的节点，它没有任何邻居。
+```
+
+**示例 3：**
+
+```
+输入：adjList = []
+输出：[]
+解释：这个图是空的，它不含任何节点。
+```
+
+ 
+
+**提示：**
+
+- 这张图中的节点数在 `[0, 100]` 之间。
+- `1 <= Node.val <= 100`
+- 每个节点值 `Node.val` 都是唯一的，
+- 图中没有重复的边，也没有自环。
+- 图是连通图，你可以从给定节点访问到所有节点。
+
+
+
+#### 91.2 解法
+
+**时间复杂度**：O(V + E)，**空间复杂度**：O(V)。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Node {
+   public:
+    int val;
+    vector<Node*> neighbors;
+
+    Node() {
+        val = 0;
+        neighbors = vector<Node*>();
+    }
+    Node(int _val) {
+        val = _val;
+        neighbors = vector<Node*>();
+    }
+    Node(int _val, vector<Node*> _neighbors) {
+        val = _val;
+        neighbors = _neighbors;
+    }
+};
+
+class Solution {
+   public:
+    Node* cloneGraph(Node* node) {
+        if (node == nullptr) return node;
+        
+        queue<Node*> neighbors;
+        neighbors.push(node);
+        node->val *= -1;
+
+        unordered_map<Node*, Node*> old2new;
+        while (!neighbors.empty()) {
+            Node* curr = neighbors.front();
+            neighbors.pop();
+
+            Node* newCurr = new Node(-1 * curr->val);
+            old2new[curr] = newCurr;
+
+            for (auto neighbor : curr->neighbors) {
+                if (neighbor->val > 0) {
+                    neighbors.push(neighbor);
+                    neighbor->val *= -1;
+                }
+            }
+        }
+
+        neighbors.push(node);
+        node->val *= -1;
+        while (!neighbors.empty()) {
+            Node* curr = neighbors.front();
+            neighbors.pop();
+
+            for (auto neighbor : curr->neighbors) {
+                old2new[curr]->neighbors.push_back(old2new[neighbor]);
+
+                if (neighbor->val < 0) {
+                    neighbors.push(neighbor);
+                    neighbor->val *= -1;
+                }
+            }
+        }
+
+        return old2new[node];
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    if (n == 0) return 0;
+
+    vector<Node*> nodes(n);
+    for (int i = 0; i < n; i++) {
+        nodes[i] = new Node(i + 1);
+    }
+
+    for (int i = 0; i < n; i++) {
+        int m;
+        cin >> m;
+
+        for (int j = 0; j < m; j++) {
+            int index;
+            cin >> index;
+
+            nodes[i]->neighbors.push_back(nodes[index - 1]);
+        }
+    }
+
+    Solution obj;
+    Node* first = obj.cloneGraph(nodes[0]);
+
+    queue<Node*> neighbors;
+    neighbors.push(first);
+    first->val *= -1;
+
+    while (!neighbors.empty()) {
+        Node* curr = neighbors.front();
+        neighbors.pop();
+
+        cout << -1 * curr->val << " ";
+
+        for (auto node : curr->neighbors) {
+            if (node->val > 0) {
+                neighbors.push(node);
+                node->val *= -1;
+            }
+        }
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 91.3 解法
+
+做得有点麻烦了，实际上只需要一次遍历：要明白是否被遍历和是否被克隆实际上是等价的，所以两次遍历可以合并为一次：
+
+```cpp
+class Solution {
+public:
+    Node* cloneGraph(Node* node) {
+        if (node == nullptr) return nullptr;
+
+        unordered_map<Node*, Node*> cloned;
+        queue<Node*> q;
+
+        // 克隆起点，并放入队列和哈希表
+        cloned[node] = new Node(node->val);
+        q.push(node);
+
+        while (!q.empty()) {
+            Node* curr = q.front();
+            q.pop();
+
+            // 遍历当前节点的所有原邻居
+            for (Node* neighbor : curr->neighbors) {
+                // 如果邻居还没被克隆过<->邻居没有被访问过
+                if (cloned.find(neighbor) == cloned.end()) {
+                    cloned[neighbor] = new Node(neighbor->val);
+                    q.push(neighbor);
+                }
+                // 无脑将邻居的克隆体，加入当前节点克隆体的邻居列表中
+                cloned[curr]->neighbors.push_back(cloned[neighbor]);
+            }
+        }
+
+        return cloned[node];
+    }
+};
+```
+
+此外还有递归的办法，也就是深度优先搜索：
+
+```cpp
+class Solution {
+private:
+    unordered_map<Node*, Node*> cloned;
+
+public:
+    Node* cloneGraph(Node* node) {
+        if (node == nullptr) return nullptr;
+
+        // 如果这个节点已经被克隆过，直接返回它的克隆体（这也就是 DFS 处理环的核心防线）
+        if (cloned.find(node) != cloned.end()) {
+            return cloned[node];
+        }
+
+        // 克隆当前节点，并立即存入哈希表（必须在递归邻居之前存入，否则遇到环会死循环）
+        Node* cloneNode = new Node(node->val);
+        cloned[node] = cloneNode;
+
+        // 递归深搜邻居，将返回的克隆邻居塞进自己的邻居列表里
+        for (Node* neighbor : node->neighbors) {
+            cloneNode->neighbors.push_back(cloneGraph(neighbor));
+        }
+
+        return cloneNode;
+    }
+};
+```
+
+
+
+
+
+### 92. 除法求值**
+
+#### 92.1 题目
+
+给你一个变量对数组 `equations` 和一个实数值数组 `values` 作为已知条件，其中 `equations[i] = [Ai, Bi]` 和 `values[i]` 共同表示等式 `Ai / Bi = values[i]` 。每个 `Ai` 或 `Bi` 是一个表示单个变量的字符串。
+
+另有一些以数组 `queries` 表示的问题，其中 `queries[j] = [Cj, Dj]` 表示第 `j` 个问题，请你根据已知条件找出 `Cj / Dj = ?` 的结果作为答案。
+
+返回 **所有问题的答案** 。如果存在某个无法确定的答案，则用 `-1.0` 替代这个答案。如果问题中出现了给定的已知条件中没有出现的字符串，也需要用 `-1.0` 替代这个答案。
+
+**注意：**输入总是有效的。你可以假设除法运算中不会出现除数为 0 的情况，且不存在任何矛盾的结果。
+
+**注意：**未在等式列表中出现的变量是未定义的，因此无法确定它们的答案。
+
+ 
+
+**示例 1：**
+
+```
+输入：equations = [["a","b"],["b","c"]], values = [2.0,3.0], queries = [["a","c"],["b","a"],["a","e"],["a","a"],["x","x"]]
+输出：[6.00000,0.50000,-1.00000,1.00000,-1.00000]
+解释：
+条件：a / b = 2.0, b / c = 3.0
+问题：a / c = ?, b / a = ?, a / e = ?, a / a = ?, x / x = ?
+结果：[6.0, 0.5, -1.0, 1.0, -1.0 ]
+注意：x 是未定义的 => -1.0
+```
+
+**示例 2：**
+
+```
+输入：equations = [["a","b"],["b","c"],["bc","cd"]], values = [1.5,2.5,5.0], queries = [["a","c"],["c","b"],["bc","cd"],["cd","bc"]]
+输出：[3.75000,0.40000,5.00000,0.20000]
+```
+
+**示例 3：**
+
+```
+输入：equations = [["a","b"]], values = [0.5], queries = [["a","b"],["b","a"],["a","c"],["x","y"]]
+输出：[0.50000,2.00000,-1.00000,-1.00000]
+```
+
+ 
+
+**提示：**
+
+- `1 <= equations.length <= 20`
+- `equations[i].length == 2`
+- `1 <= Ai.length, Bi.length <= 5`
+- `values.length == equations.length`
+- `0.0 < values[i] <= 20.0`
+- `1 <= queries.length <= 20`
+- `queries[i].length == 2`
+- `1 <= Cj.length, Dj.length <= 5`
+- `Ai, Bi, Cj, Dj` 由小写英文字母与数字组成
+
+
+
+#### 92.3 解法
+
+**时间复杂度**：$O(N + Q \times (V + E))$，**空间复杂度**：$O(V + E)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+using namespace std;
+
+struct Node {
+    string val;
+    vector<pair<Node*, double>> neighbors;
+
+    Node(string _val) : val(_val) { neighbors = vector<pair<Node*, double>>(); }
+};
+
+class Solution {
+   private:
+    unordered_map<string, Node*> build;
+    unordered_set<Node*> visit;
+
+   public:
+    vector<double> calcEquation(vector<vector<string>>& equations, vector<double>& values,
+                                vector<vector<string>>& queries) {
+        build.clear();
+        int n = equations.size();
+
+        for (int i = 0; i < n; i++) {
+            auto& eq = equations[i];
+
+            if (!build.count(eq[0])) {
+                build[eq[0]] = new Node(eq[0]);
+            }
+            if (!build.count(eq[1])) {
+                build[eq[1]] = new Node(eq[1]);
+            }
+
+            build[eq[0]]->neighbors.push_back({build[eq[1]], values[i]});
+            build[eq[1]]->neighbors.push_back({build[eq[0]], values[i] == 0 ? -1 : 1 / values[i]});
+        }
+
+        vector<double> res;
+        for (auto& q : queries) {
+            if (!build.count(q[0]) || !build.count(q[1])) {
+                res.push_back(-1);
+                continue;
+            }
+            if (q[0] == q[1]) {
+                res.push_back(1);
+                continue;
+            }
+
+            visit.clear();
+            res.push_back(calculate(build[q[0]], q[1]));
+        }
+
+        return res;
+    }
+
+   private:
+    double calculate(Node* st, string& ed) {
+        visit.insert(st);
+
+        for (auto neighbor : st->neighbors) {
+            if (neighbor.first->val == ed) {
+                return neighbor.second;
+            }
+
+            if (!visit.count(neighbor.first)) {
+                double res = calculate(neighbor.first, ed);
+                if (res != -1) return neighbor.second * res;
+            }
+        }
+
+        return -1;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<vector<string>> equations(n, vector<string>(2));
+    vector<double> values(n);
+
+    for (int i = 0; i < n; i++) {
+        string e1, e2;
+        double val;
+        cin >> e1 >> e2 >> val;
+
+        equations[i] = {e1, e2};
+        values[i] = val;
+    }
+
+    int m;
+    cin >> m;
+    vector<vector<string>> queries(m, vector<string>(2));
+
+    for (int i = 0; i < m; i++) {
+        string q1, q2;
+        cin >> q1 >> q2;
+
+        queries[i] = {q1, q2};
+    }
+
+    Solution obj;
+    vector<double> res = obj.calcEquation(equations, values, queries);
+
+    for (auto val : res) {
+        cout << val << " ";
+    }
+
+    return 0;
+}
+```
+
+> 用`new`分配空间最后没有`delete`，然后其实可以不用定义图结构，直接用`string`代指即可：
+>
+> ```cpp
+> // 直接用 string 替代 Node*，连结构体都不用写
+> unordered_map<string, vector<pair<string, double>>> graph;
+> ```
+
+
+
+#### 92.3 解析
+
+我这个解法慢一点，**带权并查集**会更快：
+
+```cpp
+class Solution {
+private:
+    // parent 记录：<当前节点字符串, 根节点字符串>
+    unordered_map<string, string> parent;
+    // weight 记录：当前节点 / 根节点 的比值
+    unordered_map<string, double> weight;
+
+    // 查：寻找根节点，并进行路径压缩更新权重
+    string find(const string& x) {
+        if (parent.find(x) == parent.end()) {
+            parent[x] = x;
+            weight[x] = 1.0;
+        }
+        
+        if (parent[x] != x) {
+            string originParent = parent[x];
+            parent[x] = find(parent[x]); // 递归找最终的根
+            // 路径压缩：当前节点到最终根的权重 = 原来自身到父节点的权重 * 父节点到最终根的权重
+            weight[x] = weight[x] * weight[originParent];
+        }
+        return parent[x];
+    }
+
+    // 并：合并两个节点所在的集合
+    void unite(const string& x, const string& y, double val) {
+        string rootX = find(x);
+        string rootY = find(y);
+        
+        if (rootX != rootY) {
+            parent[rootX] = rootY;
+            // 数学推导：x/y = val, x/rootX = weight[x], y/rootY = weight[y]
+            // 因为 rootX 指向了 rootY，所以我们需要求 rootX/rootY
+            // rootX / rootY = (x/y) * (y/rootY) / (x/rootX) = val * weight[y] / weight[x]
+            weight[rootX] = val * weight[y] / weight[x];
+        }
+    }
+
+public:
+    vector<double> calcEquation(vector<vector<string>>& equations, vector<double>& values, vector<vector<string>>& queries) {
+        // 1. 建图（合并集合）
+        for (int i = 0; i < equations.size(); i++) {
+            unite(equations[i][0], equations[i][1], values[i]);
+        }
+
+        vector<double> res;
+        // 2. 查询
+        for (const auto& q : queries) {
+            const string& x = q[0];
+            const string& y = q[1];
+
+            // 如果有未知的变量，直接 -1
+            if (parent.find(x) == parent.end() || parent.find(y) == parent.end()) {
+                res.push_back(-1.0);
+            } else {
+                string rootX = find(x);
+                string rootY = find(y);
+                // 只有在同一个连通分量里（根相同）才能求出结果
+                if (rootX == rootY) {
+                    res.push_back(weight[x] / weight[y]);
+                } else {
+                    res.push_back(-1.0);
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
+这道题是一道很经典的并查集能解的题，首先是只有在同一连通分量才有解，而并查集中的查就是判断这一点的；其次，根据乘除法的递推关系，也很容易建立起基于根的乘除关系，可以很快计算得结果。
+
+此外，之所以我的路径查找比并查集要慢，实际上是重复地查找了很多次某些路径；而并查集将这部分统一提出到并与查的过程中，即路径压缩与合并部分。
