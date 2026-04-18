@@ -17507,3 +17507,339 @@ public:
 这道题是一道很经典的并查集能解的题，首先是只有在同一连通分量才有解，而并查集中的查就是判断这一点的；其次，根据乘除法的递推关系，也很容易建立起基于根的乘除关系，可以很快计算得结果。
 
 此外，之所以我的路径查找比并查集要慢，实际上是重复地查找了很多次某些路径；而并查集将这部分统一提出到并与查的过程中，即路径压缩与合并部分。
+
+
+
+
+
+### 93. 课程表**（@）
+
+#### 93.1 题目
+
+你这个学期必须选修 `numCourses` 门课程，记为 `0` 到 `numCourses - 1` 。
+
+在选修某些课程之前需要一些先修课程。 先修课程按数组 `prerequisites` 给出，其中 `prerequisites[i] = [ai, bi]` ，表示如果要学习课程 `ai` 则 **必须** 先学习课程 `bi` 。
+
+- 例如，先修课程对 `[0, 1]` 表示：想要学习课程 `0` ，你需要先完成课程 `1` 。
+
+请你判断是否可能完成所有课程的学习？如果可以，返回 `true` ；否则，返回 `false` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：numCourses = 2, prerequisites = [[1,0]]
+输出：true
+解释：总共有 2 门课程。学习课程 1 之前，你需要完成课程 0 。这是可能的。
+```
+
+**示例 2：**
+
+```
+输入：numCourses = 2, prerequisites = [[1,0],[0,1]]
+输出：false
+解释：总共有 2 门课程。学习课程 1 之前，你需要先完成课程 0 ；并且学习课程 0 之前，你还应先完成课程 1 。这是不可能的。
+```
+
+ 
+
+**提示：**
+
+- `1 <= numCourses <= 2000`
+- `0 <= prerequisites.length <= 5000`
+- `prerequisites[i].length == 2`
+- `0 <= ai, bi < numCourses`
+- `prerequisites[i]` 中的所有课程对 **互不相同**
+
+
+
+#### 93.2 解法
+
+**时间复杂度**：$O(V + E)$，**空间复杂度**：$O(V + E)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    unordered_map<int, vector<int>> graph;
+
+   public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+        graph.clear();
+        for (int i = 0; i < numCourses; i++) {
+            graph[i] = vector<int>();
+        }
+
+        for (auto& pre : prerequisites) {
+            graph[pre[0]].push_back(pre[1]);
+        }
+
+        vector<int> state(numCourses, 0);
+        for (int i = 0; i < numCourses; i++) {
+            if (state[i] == 0) {
+                if (!checkCirc(state, i)) return false;
+            }
+        }
+
+        return true;
+    }
+
+   private:
+    bool checkCirc(vector<int>& state, int node) {
+        state[node] = 1;
+
+        for (auto neighbor : graph[node]) {
+            if (state[neighbor] == 1) {
+                return false;
+            }
+            if (state[neighbor] == 0) {
+                if (!checkCirc(state, neighbor)) return false;
+            }
+        }
+
+        state[node] = 2;
+        return true;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, numCourses;
+    cin >> n >> numCourses;
+
+    vector<vector<int>> prerequisites(n, vector<int>(2));
+    for (int i = 0; i < n; i++) {
+        cin >> prerequisites[i][0] >> prerequisites[i][1];
+    }
+
+    Solution obj;
+    cout << (obj.canFinish(n, prerequisites) ? "true" : "false");
+
+    return 0;
+}
+```
+
+> 其实没必要用`unordered_map`……
+
+#### 93.3 解析
+
+我的办法是三色标记法，一般的访问标记只能标记有没有去过，这样会导致一些情况被误判：`0->1`，`2->1`；而三色标记法多了一种状态，用来表示是否是同路径上的再次相遇：用一个 `vector<int> state` 数组，定义三种状态：
+
+- `0`：未访问；
+- `1`：正在访问，也就是在当前的 DFS 路径/栈中；
+- `2`：已完全访问，它的所有邻居都查过了，确认没有环，以后谁再访问到它，直接放行。
+
+此外，这类找环的问题，还有一种比较好的BFS方法，即**BFS 拓扑排序（Kahn 算法）**，其核心在于模拟真是上课场景，看看能不能真的上完：先把入度为零的节点入队，也就是先上这些课程，上完后把以其为依赖的课的入度都减1，如果有新的入度为0的课，也入队，最后遍历完成后，看有几个入度为0的课程……
+
+```cpp
+#include <vector>
+#include <queue>
+
+using namespace std;
+
+class Solution {
+public:
+    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
+        vector<vector<int>> graph(numCourses);
+        vector<int> inDegree(numCourses, 0);
+
+        for (const auto& pre : prerequisites) {
+            graph[pre[1]].push_back(pre[0]);
+            inDegree[pre[0]]++;
+        }
+
+        queue<int> q;
+        for (int i = 0; i < numCourses; ++i) {
+            if (inDegree[i] == 0) {
+                q.push(i);
+            }
+        }
+
+        int count = 0;
+        while (!q.empty()) {
+            int curr = q.front();
+            q.pop();
+            count++;
+
+            for (int neighbor : graph[curr]) {
+                inDegree[neighbor]--;
+                if (inDegree[neighbor] == 0) {
+                    q.push(neighbor);
+                }
+            }
+        }
+
+        return count == numCourses;
+    }
+};
+```
+
+
+
+
+
+### 94. 课程表II*
+
+#### 94.1 题目
+
+现在你总共有 `numCourses` 门课需要选，记为 `0` 到 `numCourses - 1`。给你一个数组 `prerequisites` ，其中 `prerequisites[i] = [ai, bi]` ，表示在选修课程 `ai` 前 **必须** 先选修 `bi` 。
+
+- 例如，想要学习课程 `0` ，你需要先完成课程 `1` ，我们用一个匹配来表示：`[0,1]` 。
+
+返回你为了学完所有课程所安排的学习顺序。可能会有多个正确的顺序，你只要返回 **任意一种** 就可以了。如果不可能完成所有课程，返回 **一个空数组** 。
+
+ 
+
+**示例 1：**
+
+```
+输入：numCourses = 2, prerequisites = [[1,0]]
+输出：[0,1]
+解释：总共有 2 门课程。要学习课程 1，你需要先完成课程 0。因此，正确的课程顺序为 [0,1] 。
+```
+
+**示例 2：**
+
+```
+输入：numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]]
+输出：[0,2,1,3]
+解释：总共有 4 门课程。要学习课程 3，你应该先完成课程 1 和课程 2。并且课程 1 和课程 2 都应该排在课程 0 之后。
+因此，一个正确的课程顺序是 [0,1,2,3] 。另一个正确的排序是 [0,2,1,3] 。
+```
+
+**示例 3：**
+
+```
+输入：numCourses = 1, prerequisites = []
+输出：[0]
+```
+
+ 
+
+**提示：**
+
+- `1 <= numCourses <= 2000`
+- `0 <= prerequisites.length <= numCourses * (numCourses - 1)`
+- `prerequisites[i].length == 2`
+- `0 <= ai, bi < numCourses`
+- `ai != bi`
+- 所有`[ai, bi]` **互不相同**
+
+
+
+#### 94.2 解法
+
+**时间复杂度**：$O(V + E)$，**空间复杂度**：$O(V + E)$。
+
+```cpp
+class Solution {
+   public:
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+        vector<vector<int>> baseCourse(numCourses);
+        vector<int> inDegree(numCourses, 0);
+        vector<int> res;
+
+        for (auto& pre : prerequisites) {
+            baseCourse[pre[1]].push_back(pre[0]);
+            inDegree[pre[0]]++;
+        }
+
+        queue<int> course;
+        for (int i = 0; i < numCourses; i++) {
+            if (inDegree[i] == 0) {
+                course.push(i);
+            }
+        }
+
+        int count = 0;
+        while (!course.empty()) {
+            int curr = course.front();
+            course.pop();
+            res.push_back(curr);
+            count++;
+
+            for (int x : baseCourse[curr]) {
+                inDegree[x]--;
+                if (inDegree[x] == 0) {
+                    course.push(x);
+                }
+            }
+        }
+
+        return count == numCourses ? res : vector<int>();
+    }
+};
+```
+
+> `count`没什么必要了
+
+
+
+#### 94.3 解析
+
+这题就是延续上一题的BFS的思路做的，此外三色排序也能做：
+
+```cpp
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+private:
+    vector<vector<int>> graph;
+    vector<int> state;
+    vector<int> res;
+    bool valid = true;
+
+public:
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+        graph.resize(numCourses);
+        state.assign(numCourses, 0);
+        
+        for (const auto& pre : prerequisites) {
+            graph[pre[1]].push_back(pre[0]);
+        }
+
+        for (int i = 0; i < numCourses && valid; i++) {
+            if (state[i] == 0) {
+                dfs(i);
+            }
+        }
+
+        if (!valid) return {};
+
+        reverse(res.begin(), res.end());
+        return res;
+    }
+
+private:
+    void dfs(int u) {
+        state[u] = 1;
+        for (int v : graph[u]) {
+            if (state[v] == 0) {
+                dfs(v);
+                if (!valid) return;
+            } else if (state[v] == 1) {
+                valid = false;
+                return;
+            }
+        }
+        state[u] = 2;
+        res.push_back(u);
+    }
+};
+```
+
+这里面一个核心的改动就是在状态为2的时候加入，然后最后反转一下数组就行。当为2时，它一定就是最后的那个课程，也就是越深的递归越先结束，这个比较好理解。
