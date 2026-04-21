@@ -17843,3 +17843,1422 @@ private:
 ```
 
 这里面一个核心的改动就是在状态为2的时候加入，然后最后反转一下数组就行。当为2时，它一定就是最后的那个课程，也就是越深的递归越先结束，这个比较好理解。
+
+
+
+### 95. 蛇梯棋**
+
+#### 95.1 题目
+
+给你一个大小为 `n x n` 的整数矩阵 `board` ，方格按从 `1` 到 `n2` 编号，编号遵循 [转行交替方式](https://baike.baidu.com/item/牛耕式转行书写法/17195786) ，**从左下角开始** （即，从 `board[n - 1][0]` 开始）的每一行改变方向。
+
+你一开始位于棋盘上的方格 `1`。每一回合，玩家需要从当前方格 `curr` 开始出发，按下述要求前进：
+
+- 选定目标方格 `next` ，目标方格的编号在范围 `[curr + 1, min(curr + 6, n2)]` 。
+  - 该选择模拟了掷 **六面体骰子** 的情景，无论棋盘大小如何，玩家最多只能有 6 个目的地。
+- 传送玩家：如果目标方格 `next` 处存在蛇或梯子，那么玩家会传送到蛇或梯子的目的地。否则，玩家传送到目标方格 `next` 。 
+- 当玩家到达编号 `n2` 的方格时，游戏结束。
+
+如果 `board[r][c] != -1` ，位于 `r` 行 `c` 列的棋盘格中可能存在 “蛇” 或 “梯子”。那个蛇或梯子的目的地将会是 `board[r][c]`。编号为 `1` 和 `n2` 的方格不是任何蛇或梯子的起点。
+
+注意，玩家在每次掷骰的前进过程中最多只能爬过蛇或梯子一次：就算目的地是另一条蛇或梯子的起点，玩家也 **不能** 继续移动。
+
+- 举个例子，假设棋盘是 `[[-1,4],[-1,3]]` ，第一次移动，玩家的目标方格是 `2` 。那么这个玩家将会顺着梯子到达方格 `3` ，但 **不能** 顺着方格 `3` 上的梯子前往方格 `4` 。（简单来说，类似飞行棋，玩家掷出骰子点数后移动对应格数，遇到单向的路径（即梯子或蛇）可以直接跳到路径的终点，但如果多个路径首尾相连，也不能连续跳多个路径）
+
+返回达到编号为 `n2` 的方格所需的最少掷骰次数，如果不可能，则返回 `-1`。
+
+ 
+
+**示例 1：**
+
+![img](./assets/snakes.png)
+
+```
+输入：board = [[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,-1,-1,-1,-1,-1],[-1,35,-1,-1,13,-1],[-1,-1,-1,-1,-1,-1],[-1,15,-1,-1,-1,-1]]
+输出：4
+解释：
+首先，从方格 1 [第 5 行，第 0 列] 开始。 
+先决定移动到方格 2 ，并必须爬过梯子移动到到方格 15 。
+然后决定移动到方格 17 [第 3 行，第 4 列]，必须爬过蛇到方格 13 。
+接着决定移动到方格 14 ，且必须通过梯子移动到方格 35 。 
+最后决定移动到方格 36 , 游戏结束。 
+可以证明需要至少 4 次移动才能到达最后一个方格，所以答案是 4 。 
+```
+
+**示例 2：**
+
+```
+输入：board = [[-1,-1],[-1,3]]
+输出：1
+```
+
+ 
+
+**提示：**
+
+- `n == board.length == board[i].length`
+- `2 <= n <= 20`
+- `board[i][j]` 的值是 `-1` 或在范围 `[1, n2]` 内
+- 编号为 `1` 和 `n2` 的方格上没有蛇或梯子
+
+
+
+#### 95.2 解法
+
+时间复杂度：$(O(N^2) , O(6^{N^2}) )$，空间复杂度：$O(N^2)$。
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <climits>
+
+using namespace std;
+
+class Solution {
+private:
+    int minTimes;
+    int n;
+public:
+    int snakesAndLadders(vector<vector<int>>& board) {
+        minTimes = INT_MAX;
+        n = board.size();
+        vector<int> visited(n * n + 1, INT_MAX);
+        
+        move(board, 0, 1, visited);
+        
+        return (minTimes == INT_MAX ? -1 : minTimes);
+    }
+private:
+    void move(vector<vector<int>>& board, int times, int pos, vector<int>& visited) {
+        if (times >= minTimes) return;
+        
+        if (times >= visited[pos]) return;
+        visited[pos] = times;
+        
+        if (pos == n * n) {
+            minTimes = times;
+            return;
+        }
+        
+        for (int i = 1; i <= 6; i++) {
+            int nextPos = pos + i;
+            if (nextPos > n * n) break;
+            
+            int r = n - 1 - (nextPos - 1) / n;
+            int c = ((nextPos - 1) / n) % 2 == 0 ? (nextPos - 1) % n : n - 1 - (nextPos - 1) % n;
+            
+            int dest = (board[r][c] == -1 ? nextPos : board[r][c]);
+            
+            move(board, times + 1, dest, visited);
+        }
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+    if (n == 0) return 0;
+
+    vector<vector<int>> board(n, vector<int>(n));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            cin >> board[i][j];
+        }
+    }
+
+    Solution obj;
+    cout << obj.snakesAndLadders(board) << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 95.3 解析
+
+这种无权图最短路径问题，我的DFS解法效果是很差的，虽然在剪枝上下了不少功夫，但是依旧可能因为数据较差而使得时间复杂度飙升。这种题目最好的做法其实是BFS，其一个核心特点是：**首次到达的情况就是最少次数的情况**。
+
+```cpp
+class Solution {
+public:
+    int snakesAndLadders(vector<vector<int>>& board) {
+        int n = board.size();
+        // visited 数组退化为最简单的 bool 数组，因为 BFS 第一次访问必定是最短步数
+        vector<bool> visited(n * n + 1, false); 
+        queue<pair<int, int>> q; // <当前位置, 掷骰子次数>
+        
+        q.push({1, 0});
+        visited[1] = true;
+        
+        while (!q.empty()) {
+            auto [curr, step] = q.front();
+            q.pop();
+            
+            if (curr == n * n) return step;
+            
+            // 模拟掷骰子 1-6
+            for (int i = 1; i <= 6; ++i) {
+                int next = curr + i;
+                if (next > n * n) break;
+                
+                int r = n - 1 - (next - 1) / n;
+                int c = ((next - 1) / n) % 2 == 0 ? (next - 1) % n : n - 1 - (next - 1) % n;  
+                int dest = board[r][c] != -1 ? board[r][c] : next;
+                
+                // 只要没访问过，现在到达的步数就是最优的
+                if (!visited[dest]) {
+                    visited[dest] = true;
+                    q.push({dest, step + 1});
+                }
+            }
+        }
+        
+        return -1;
+    }
+};
+```
+
+
+
+### 96. 最小基因变化**
+
+#### 96.1 题目
+
+基因序列可以表示为一条由 8 个字符组成的字符串，其中每个字符都是 `'A'`、`'C'`、`'G'` 和 `'T'` 之一。
+
+假设我们需要调查从基因序列 `start` 变为 `end` 所发生的基因变化。一次基因变化就意味着这个基因序列中的一个字符发生了变化。
+
+- 例如，`"AACCGGTT" --> "AACCGGTA"` 就是一次基因变化。
+
+另有一个基因库 `bank` 记录了所有有效的基因变化，只有基因库中的基因才是有效的基因序列。（变化后的基因必须位于基因库 `bank` 中）
+
+给你两个基因序列 `start` 和 `end` ，以及一个基因库 `bank` ，请你找出并返回能够使 `start` 变化为 `end` 所需的最少变化次数。如果无法完成此基因变化，返回 `-1` 。
+
+注意：起始基因序列 `start` 默认是有效的，但是它并不一定会出现在基因库中。
+
+ 
+
+**示例 1：**
+
+```
+输入：start = "AACCGGTT", end = "AACCGGTA", bank = ["AACCGGTA"]
+输出：1
+```
+
+**示例 2：**
+
+```
+输入：start = "AACCGGTT", end = "AAACGGTA", bank = ["AACCGGTA","AACCGCTA","AAACGGTA"]
+输出：2
+```
+
+**示例 3：**
+
+```
+输入：start = "AAAAACCC", end = "AACCCCCC", bank = ["AAAACCCC","AAACCCCC","AACCCCCC"]
+输出：3
+```
+
+ 
+
+**提示：**
+
+- `start.length == 8`
+- `end.length == 8`
+- `0 <= bank.length <= 10`
+- `bank[i].length == 8`
+- `start`、`end` 和 `bank[i]` 仅由字符 `['A', 'C', 'G', 'T']` 组成
+
+
+
+#### 96.2 解法
+
+**时间复杂度**：$O(N^2 \cdot L)$，**空间复杂度**：$O(N \cdot L)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int minMutation(string startGene, string endGene, vector<string>& bank) {
+        unordered_set<string> visited;
+        queue<pair<string, int>> q;
+
+        q.push({startGene, 0});
+        visited.insert(startGene);
+
+        while (!q.empty()) {
+            auto [curr, step] = q.front();
+            q.pop();
+
+            if (curr == endGene) return step;
+
+            for (string& gene : bank) {
+                if (!visited.count(gene) && isCanConvert(curr, gene)) {
+                    visited.insert(gene);
+                    q.push({gene, step + 1});
+                }
+            }
+        }
+
+        return -1;
+    }
+
+   private:
+    bool isCanConvert(string st, string ed) {
+        bool times = false;
+        for (int i = 0; i < 8; i++) {
+            if (st[i] != ed[i]) {
+                if (times) return false;
+                times = true;
+            }
+        }
+
+        return times;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    string start, end;
+    int n;
+    cin >> n >> start >> end;
+
+    vector<string> bank(n);
+    for (int i = 0; i < n; i++) {
+        cin >> bank[i];
+    }
+
+    Solution obj;
+    cout << obj.minMutation(start, end, bank);
+
+    return 0;
+}
+```
+
+> `isCanConvert`那里应该用引用的：
+>
+> ```cpp
+> bool isCanConvert(const string& st, const string& ed)
+> ```
+
+
+
+#### 96.3 解析
+
+如果`bank`特别大，那么每一次拓展都要搜索一遍，开销就很大了。而本题里由于L长度定为8，每个位置最多有3种变化，那么一共就是24种情况，这时候可以把bank哈希化，然后遍历24种所有可能的变化去匹配：
+
+```cpp
+class Solution {
+public:
+    int minMutation(string startGene, string endGene, vector<string>& bank) {
+        unordered_set<string> dict(bank.begin(), bank.end());
+        if (!dict.count(endGene)) return -1;
+        
+        unordered_set<string> visited;
+        queue<pair<string, int>> q;
+        
+        q.push({startGene, 0});
+        visited.insert(startGene);
+        
+        char mutates[4] = {'A', 'C', 'G', 'T'};
+        
+        while (!q.empty()) {
+            auto [curr, step] = q.front();
+            q.pop();
+            
+            if (curr == endGene) return step;
+            
+            // 核心转变：不再遍历 bank，而是遍历 24 种突变可能
+            for (int i = 0; i < 8; i++) {
+                char originalChar = curr[i];
+                for (char c : mutates) {
+                    if (c == originalChar) continue;
+                    
+                    curr[i] = c; // 原地突变
+                    if (dict.count(curr) && !visited.count(curr)) {
+                        visited.insert(curr);
+                        q.push({curr, step + 1});
+                    }
+                }
+                curr[i] = originalChar; // 回溯复原，供下个位置突变
+            }
+        }
+        return -1;
+    }
+};
+```
+
+这样时间复杂度就变成了$O(N \cdot 24 \cdot L)$，当然LeetCode里面限制了bank的长度一定小于10，所以这个优化有点鸡肋。
+
+此外，还有一种办法，就是双向的BFS：
+
+```cpp
+class Solution {
+public:
+    int minMutation(string startGene, string endGene, vector<string>& bank) {
+        unordered_set<string> dict(bank.begin(), bank.end());
+        if (!dict.count(endGene)) return -1;
+
+        unordered_set<string> beginSet, endSet, visited;
+        beginSet.insert(startGene);
+        endSet.insert(endGene);
+        
+        int step = 0;
+        char mutates[4] = {'A', 'C', 'G', 'T'};
+
+        while (!beginSet.empty() && !endSet.empty()) {
+            // 优先扩展节点数较少的那个集合
+            if (beginSet.size() > endSet.size()) {
+                swap(beginSet, endSet);
+            }
+
+            unordered_set<string> nextSet; // 存储下一层的节点
+            
+            for (string curr : beginSet) {
+                for (int i = 0; i < 8; i++) {
+                    char originalChar = curr[i];
+                    for (char c : mutates) {
+                        if (c == originalChar) continue;
+                        
+                        curr[i] = c;
+                        
+                        // 如果在另一端的扩展圈里找到了，即相交，结束
+                        if (endSet.count(curr)) {
+                            return step + 1;
+                        }
+                        
+                        if (dict.count(curr) && !visited.count(curr)) {
+                            visited.insert(curr);
+                            nextSet.insert(curr);
+                        }
+                    }
+                    curr[i] = originalChar;
+                }
+            }
+            
+            beginSet = nextSet;
+            step++;
+        }
+
+        return -1;
+    }
+};
+```
+
+
+
+
+
+### 97. 单词接龙*
+
+#### 97.1 题目
+
+字典 `wordList` 中从单词 `beginWord` 到 `endWord` 的 **转换序列** 是一个按下述规格形成的序列 `beginWord -> s1 -> s2 -> ... -> sk`：
+
+- 每一对相邻的单词只差一个字母。
+-  对于 `1 <= i <= k` 时，每个 `si` 都在 `wordList` 中。注意， `beginWord` 不需要在 `wordList` 中。
+- `sk == endWord`
+
+给你两个单词 `beginWord` 和 `endWord` 和一个字典 `wordList` ，返回 *从 `beginWord` 到 `endWord` 的 **最短转换序列** 中的 **单词数目*** 。如果不存在这样的转换序列，返回 `0` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log","cog"]
+输出：5
+解释：一个最短转换序列是 "hit" -> "hot" -> "dot" -> "dog" -> "cog", 返回它的长度 5。
+```
+
+**示例 2：**
+
+```
+输入：beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log"]
+输出：0
+解释：endWord "cog" 不在字典中，所以无法进行转换。
+```
+
+ 
+
+**提示：**
+
+- `1 <= beginWord.length <= 10`
+- `endWord.length == beginWord.length`
+- `1 <= wordList.length <= 5000`
+- `wordList[i].length == beginWord.length`
+- `beginWord`、`endWord` 和 `wordList[i]` 由小写英文字母组成
+- `beginWord != endWord`
+- `wordList` 中的所有字符串 **互不相同**
+
+
+
+#### 97.2 解法
+
+**时间复杂度**：$O(N \cdot 26 \cdot L^2)$，**空间复杂度**：$O(N \cdot L)$。
+
+```cpp
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+        unordered_map<string, int> wordMap;
+        for (string& word : wordList) {
+            wordMap[word] = 0;
+        }
+
+        queue<pair<string, int>> q;
+        int n = beginWord.size();
+
+        q.push({beginWord, 0});
+        while (!q.empty()) {
+            auto [curr, step] = q.front();
+            q.pop();
+            // cout << curr << ": ";
+
+            if (curr == endWord) return step + 1;
+
+            for (int i = 0; i < n; i++) {
+                char ori = curr[i];
+                for (int j = 0; j < 26; j++) {
+                    if (ori == 'a' + j) continue;
+                    curr[i] = 'a' + j;
+
+                    if (wordMap.count(curr) && wordMap[curr] == 0) {
+                        // cout << curr << " ";
+                        wordMap[curr]++;
+                        q.push({curr, step + 1});
+                    }
+                }
+                curr[i] = ori;
+            }
+            // cout << endl;
+        }
+
+        // cout << endl;
+        return 0;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    string beginWord, endWord;
+    if (!(cin >> beginWord >> endWord)) return 0;
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    vector<string> wordList(n);
+    for (int i = 0; i < n; i++) {
+        cin >> wordList[i];
+    }
+
+    Solution obj;
+    cout << obj.ladderLength(beginWord, endWord, wordList) << "\n";
+
+    return 0;
+}
+```
+
+> 可以用`unordered_set`代替，如果访问过就删除即可，这样也能有三种标记。
+
+#### 97.3 解析
+
+同样地，也能双向BFS：
+
+```cpp
+#include <unordered_set>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+class Solution {
+public:
+    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+        unordered_set<string> dict(wordList.begin(), wordList.end());
+        if (!dict.count(endWord)) return 0; // 终点不在字典里，直接判死刑
+
+        unordered_set<string> beginSet{beginWord};
+        unordered_set<string> endSet{endWord};
+        int step = 1;
+
+        while (!beginSet.empty() && !endSet.empty()) {
+            // 极限剪枝优化：永远优先扩展规模较小的那个集合
+            if (beginSet.size() > endSet.size()) {
+                swap(beginSet, endSet);
+            }
+
+            unordered_set<string> nextSet; // 收集下一层挖掘到的新节点
+            
+            for (string word : beginSet) {
+                for (int i = 0; i < word.size(); i++) {
+                    char originalChar = word[i];
+                    
+                    for (int j = 0; j < 26; j++) {
+                        if (originalChar == 'a' + j) continue;
+                        word[i] = 'a' + j;
+                        
+                        // 神来之笔：如果我刚挖出的一步，正好在对面队伍的集合里
+                        // 说明两支队伍胜利会师，直接返回总步数！
+                        if (endSet.count(word)) {
+                            return step + 1;
+                        }
+                        
+                        // 如果是个合法的新节点
+                        if (dict.count(word)) {
+                            nextSet.insert(word);
+                            dict.erase(word); // 用完就删，极致压榨空间并防止回头路
+                        }
+                    }
+                    word[i] = originalChar; // 回溯
+                }
+            }
+            
+            // 队伍推进：把下一层变成当前层
+            beginSet = nextSet;
+            step++;
+        }
+
+        return 0;
+    }
+};
+```
+
+
+
+### 98. 实现前缀树***
+
+#### 98.1 题目
+
+**[Trie](https://baike.baidu.com/item/字典树/9825209?fr=aladdin)**（发音类似 "try"）或者说 **前缀树** 是一种树形数据结构，用于高效地存储和检索字符串数据集中的键。这一数据结构有相当多的应用情景，例如自动补全和拼写检查。
+
+请你实现 Trie 类：
+
+- `Trie()` 初始化前缀树对象。
+- `void insert(String word)` 向前缀树中插入字符串 `word` 。
+- `boolean search(String word)` 如果字符串 `word` 在前缀树中，返回 `true`（即，在检索之前已经插入）；否则，返回 `false` 。
+- `boolean startsWith(String prefix)` 如果之前已经插入的字符串 `word` 的前缀之一为 `prefix` ，返回 `true` ；否则，返回 `false` 。
+
+ 
+
+**示例：**
+
+```
+输入
+["Trie", "insert", "search", "search", "startsWith", "insert", "search"]
+[[], ["apple"], ["apple"], ["app"], ["app"], ["app"], ["app"]]
+输出
+[null, null, true, false, true, null, true]
+
+解释
+Trie trie = new Trie();
+trie.insert("apple");
+trie.search("apple");   // 返回 True
+trie.search("app");     // 返回 False
+trie.startsWith("app"); // 返回 True
+trie.insert("app");
+trie.search("app");     // 返回 True
+```
+
+ 
+
+**提示：**
+
+- `1 <= word.length, prefix.length <= 2000`
+- `word` 和 `prefix` 仅由小写英文字母组成
+- `insert`、`search` 和 `startsWith` 调用次数 **总计** 不超过 `3 * 104` 次
+
+
+
+#### 98.2 解法
+
+
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct Node {
+    string val;
+    vector<Node*> children;
+
+    Node(string _val) : val(_val) { children = vector<Node*>(); }
+};
+
+class Trie {
+   private:
+    Node* root;
+
+    int isContain(string& pre, string& word) {
+        int n = pre.size(), m = word.size();
+
+        for (int i = 0; i < n; i++) {
+            if (i == m) return -m;
+
+            if (pre[i] != word[i]) {
+                return i;
+            }
+        }
+
+        return n;
+    }
+
+   public:
+    Trie() { root = new Node(""); }
+
+    void insert(string word) {
+        Node* curr = root;
+        while (true) {
+            if (curr->children.empty()) {
+                curr->children.push_back(new Node(word));
+                if (curr->val != "") curr->children.push_back(new Node(curr->val));
+                return;
+            }
+
+            int basePre = isContain(curr->val, word);
+            bool isContinue = false;
+            for (int i = 0; i < curr->children.size(); i++) {
+                auto& node = curr->children[i];
+                int res = isContain(node->val, word);
+                /* 这里res的取值必须确定一下：
+                首先要知道的是，进入到这一层之后，node->val.size()是一定大于或等于curr->val.size()的，也即大于或等于basePre。
+                1. 如果word比curr要短，那么它不可能进入到这一层；
+                2. 如果word和curr等长，那么它在进来之前，就已经pushback了；
+                3. 那么word一定比curr长，这时：（res > basePre 防止往叶子节点上加，并且不匹配前缀同curr者）
+                    1. word是node的前缀但不相等（res < 0）：把word插入到curr与node之间，并额外并入word作为叶子；
+                    2. node是word的前缀（res == node->val.size()）：
+                        1. 如果node和word相等（res ==
+                word.size()）：找node的孩子，如果之前有过word，那么其孩子一定还有一个与word相等的，否则添加；
+                        2. 如果node和word不相等，那就是纯前缀，进入到下一层。
+                    3. node和word有共同前缀：就拆分。
+                 */
+                if (res < 0) {
+                    Node* tempNode = node;
+                    swap(node, curr->children.back());
+                    curr->children.pop_back();
+                    curr->children.push_back(new Node(word));
+                    curr->children.back()->children.push_back(tempNode);
+                    curr->children.back()->children.push_back(new Node(word));
+                    return;
+                } else if (res > basePre) {
+                    if (res < node->val.size()) {
+                        string prefix = word.substr(0, res);
+                        Node* tempNode = node;
+                        swap(node, curr->children.back());
+                        curr->children.pop_back();
+                        curr->children.push_back(new Node(prefix));
+                        curr->children.back()->children.push_back(tempNode);
+                        curr->children.back()->children.push_back(new Node(word));
+                        return;
+                    } else {
+                        if (res < word.size()) {
+                            curr = node;
+                            isContinue = true;
+                            break;
+                        } else {
+                            for (auto subNode : node->children) {
+                                if (subNode->val == word) {
+                                    return;
+                                }
+                            }
+                            node->children.push_back(new Node(word));
+                        }
+                    }
+                }
+            }
+            if (isContinue) continue;
+
+            curr->children.push_back(new Node(word));
+            return;
+        }
+    }
+
+    bool search(string word) {
+        Node* curr = root;
+        while (true) {
+            int basePre = isContain(curr->val, word);
+            bool isContinue = false;
+            for (auto node : curr->children) {
+                int res = isContain(node->val, word);
+                if (res > basePre) {
+                    if (res == node->val.size()) {
+                        if (res < word.size()) {
+                            curr = node;
+                            isContinue = true;
+                            break;
+                        } else {
+                            if (node->children.empty()) return true;
+
+                            for (auto subNode : node->children) {
+                                if (subNode->val == word) {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+            }
+            if (isContinue) continue;
+
+            return false;
+        }
+        return false;
+    }
+
+    bool startsWith(string prefix) {
+        Node* curr = root;
+        while (true) {
+            bool isContinue = false;
+            for (auto node : curr->children) {
+                int res = isContain(node->val, prefix);
+                if (res < 0) {
+                    return true;
+                } else if (res == node->val.size()) {
+                    if (res == prefix.size() && node->children.empty()) {
+                        return true;
+                    } else {
+                        curr = node;
+                        isContinue = true;
+                        break;
+                    }
+                }
+            }
+            if (isContinue) continue;
+
+            return false;
+        }
+
+        return false;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    Trie trie;
+    trie.insert("axy");
+    trie.insert("ax");
+    cout << trie.search("axy");
+
+    return 0;
+}
+```
+
+> 这个版本是自己写的，但是没有通过。改了很多遍了，目前这一版算是表述比较清晰的一版，乍一看实在是看不出什么问题，不过注释可能有点过时，但也不想改了。
+
+
+
+#### 98.3 解析
+
+做了很久，还是没做出来，有一个用例大概是11000步，过了6139步，因为树实在是太复杂了，无法得知到底是哪里的问题，留作悬案了。
+
+因为只是小写字母，所以这个树可以一个个字母那样弄，这样简单很多，参考解法：
+
+```cpp
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Trie {
+private:
+    struct Node {
+        bool isEnd; // 标记是否是一个完整单词的结尾
+        Node* children[26]; // 26个字母的槽位，空则为 nullptr
+
+        Node() {
+            isEnd = false;
+            for (int i = 0; i < 26; i++) {
+                children[i] = nullptr;
+            }
+        }
+    };
+
+    Node* root;
+
+public:
+    Trie() {
+        root = new Node();
+    }
+    
+    void insert(string word) {
+        Node* curr = root;
+        for (char c : word) {
+            int index = c - 'a';
+            // 如果这条路上没有这个字母，新建一个节点
+            if (curr->children[index] == nullptr) {
+                curr->children[index] = new Node();
+            }
+            // 顺着这条路往下走
+            curr = curr->children[index];
+        }
+        // 单词的所有字母都走完了，打上完结标记
+        curr->isEnd = true;
+    }
+    
+    bool search(string word) {
+        Node* curr = root;
+        for (char c : word) {
+            int index = c - 'a';
+            // 如果路断了，说明字典里没有这个词
+            if (curr->children[index] == nullptr) {
+                return false;
+            }
+            curr = curr->children[index];
+        }
+        // 词是走完了，但它必须是一个被标记过结尾的完整单词（比如查 app，虽然路通了，但如果只有 apple，app 的 isEnd 就是 false）
+        return curr->isEnd;
+    }
+    
+    bool startsWith(string prefix) {
+        Node* curr = root;
+        for (char c : prefix) {
+            int index = c - 'a';
+            // 如果前缀的路断了，直接 return false
+            if (curr->children[index] == nullptr) {
+                return false;
+            }
+            curr = curr->children[index];
+        }
+        // 只要前缀能顺利走完，哪怕没有 isEnd 标记，也是合法的
+        return true;
+    }
+};
+```
+
+
+
+
+
+### 99. 添加与搜索单词-数据结构设计*
+
+#### 99.1 题目
+
+请你设计一个数据结构，支持 添加新单词 和 查找字符串是否与任何先前添加的字符串匹配 。
+
+实现词典类 `WordDictionary` ：
+
+- `WordDictionary()` 初始化词典对象
+- `void addWord(word)` 将 `word` 添加到数据结构中，之后可以对它进行匹配
+- `bool search(word)` 如果数据结构中存在字符串与 `word` 匹配，则返回 `true` ；否则，返回 `false` 。`word` 中可能包含一些 `'.'` ，每个 `.` 都可以表示任何一个字母。
+
+ 
+
+**示例：**
+
+```
+输入：
+["WordDictionary","addWord","addWord","addWord","search","search","search","search"]
+[[],["bad"],["dad"],["mad"],["pad"],["bad"],[".ad"],["b.."]]
+输出：
+[null,null,null,null,false,true,true,true]
+
+解释：
+WordDictionary wordDictionary = new WordDictionary();
+wordDictionary.addWord("bad");
+wordDictionary.addWord("dad");
+wordDictionary.addWord("mad");
+wordDictionary.search("pad"); // 返回 False
+wordDictionary.search("bad"); // 返回 True
+wordDictionary.search(".ad"); // 返回 True
+wordDictionary.search("b.."); // 返回 True
+```
+
+ 
+
+**提示：**
+
+- `1 <= word.length <= 25`
+- `addWord` 中的 `word` 由小写英文字母组成
+- `search` 中的 `word` 由 '.' 或小写英文字母组成
+- 最多调用 `104` 次 `addWord` 和 `search`
+
+
+
+#### 99.2 解法
+
+**时间复杂度**：`addWord`：严格的 $O(L)$；`search`：最坏情况下 $O(26^L)$。
+
+**空间复杂度**：$O(N \cdot L \cdot 26)$。
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class WordDictionary {
+private:
+    struct Node{
+        bool isEnd;
+        Node* next[26];
+    
+        Node(bool _isEnd) : isEnd(_isEnd){
+            for(int i=0; i<26;i++){
+                next[i] = nullptr;
+            }
+        }
+    };
+    Node* root;
+    
+    bool findWord(string& word, int i,  Node* curr){
+        if(i >= word.size()) return curr->isEnd;
+        
+        if(word[i] == '.'){
+            for(int k=0;k<26;k++){
+                if (curr->next[k] != nullptr && findWord(word, i+1, curr->next[k])) return true;
+            }
+        }else{
+            if (curr->next[word[i]-'a'] != nullptr && findWord(word, i+1, curr->next[word[i]-'a'] )) return true;
+        }
+        
+        return false;
+    }
+    
+public:
+    WordDictionary() {
+        root = new Node(false);
+    }
+    
+    void addWord(string word) {
+        Node *curr = root;
+        for(char c:word){
+            if(curr->next[c-'a'] == nullptr){
+                curr->next[c-'a'] = new Node(false);
+            }
+            curr = curr->next[c-'a'];
+        }
+        curr->isEnd = true;
+    }
+    
+    bool search(string word) {
+        return findWord(word, 0, root);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    WordDictionary* obj = new WordDictionary();
+    int n;
+    if (!(cin >> n)) return 0;
+
+    for (int i = 0; i < n; i++) {
+        string op, word;
+        cin >> op >> word;
+        if (op == "addWord") {
+            obj->addWord(word);
+            cout << "null\n";
+        } else if (op == "search") {
+            cout << (obj->search(word) ? "true" : "false") << "\n";
+        }
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 99.3 解析
+
+基于之前的前缀树即可解决，不多说。此外Gemini给出一个暴力解，它也能过测试，但是在LeetCode的测试集上速度比我的解法慢很多，不知道它所说的“速度更快”快在哪：
+
+```cpp
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class WordDictionary {
+private:
+    vector<vector<string>> dict;
+
+public:
+    WordDictionary() {
+        dict.resize(26);
+    }
+    
+    void addWord(string word) {
+        dict[word.size()].push_back(word);
+    }
+    
+    bool search(string word) {
+        int len = word.size();
+        for (const string& s : dict[len]) {
+            bool match = true;
+            for (int i = 0; i < len; i++) {
+                if (word[i] != '.' && word[i] != s[i]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) return true;
+        }
+        return false;
+    }
+};
+```
+
+就是按长度将单词分组，然后暴力匹配。
+
+
+
+### 100. 单词搜索II \*/*\*\*
+
+#### 100.1 题目
+
+给定一个 `m x n` 二维字符网格 `board` 和一个单词（字符串）列表 `words`， *返回所有二维网格上的单词* 。
+
+单词必须按照字母顺序，通过 **相邻的单元格** 内的字母构成，其中“相邻”单元格是那些水平相邻或垂直相邻的单元格。同一个单元格内的字母在一个单词中不允许被重复使用。
+
+ 
+
+**示例 1：**
+
+![img](./assets/search1.jpg)
+
+```
+输入：board = [["o","a","a","n"],["e","t","a","e"],["i","h","k","r"],["i","f","l","v"]], words = ["oath","pea","eat","rain"]
+输出：["eat","oath"]
+```
+
+**示例 2：**
+
+![img](./assets/search2.jpg)
+
+```
+输入：board = [["a","b"],["c","d"]], words = ["abcb"]
+输出：[]
+```
+
+ 
+
+**提示：**
+
+- `m == board.length`
+- `n == board[i].length`
+- `1 <= m, n <= 12`
+- `board[i][j]` 是一个小写英文字母
+- `1 <= words.length <= 3 * 104`
+- `1 <= words[i].length <= 10`
+- `words[i]` 由小写英文字母组成
+- `words` 中的所有字符串互不相同
+
+
+
+#### 100.2 解法
+
+**时间复杂度**：$O(W \times L + M \times N \times 4^L \times L)$，**空间复杂度**：$O(W \times L + L^2)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+using namespace std;
+
+struct Node {
+    bool isEnd;
+    int wordLen;
+    Node* next[26];
+
+    Node(bool _isEnd) : isEnd(_isEnd) {
+        wordLen = 0;
+        for (int i = 0; i < 26; i++) {
+            next[i] = nullptr;
+        }
+    }
+};
+
+class Trie {
+   public:
+    Node* root;
+
+    Trie() { root = new Node(false); }
+
+    void addWord(string word) {
+        Node* curr = root;
+        for (char c : word) {
+            curr->wordLen++;
+            if (curr->next[c - 'a'] == nullptr) {
+                curr->next[c - 'a'] = new Node(false);
+            }
+            curr = curr->next[c - 'a'];
+        }
+        curr->isEnd = true;
+    }
+
+    void findWord(string& word, int i, Node* curr) {
+        if (i >= word.size()) return;
+
+        curr->wordLen--;
+
+        findWord(word, i + 1, curr->next[word[i] - 'a']);
+    }
+};
+
+class Solution {
+   private:
+    Trie* wordTree;
+    int n;
+    int m;
+    vector<string> res;
+    unordered_set<string> isRes;
+
+    void DFS(vector<vector<char>>& board, int i, int j, Node* curr, string prefix, unordered_set<int> visited) {
+        if (curr->isEnd && !isRes.count(prefix)) {
+            wordTree->findWord(prefix, 0, wordTree->root);
+            isRes.insert(prefix);
+            res.push_back(prefix);
+        }
+
+        if (curr->wordLen <= 0) return;
+
+        if (i - 1 >= 0 && !visited.count((i - 1) * m + j) && curr->next[board[i - 1][j] - 'a'] != nullptr) {
+            string temp = prefix + board[i - 1][j];
+            unordered_set tempVis = visited;
+            tempVis.insert((i - 1) * m + j);
+            DFS(board, i - 1, j, curr->next[board[i - 1][j] - 'a'], temp, tempVis);
+        }
+        if (i + 1 < n && !visited.count((i + 1) * m + j) && curr->next[board[i + 1][j] - 'a'] != nullptr) {
+            string temp = prefix + board[i + 1][j];
+            unordered_set tempVis = visited;
+            tempVis.insert((i + 1) * m + j);
+            DFS(board, i + 1, j, curr->next[board[i + 1][j] - 'a'], temp, tempVis);
+        }
+        if (j - 1 >= 0 && !visited.count(i * m + j - 1) && curr->next[board[i][j - 1] - 'a'] != nullptr) {
+            string temp = prefix + board[i][j - 1];
+            unordered_set tempVis = visited;
+            tempVis.insert(i * m + j - 1);
+            DFS(board, i, j - 1, curr->next[board[i][j - 1] - 'a'], temp, tempVis);
+        }
+        if (j + 1 < m && !visited.count(i * m + j + 1) && curr->next[board[i][j + 1] - 'a'] != nullptr) {
+            string temp = prefix + board[i][j + 1];
+            unordered_set tempVis = visited;
+            tempVis.insert(i * m + j + 1);
+            DFS(board, i, j + 1, curr->next[board[i][j + 1] - 'a'], temp, tempVis);
+        }
+    }
+
+   public:
+    vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+        wordTree = new Trie();
+        res.clear();
+        isRes.clear();
+        n = board.size();
+        m = board[0].size();
+
+        unordered_set<char> boardNum;
+        for (auto& r : board) {
+            for (char c : r) {
+                boardNum.insert(c);
+            }
+        }
+        for (string& w : words) {
+            unordered_set<char> wordNum;
+            for (char c : w) wordNum.insert(c);
+
+            if (wordNum.size() <= boardNum.size()) {
+                wordTree->addWord(w);
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (wordTree->root->wordLen <= 0) return res;
+
+                if (wordTree->root->next[board[i][j] - 'a'] != nullptr) {
+                    unordered_set<int> visited;
+                    visited.insert(i * m + j);
+                    DFS(board, i, j, wordTree->root->next[board[i][j] - 'a'], string(1, board[i][j]), visited);
+                }
+            }
+        }
+
+        delete wordTree;
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    cin >> n >> m;
+    vector<vector<char>> board(n, vector<char>(m));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> board[i][j];
+        }
+    }
+
+    cin >> n;
+    vector<string> words(n);
+    for (int i = 0; i < n; i++) {
+        cin >> words[i];
+    }
+
+    Solution obj;
+    vector<string> res = obj.findWords(board, words);
+    for (string& r : res) {
+        cout << r << " ";
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 100.3 解析
+
+这几天忙得有点神志不清，一定程度上是题目越来越难导致的，所以这几天都忘记在仓库上提交了，做完就润了，这次弄了个48、49、50天的合并提交……
+
+我的解法理论时间复杂度达标，但是由于弄了太多值传递的东西了，最终导致实际执行超时，优化版本：
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+struct Node {
+    string word;
+    Node* next[26];
+    Node() {
+        word = "";
+        for (int i = 0; i < 26; i++) {
+            next[i] = nullptr;
+        }
+    }
+};
+
+class Solution {
+private:
+    Node* root;
+    vector<string> res;
+    int n, m;
+
+    void dfs(vector<vector<char>>& board, int i, int j, Node* p) {
+        char c = board[i][j];
+        if (c == '#' || p->next[c - 'a'] == nullptr) return;
+
+        p = p->next[c - 'a'];
+        if (p->word != "") {
+            res.push_back(p->word);
+            p->word = ""; 
+        }
+
+        board[i][j] = '#';
+        if (i > 0) dfs(board, i - 1, j, p);
+        if (j > 0) dfs(board, i, j - 1, p);
+        if (i < n - 1) dfs(board, i + 1, j, p);
+        if (j < m - 1) dfs(board, i, j + 1, p);
+        board[i][j] = c;
+    }
+
+public:
+    vector<string> findWords(vector<vector<char>>& board, vector<string>& words) {
+        root = new Node();
+        for (string& w : words) {
+            Node* curr = root;
+            for (char c : w) {
+                if (curr->next[c - 'a'] == nullptr) {
+                    curr->next[c - 'a'] = new Node();
+                }
+                curr = curr->next[c - 'a'];
+            }
+            curr->word = w;
+        }
+
+        n = board.size();
+        m = board[0].size();
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                dfs(board, i, j, root);
+            }
+        }
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    if (!(cin >> n >> m)) return 0;
+
+    vector<vector<char>> board(n, vector<char>(m));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> board[i][j];
+        }
+    }
+
+    int k;
+    if (!(cin >> k)) return 0;
+    vector<string> words(k);
+    for (int i = 0; i < k; i++) {
+        cin >> words[i];
+    }
+
+    Solution obj;
+    vector<string> res = obj.findWords(board, words);
+    for (size_t i = 0; i < res.size(); i++) {
+        cout << res[i] << (i == res.size() - 1 ? "" : " ");
+    }
+    cout << "\n";
+
+    return 0;
+}
+```
+
+这个版本优先采用了原地的标记以及把Trie修改成叶子节点记录完整单词，这样就直接节省掉我两个值传递的变量，然后Trie的wordLen也省了。然后我之前一直担心原地标记会不会让交错情况出错，但是实际上每一层DFS，它所有父节点就是它的来时路，标记为“#”没有问题，而当它要退回到上一层时，再把它改回去就行，这样不会出现分叉交错的问题。
+
+优化后，**时间复杂度**：$O(M \cdot N \cdot 4 \cdot 3^{L-1})$，**空间复杂度**：$O(K \cdot L)$。
