@@ -18452,6 +18452,8 @@ public:
 
 
 
+## 十一、字典树
+
 ### 98. 实现前缀树***
 
 #### 98.1 题目
@@ -19262,3 +19264,253 @@ int main() {
 这个版本优先采用了原地的标记以及把Trie修改成叶子节点记录完整单词，这样就直接节省掉我两个值传递的变量，然后Trie的wordLen也省了。然后我之前一直担心原地标记会不会让交错情况出错，但是实际上每一层DFS，它所有父节点就是它的来时路，标记为“#”没有问题，而当它要退回到上一层时，再把它改回去就行，这样不会出现分叉交错的问题。
 
 优化后，**时间复杂度**：$O(M \cdot N \cdot 4 \cdot 3^{L-1})$，**空间复杂度**：$O(K \cdot L)$。
+
+
+
+## 十二、回溯法
+
+### 101. 电话号码的字母组合**
+
+#### 101.1 题目
+
+给定一个仅包含数字 `2-9` 的字符串，返回所有它能表示的字母组合。答案可以按 **任意顺序** 返回。
+
+给出数字到字母的映射如下（与电话按键相同）。注意 1 不对应任何字母。
+
+<img src="./assets/1752723054-mfIHZs-image.png" alt="img" style="zoom: 50%;" />
+
+ 
+
+**示例 1：**
+
+```
+输入：digits = "23"
+输出：["ad","ae","af","bd","be","bf","cd","ce","cf"]
+```
+
+**示例 2：**
+
+```
+输入：digits = "2"
+输出：["a","b","c"]
+```
+
+ 
+
+**提示：**
+
+- `1 <= digits.length <= 4`
+- `digits[i]` 是范围 `['2', '9']` 的一个数字。
+
+
+
+#### 101.2 解法
+
+时间复杂度：$O(4^n \times n)$，空间复杂度：$O(4^n \times n)$。
+
+```cpp
+class Solution {
+   private:
+    vector<vector<string>> dial = {
+        {},
+        {},
+        {"a", "b", "c"},
+        {"d", "e", "f"},
+        {"g", "h", "i"},
+        {"j", "k", "l"},
+        {"m", "n", "o"},
+        {"p", "q", "r", "s"},
+        {"t", "u", "v"},
+        {"w", "x", "y", "z"},
+    };
+
+   public:
+    vector<string> letterCombinations(string digits) {
+        if (digits.size() == 0) return {};
+
+        queue<string> q;
+        for (string& c : dial[stoi(digits.substr(0, 1))]) {
+            q.push(c);
+        }
+
+        for (int i = 1; i < digits.size(); i++) {
+            int qSize = q.size();
+            for (int j = 0; j < qSize; j++) {
+                string curr = q.front();
+                q.pop();
+
+                for (string& c : dial[stoi(digits.substr(i, 1))]) {
+                    q.push(curr + c);
+                }
+            }
+        }
+
+        vector<string> res;
+        while (!q.empty()) {
+            res.push_back(q.front());
+            q.pop();
+        }
+
+        return res;
+    }
+};
+```
+
+> 1. 单个字母，可以直接`digits[i] - '0'`，当时也是没转过弯来……
+> 2. 然后`dial`可以直接弄字符串，而不是`vector<char>`；
+> 3. 最后可以先在`q`里弄个空串，就可以统一处理了……
+
+
+
+#### 101.3 解析
+
+BFS缺点在于空间复杂度太大，如果用回溯法（DFS），那么只要维护递归调用栈，也就是$O(n)$：
+
+```cpp
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+private:
+    vector<string> dial = {
+        "", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"
+    };
+    vector<string> res;
+    string path;
+
+    void backtrack(const string& digits, int index) {
+        if (index == digits.size()) {
+            res.push_back(path);
+            return;
+        }
+        
+        int digit = digits[index] - '0';
+        const string& letters = dial[digit];
+        
+        for (char c : letters) {
+            path.push_back(c);
+            backtrack(digits, index + 1);
+            path.pop_back();
+        }
+    }
+
+public:
+    vector<string> letterCombinations(string digits) {
+        if (digits.empty()) return {};
+        backtrack(digits, 0);
+        return res;
+    }
+};
+```
+
+
+
+### 102. 组合*
+
+#### 102.1 题目
+
+给定两个整数 `n` 和 `k`，返回范围 `[1, n]` 中所有可能的 `k` 个数的组合。
+
+你可以按 **任何顺序** 返回答案。
+
+ 
+
+**示例 1：**
+
+```
+输入：n = 4, k = 2
+输出：
+[
+  [2,4],
+  [3,4],
+  [2,3],
+  [1,2],
+  [1,3],
+  [1,4],
+]
+```
+
+**示例 2：**
+
+```
+输入：n = 1, k = 1
+输出：[[1]]
+```
+
+ 
+
+**提示：**
+
+- `1 <= n <= 20`
+- `1 <= k <= n`
+
+
+
+#### 102.2 解法
+
+时间复杂度：$O(k \times C(n, k))$，空间复杂度：$O(k)$。
+
+```cpp
+class Solution {
+   private:
+    vector<vector<int>> res;
+
+    void findCombination(int n, int k, int index, vector<int>& path) {
+        if (path.size() == k) {
+            res.push_back(path);
+            return;
+        }
+
+        for (int i = index; i <= n + 1 - k + path.size(); i++) {
+            path.push_back(i);
+            findCombination(n, k, i + 1, path);
+            path.pop_back();
+        }
+    }
+
+   public:
+    vector<vector<int>> combine(int n, int k) {
+        res.clear();
+
+        vector<int> path;
+        findCombination(n, k, 1, path);
+
+        return res;
+    }
+};
+
+```
+
+
+
+#### 102.3 解析
+
+这道题回归到正宗回溯法了，也是最优解之一，当然也可以用循环模拟递归：
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> combine(int n, int k) {
+        vector<vector<int>> res;
+        vector<int> path(k, 0);
+        int i = 0;
+        
+        while (i >= 0) {
+            path[i]++;
+            if (path[i] > n - k + i + 1) {
+                i--;
+            } else if (i == k - 1) {
+                res.push_back(path);
+            } else {
+                i++;
+                path[i] = path[i - 1];
+            }
+        }
+        return res;
+    }
+};
+```
+
+可以把`i`理解成是递归的第几层，也就是`index`，其他同理。
