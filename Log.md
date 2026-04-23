@@ -19514,3 +19514,343 @@ public:
 ```
 
 可以把`i`理解成是递归的第几层，也就是`index`，其他同理。
+
+
+
+
+
+### 103. 全排列*
+
+#### 103.1 题目
+
+给定一个不含重复数字的数组 `nums` ，返回其 *所有可能的全排列* 。你可以 **按任意顺序** 返回答案。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [1,2,3]
+输出：[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+```
+
+**示例 2：**
+
+```
+输入：nums = [0,1]
+输出：[[0,1],[1,0]]
+```
+
+**示例 3：**
+
+```
+输入：nums = [1]
+输出：[[1]]
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 6`
+- `-10 <= nums[i] <= 10`
+- `nums` 中的所有整数 **互不相同**
+
+
+
+#### 103.2 解法
+
+时间复杂度：$O(n \times n!)$，空间复杂度：$O(n)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    vector<vector<int>> res;
+    vector<int> path;
+    int n;
+
+    void DFS(vector<int>& nums, int index) {
+        if (index == n) {
+            res.push_back(path);
+        }
+
+        for (int i = index; i < n; i++) {
+            swap(nums[index], nums[i]);
+            path.push_back(nums[index]);
+            DFS(nums, index + 1);
+            path.pop_back();
+            swap(nums[index], nums[i]);
+        }
+    }
+
+   public:
+    vector<vector<int>> permute(vector<int>& nums) {
+        res.clear();
+        path.clear();
+        n = nums.size();
+
+        DFS(nums, 0);
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    vector<vector<int>> res = obj.permute(nums);
+
+    for (auto& r : res) {
+        for (int c : r) {
+            cout << c << " ";
+        }
+        cout << endl;
+    }
+
+    return 0;
+}
+```
+
+> `path`实际上没有必要，`nums`的前几项就是了
+>
+> ```cpp
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+>    private:
+>     vector<vector<int>> res;
+>     int n;
+> 
+>     void DFS(vector<int>& nums, int index) {
+>         if (index == n) {
+>             res.push_back(nums);
+>             return;
+>         }
+> 
+>         for (int i = index; i < n; i++) {
+>             swap(nums[index], nums[i]);
+>             DFS(nums, index + 1);
+>             swap(nums[index], nums[i]);
+>         }
+>     }
+> 
+>    public:
+>     vector<vector<int>> permute(vector<int>& nums) {
+>         res.clear();
+>         n = nums.size();
+>         DFS(nums, 0);
+>         return res;
+>     }
+> };
+> ```
+
+
+
+#### 103.3 解析
+
+这道题基本上就是这样，关键在于`swap`那一步；此外，`STL`其实内置一个全排列的函数：
+
+```cpp
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    vector<vector<int>> permute(vector<int>& nums) {
+        vector<vector<int>> res;
+        
+        sort(nums.begin(), nums.end());
+        
+        do {
+            res.push_back(nums);
+        } while (next_permutation(nums.begin(), nums.end()));
+        
+        return res;
+    }
+};
+```
+
+
+
+
+
+### 104. 组合总和*
+
+#### 104.1 题目
+
+给你一个 **无重复元素** 的整数数组 `candidates` 和一个目标整数 `target` ，找出 `candidates` 中可以使数字和为目标数 `target` 的 所有 **不同组合** ，并以列表形式返回。你可以按 **任意顺序** 返回这些组合。
+
+`candidates` 中的 **同一个** 数字可以 **无限制重复被选取** 。如果至少一个数字的被选数量不同，则两种组合是不同的。 
+
+对于给定的输入，保证和为 `target` 的不同组合数少于 `150` 个。
+
+ 
+
+**示例 1：**
+
+```
+输入：candidates = [2,3,6,7], target = 7
+输出：[[2,2,3],[7]]
+解释：
+2 和 3 可以形成一组候选，2 + 2 + 3 = 7 。注意 2 可以使用多次。
+7 也是一个候选， 7 = 7 。
+仅有这两种组合。
+```
+
+**示例 2：**
+
+```
+输入: candidates = [2,3,5], target = 8
+输出: [[2,2,2,2],[2,3,3],[3,5]]
+```
+
+**示例 3：**
+
+```
+输入: candidates = [2], target = 1
+输出: []
+```
+
+ 
+
+**提示：**
+
+- `1 <= candidates.length <= 30`
+- `2 <= candidates[i] <= 40`
+- `candidates` 的所有元素 **互不相同**
+- `1 <= target <= 40`
+
+
+
+#### 104.2 解法
+
+时间复杂度：$O(S)$，空间复杂度：$O(\frac{target}{min\_val})$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    vector<vector<int>> res;
+    vector<int> path;
+
+    void DFS(vector<int>& nums, int index, int sum, int target) {
+        if (sum == target) {
+            res.push_back(path);
+            return;
+        }
+
+        for (int i = index; i < nums.size(); i++) {
+            if (sum + nums[i] > target) {
+                return;
+            }
+
+            path.push_back(nums[i]);
+            sum += nums[i];
+            DFS(nums, i, sum, target);
+            path.pop_back();
+            sum -= nums[i];
+        }
+    }
+
+   public:
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        res.clear();
+        path.clear();
+
+        int sum = 0;
+        sort(candidates.begin(), candidates.end());
+        DFS(candidates, 0, sum, target);
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, target;
+    cin >> n >> target;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    vector<vector<int>> res = obj.combinationSum(nums, target);
+
+    for (auto& r : res) {
+        for (int c : r) {
+            cout << c << " ";
+        }
+
+        cout << endl;
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 104.3 解析
+
+如果用回溯法，基本上就是这样，理论上`sum`也可以不用，一直减`target`就行。然后也能用DP来解，这个问题本质上是一个完全背包问题：
+
+```cpp
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        vector<vector<vector<int>>> dp(target + 1);
+        dp[0] = {{}};
+
+        for (int num : candidates) {
+            for (int i = num; i <= target; i++) {
+                for (auto combination : dp[i - num]) {
+                    combination.push_back(num);
+                    dp[i].push_back(combination);
+                }
+            }
+        }
+
+        return dp[target];
+    }
+};
+```
+
+其核心是：和为 `i` 的组合，等于和为 `i - num` 的所有组合，各自在尾部追加一个当前的 `num`。
