@@ -19854,3 +19854,333 @@ class Solution {
 ```
 
 其核心是：和为 `i` 的组合，等于和为 `i - num` 的所有组合，各自在尾部追加一个当前的 `num`。
+
+
+
+
+
+### 105. N皇后II*
+
+#### 105.1 题目
+
+**n 皇后问题** 研究的是如何将 `n` 个皇后放置在 `n × n` 的棋盘上，并且使皇后彼此之间不能相互攻击。
+
+给你一个整数 `n` ，返回 **n 皇后问题** 不同的解决方案的数量。
+
+ 
+
+**示例 1：**
+
+![img](./assets/queens.jpg)
+
+```
+输入：n = 4
+输出：2
+解释：如上图所示，4 皇后问题存在两个不同的解法。
+```
+
+**示例 2：**
+
+```
+输入：n = 1
+输出：1
+```
+
+ 
+
+**提示：**
+
+- `1 <= n <= 9`
+
+
+
+#### 105.2 解法
+
+时间复杂度：$O(N!)$，空间复杂度：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    vector<bool> c;
+    vector<bool> y;
+    vector<bool> x;
+    int n;
+    int nums;
+
+    void placeQueens(int index) {
+        if (index == n) {
+            nums++;
+            return;
+        }
+
+        for (int i = 0; i < n; i++) {
+            if (c[i]) continue;
+            if (x[n - index + i - 1]) continue;
+            if (y[2 * n - index - i - 2]) continue;
+
+            c[i] = true;
+            x[n - index + i - 1] = true;
+            y[2 * n - index - i - 2] = true;
+            placeQueens(index + 1);
+            c[i] = false;
+            x[n - index + i - 1] = false;
+            y[2 * n - index - i - 2] = false;
+        }
+    }
+
+   public:
+    int totalNQueens(int n) {
+        this->n = n;
+        c.resize(n, false);
+        x.resize(2 * n - 1, false);
+        y.resize(2 * n - 1, false);
+        nums = 0;
+        placeQueens(0);
+
+        return nums;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    Solution obj;
+    cout << obj.totalNQueens(n);
+
+    return 0;
+}
+```
+
+
+
+#### 105.3 解析
+
+基本上这个思路就是最好的，当然在实现上，因为不需要给出具体解，可以直接用位运算来解：
+
+```cpp
+class Solution {
+   private:
+    int nums;
+    int upper_lim;
+
+    void dfs(int col, int ld, int rd) {
+        if (col == upper_lim) {
+            nums++;
+            return;
+        }
+
+        int pos = upper_lim & (~(col | ld | rd));
+        
+        while (pos != 0) {
+            int p = pos & (-pos);
+            pos -= p;
+            dfs(col | p, (ld | p) << 1, (rd | p) >> 1);
+        }
+    }
+
+   public:
+    int totalNQueens(int n) {
+        nums = 0;
+        upper_lim = (1 << n) - 1;
+        dfs(0, 0, 0);
+        return nums;
+    }
+};
+```
+
+其中，`col`、`ld`、`rd`代替我的 `c`、`x`、`y` 数组。然后用`upper_lim` 控制边界： `(1 << n) - 1` 会生成一个低 $n$ 位全为 `1` 的数字，用来作为掩码，确保所有的位操作只在棋盘的 $n$ 列范围内进行。通过`col | ld | rd` 算出了当前行所有不能放皇后的位置。对其取反 `~` 后，再与 `upper_lim` 进行按位与 `&`，得到的 `pos` 中，所有二进制为 `1` 的位就是当前行可以放皇后的安全位置。然后`p = pos & (-pos)`拿出最低有效位，逐个传入下一层。进入下一行递归时，列的限制 `col | p` 垂直传递；左对角线的限制 `(ld | p) << 1` 整体向左移一位；右对角线的限制 `(rd | p) >> 1` 整体向右移一位。
+
+
+
+### 106. 括号生成*
+
+#### 106.1 题目
+
+数字 `n` 代表生成括号的对数，请你设计一个函数，用于能够生成所有可能的并且 **有效的** 括号组合。
+
+ 
+
+**示例 1：**
+
+```
+输入：n = 3
+输出：["((()))","(()())","(())()","()(())","()()()"]
+```
+
+**示例 2：**
+
+```
+输入：n = 1
+输出：["()"]
+```
+
+ 
+
+**提示：**
+
+- `1 <= n <= 8`
+
+
+
+#### 106.2 解法
+
+时间复杂度：$O(n \times C_n)$，空间复杂度：$O(n)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    vector<string> res;
+    string path;
+
+    void findSeq(int n, int index) {
+        if (index == 0) {
+            if (n == 0) res.push_back(path);
+            return;
+        }
+
+        path.push_back('(');
+        n++;
+        for (int i = 0; i <= n; i++) {
+            int temp = n;
+            for (int j = 0; j < i; j++) {
+                path.push_back(')');
+                temp--;
+            }
+
+            findSeq(temp, index - 1);
+
+            while (path.back() == ')') path.pop_back();
+        }
+        path.pop_back();
+        n--;
+    }
+
+   public:
+    vector<string> generateParenthesis(int n) {
+        res.clear();
+        path = "";
+        findSeq(0, n);
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    Solution obj;
+    vector<string> res = obj.generateParenthesis(n);
+
+    for (string& r : res) {
+        cout << r << " ";
+    }
+
+    return 0;
+}
+```
+
+> 可以弄成二叉树，省一点`pop`和`push`的开销：
+>
+> ```cpp
+> #include <string>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+>    private:
+>     vector<string> res;
+>     string path;
+> 
+>     void DFS(int left, int right, int n) {
+>         if (path.length() == n * 2) {
+>             res.push_back(path);
+>             return;
+>         }
+> 
+>         if (left < n) {
+>             path.push_back('(');
+>             DFS(left + 1, right, n);
+>             path.pop_back();
+>         }
+> 
+>         if (right < left) {
+>             path.push_back(')');
+>             DFS(left, right + 1, n);
+>             path.pop_back();
+>         }
+>     }
+> 
+>    public:
+>     vector<string> generateParenthesis(int n) {
+>         res.clear();
+>         path.clear();
+>         DFS(0, 0, n);
+>         return res;
+>     }
+> };
+> ```
+
+
+
+#### 106.3 解析
+
+此外，这道题也能用DP来做，核心是：**"(" + 内部的合法括号 + ")" + 外部右侧的合法括号**：
+
+```cpp
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    vector<string> generateParenthesis(int n) {
+        if (n == 0) return {""};
+
+        vector<vector<string>> dp(n + 1);
+        dp[0] = {""};
+        dp[1] = {"()"};
+
+        for (int i = 2; i <= n; i++) {
+            for (int j = 0; j < i; j++) {
+                for (const string& p : dp[j]) {
+                    for (const string& q : dp[i - 1 - j]) {
+                        string str = "(" + p + ")" + q;
+                        dp[i].push_back(str);
+                    }
+                }
+            }
+        }
+
+        return dp[n];
+    }
+};
+```
+
