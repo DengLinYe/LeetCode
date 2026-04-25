@@ -20184,3 +20184,383 @@ class Solution {
 };
 ```
 
+
+
+
+
+### 107. 单词搜索*
+
+#### 107.1 题目
+
+给定一个 `m x n` 二维字符网格 `board` 和一个字符串单词 `word` 。如果 `word` 存在于网格中，返回 `true` ；否则，返回 `false` 。
+
+单词必须按照字母顺序，通过相邻的单元格内的字母构成，其中“相邻”单元格是那些水平相邻或垂直相邻的单元格。同一个单元格内的字母不允许被重复使用。
+
+ 
+
+**示例 1：**
+
+![img](./assets/word2.jpg)
+
+```
+输入：board = [['A','B','C','E'],['S','F','C','S'],['A','D','E','E']], word = "ABCCED"
+输出：true
+```
+
+**示例 2：**
+
+![img](./assets/word-1.jpg)
+
+```
+输入：board = [['A','B','C','E'],['S','F','C','S'],['A','D','E','E']], word = "SEE"
+输出：true
+```
+
+**示例 3：**
+
+![img](./assets/word3.jpg)
+
+```
+输入：board = [['A','B','C','E'],['S','F','C','S'],['A','D','E','E']], word = "ABCB"
+输出：false
+```
+
+ 
+
+**提示：**
+
+- `m == board.length`
+- `n = board[i].length`
+- `1 <= m, n <= 6`
+- `1 <= word.length <= 15`
+- `board` 和 `word` 仅由大小写英文字母组成
+
+ 
+
+**进阶：**你可以使用搜索剪枝的技术来优化解决方案，使其在 `board` 更大的情况下可以更快解决问题？
+
+
+
+#### 107.2 解法
+
+时间复杂度：$O(M \times N \times 3^L)$，空间复杂度：$O(L)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    int n;
+    int m;
+
+    bool wordSearch(vector<vector<char>>& board, string& word, int k, int i, int j) {
+        if (board[i][j] == word[k]) {
+            if (k == word.size() - 1) return true;
+        } else {
+            return false;
+        }
+
+        char c = board[i][j];
+        board[i][j] = '0';
+        if (i - 1 >= 0 && board[i - 1][j] != '0' && wordSearch(board, word, k + 1, i - 1, j)) return true;
+        if (i + 1 < n && board[i + 1][j] != '0' && wordSearch(board, word, k + 1, i + 1, j)) return true;
+        if (j - 1 >= 0 && board[i][j - 1] != '0' && wordSearch(board, word, k + 1, i, j - 1)) return true;
+        if (j + 1 < m && board[i][j + 1] != '0' && wordSearch(board, word, k + 1, i, j + 1)) return true;
+        board[i][j] = c;
+
+        return false;
+    }
+
+   public:
+    bool exist(vector<vector<char>>& board, string word) {
+        n = board.size();
+        m = board[0].size();
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (board[i][j] == word[0] && wordSearch(board, word, 0, i, j)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    cin >> n >> m;
+
+    vector<vector<char>> board(n, vector<char>(m));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> board[i][j];
+        }
+    }
+
+    string word;
+    cin >> word;
+
+    Solution obj;
+    cout << (obj.exist(board, word) ? "true" : "false");
+
+    return 0;
+}
+```
+
+
+
+#### 107.3 解析
+
+比单词搜索II简单很多，基本上就是这么做，此外还能做一些剪枝，只要花费的代价比收益小就行：
+
+1. 统计一下单词长度，如果大于矩阵大小，直接返回；
+2. 统计一下首尾字母在矩阵中出现的个数，哪个少就从哪边开始。
+
+```cpp
+#include <algorithm>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    int n, m;
+
+    bool wordSearch(vector<vector<char>>& board, string& word, int k, int i, int j) {
+        // 把跳过的情况集中
+        if (i < 0 || i >= n || j < 0 || j >= m || board[i][j] != word[k]) {
+            return false;
+        }
+        if (k == word.size() - 1) {
+            return true;
+        }
+
+        char c = board[i][j];
+        board[i][j] = '0';
+
+        bool found = wordSearch(board, word, k + 1, i - 1, j) ||
+                     wordSearch(board, word, k + 1, i + 1, j) ||
+                     wordSearch(board, word, k + 1, i, j - 1) ||
+                     wordSearch(board, word, k + 1, i, j + 1);
+
+        board[i][j] = c;
+        return found;
+    }
+
+   public:
+    bool exist(vector<vector<char>>& board, string word) {
+        n = board.size();
+        m = board[0].size();
+
+        if (word.length() > n * m) return false;
+
+        vector<int> boardCount(128, 0);
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < m; ++j) {
+                boardCount[board[i][j]]++;
+            }
+        }
+
+        vector<int> wordCount(128, 0);
+        for (char c : word) {
+            wordCount[c]++;
+            if (wordCount[c] > boardCount[c]) return false;
+        }
+
+        if (boardCount[word.front()] > boardCount[word.back()]) {
+            reverse(word.begin(), word.end());
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (wordSearch(board, word, 0, i, j)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+};
+```
+
+
+
+
+
+## 十三、分治
+
+### 108. 将有序数组转换为二叉搜索树*
+
+#### 108.1 题目
+
+给你一个整数数组 `nums` ，其中元素已经按 **升序** 排列，请你将其转换为一棵 平衡 二叉搜索树。
+
+ 
+
+**示例 1：**
+
+![img](./assets/btree1.jpg)
+
+```
+输入：nums = [-10,-3,0,5,9]
+输出：[0,-3,9,-10,null,5]
+解释：[0,-10,5,null,-3,null,9] 也将被视为正确答案：
+```
+
+**示例 2：**
+
+![img](./assets/btree.jpg)
+
+```
+输入：nums = [1,3]
+输出：[3,1]
+解释：[1,null,3] 和 [3,1] 都是高度平衡二叉搜索树。
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 104`
+- `-104 <= nums[i] <= 104`
+- `nums` 按 **严格递增** 顺序排列
+
+
+
+#### 108.2 解法
+
+时间复杂度：$O(N)$，空间复杂度：$O(\log N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   private:
+    void buildTree(TreeNode* root, vector<int>& nums, int i, int j) {
+        int mid = (i + j) / 2;
+        root->val = nums[mid];
+
+        if (mid > i) {
+            root->left = new TreeNode();
+            buildTree(root->left, nums, i, mid - 1);
+        }
+        if (mid < j) {
+            root->right = new TreeNode();
+            buildTree(root->right, nums, mid + 1, j);
+        }
+    }
+
+   public:
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        TreeNode* root = new TreeNode();
+        buildTree(root, nums, 0, nums.size() - 1);
+        return root;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    TreeNode* root = obj.sortedArrayToBST(nums);
+    queue<TreeNode*> q;
+    q.push(root);
+
+    while (!q.empty()) {
+        TreeNode* curr = q.front();
+        q.pop();
+
+        cout << curr->val << " ";
+        if (curr->left != nullptr) {
+            q.push(curr->left);
+        }
+        if (curr->right != nullptr) {
+            q.push(curr->right);
+        }
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 108.3 解析
+
+我这个思路是给出子节点让其在子函数中替换，但是也可以在子函数中建立起小的二叉树，然后返回给父函数组装：
+
+```cpp
+#include <vector>
+
+using namespace std;
+
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode() : val(0), left(nullptr), right(nullptr) {}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+    TreeNode(int x, TreeNode* left, TreeNode* right) : val(x), left(left), right(right) {}
+};
+
+class Solution {
+   private:
+    TreeNode* buildTree(vector<int>& nums, int left, int right) {
+        if (left > right) {
+            return nullptr;
+        }
+
+        int mid = left + (right - left) / 2;
+        TreeNode* root = new TreeNode(nums[mid]);
+
+        root->left = buildTree(nums, left, mid - 1);
+        root->right = buildTree(nums, mid + 1, right);
+
+        return root;
+    }
+
+   public:
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        return buildTree(nums, 0, nums.size() - 1);
+    }
+};
+```
+
