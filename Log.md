@@ -20564,3 +20564,458 @@ class Solution {
 };
 ```
 
+
+
+
+
+### 109. 排序链表**
+
+#### 109.1 题目
+
+给你链表的头结点 `head` ，请将其按 **升序** 排列并返回 **排序后的链表** 。
+
+ 
+
+**示例 1：**
+
+![img](./assets/sort_list_1.jpg)
+
+```
+输入：head = [4,2,1,3]
+输出：[1,2,3,4]
+```
+
+**示例 2：**
+
+![img](./assets/sort_list_2.jpg)
+
+```
+输入：head = [-1,5,3,4,0]
+输出：[-1,0,3,4,5]
+```
+
+**示例 3：**
+
+```
+输入：head = []
+输出：[]
+```
+
+ 
+
+**提示：**
+
+- 链表中节点的数目在范围 `[0, 5 * 104]` 内
+- `-105 <= Node.val <= 105`
+
+ 
+
+**进阶：**你可以在 `O(n log n)` 时间复杂度和常数级空间复杂度下，对链表进行排序吗？
+
+
+
+#### 109.2 解法
+
+时间复杂度：$O(N^2)$，空间复杂度：$O(1)$
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   public:
+    ListNode* sortList(ListNode* head) {
+        ListNode dummy(0);
+
+        while (head != nullptr) {
+            ListNode* curr = &dummy;
+            while (curr->next != nullptr && curr->next->val < head->val) {
+                curr = curr->next;
+            }
+            ListNode* temp = curr->next;
+            curr->next = head;
+            int right = (temp == nullptr ? INT_MAX : temp->val);
+            while (head->next != nullptr && head->next->val > head->val && head->next->val < right) head = head->next;
+            ListNode* next = head->next;
+            head->next = temp;
+            head = next;
+        }
+
+        return dummy.next;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    ListNode dummy(0);
+    ListNode* curr = &dummy;
+
+    while (curr != nullptr && n > 0) {
+        int in;
+        cin >> in;
+        curr->next = new ListNode(in);
+        curr = curr->next;
+        n--;
+    }
+
+    Solution obj;
+    curr = obj.sortList(dummy.next);
+    while (curr != nullptr) {
+        cout << curr->val << " ";
+        curr = curr->next;
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 109.3 解析
+
+在数组的排序中，有不少$O(N \log N)$的解法，但是否能用在链表中，关键在于是否依赖随机访问，而其中的归并排序就可以迁移过来：
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   public:
+    ListNode* sortList(ListNode* head) {
+        if (head == nullptr || head->next == nullptr) {
+            return head;
+        }
+
+        // slow单步，fast双步，到头之后，slow就是中间
+        ListNode* slow = head;
+        ListNode* fast = head->next;
+        while (fast != nullptr && fast->next != nullptr) {
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+
+        ListNode* mid = slow->next;
+        slow->next = nullptr;
+
+        // 细分
+        ListNode* left = sortList(head);
+        ListNode* right = sortList(mid);
+
+        // 合并
+        return merge(left, right);
+    }
+
+   private:
+    ListNode* merge(ListNode* l1, ListNode* l2) {
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        while (l1 != nullptr && l2 != nullptr) {
+            if (l1->val < l2->val) {
+                curr->next = l1;
+                l1 = l1->next;
+            } else {
+                curr->next = l2;
+                l2 = l2->next;
+            }
+            curr = curr->next;
+        }
+
+        if (l1 != nullptr) curr->next = l1;
+        if (l2 != nullptr) curr->next = l2;
+
+        return dummy.next;
+    }
+};
+```
+
+
+
+### 110. 建立四叉树*/**
+
+#### 110.1 题目
+
+给你一个 `n * n` 矩阵 `grid` ，矩阵由若干 `0` 和 `1` 组成。请你用四叉树表示该矩阵 `grid` 。
+
+你需要返回能表示矩阵 `grid` 的 四叉树 的根结点。
+
+四叉树数据结构中，每个内部节点只有四个子节点。此外，每个节点都有两个属性：
+
+- `val`：储存叶子结点所代表的区域的值。1 对应 **True**，0 对应 **False**。注意，当 `isLeaf` 为 **False** 时，你可以把 **True** 或者 **False** 赋值给节点，两种值都会被判题机制 **接受** 。
+- `isLeaf`: 当这个节点是一个叶子结点时为 **True**，如果它有 4 个子节点则为 **False** 。
+
+```
+class Node {
+    public boolean val;
+    public boolean isLeaf;
+    public Node topLeft;
+    public Node topRight;
+    public Node bottomLeft;
+    public Node bottomRight;
+}
+```
+
+我们可以按以下步骤为二维区域构建四叉树：
+
+1. 如果当前网格的值相同（即，全为 `0` 或者全为 `1`），将 `isLeaf` 设为 True ，将 `val` 设为网格相应的值，并将四个子节点都设为 Null 然后停止。
+2. 如果当前网格的值不同，将 `isLeaf` 设为 False， 将 `val` 设为任意值，然后如下图所示，将当前网格划分为四个子网格。
+3. 使用适当的子网格递归每个子节点。
+
+![img](./assets/1776133572-twFsfh-image.png)
+
+如果你想了解更多关于四叉树的内容，可以参考 [百科](https://baike.baidu.com/item/四叉树) 。
+
+**四叉树格式：**
+
+你不需要阅读本节来解决这个问题。只有当你想了解输出格式时才会这样做。输出为使用层序遍历后四叉树的序列化形式，其中 `null` 表示路径终止符，其下面不存在节点。
+
+它与二叉树的序列化非常相似。唯一的区别是节点以列表形式表示 `[isLeaf, val]` 。
+
+如果 `isLeaf` 或者 `val` 的值为 True ，则表示它在列表 `[isLeaf, val]` 中的值为 **1** ；如果 `isLeaf` 或者 `val` 的值为 False ，则表示值为 **0** 。
+
+ 
+
+**示例 1：**
+
+![img](./assets/1776133596-OszyMu-image.png)
+
+```
+输入：grid = [[0,1],[1,0]]
+输出：[[0,1],[1,0],[1,1],[1,1],[1,0]]
+解释：此示例的解释如下：
+请注意，在下面四叉树的图示中，0 表示 false，1 表示 True 。
+```
+
+**示例 2：**
+
+![img](./assets/1776133642-jZsQoA-image.png)
+
+```
+输入：grid = [[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0],[1,1,1,1,0,0,0,0]]
+输出：[[0,1],[1,1],[0,1],[1,1],[1,0],null,null,null,null,[1,0],[1,0],[1,1],[1,1]]
+解释：网格中的所有值都不相同。我们将网格划分为四个子网格。
+topLeft，bottomLeft 和 bottomRight 均具有相同的值。
+topRight 具有不同的值，因此我们将其再分为 4 个子网格，这样每个子网格都具有相同的值。
+解释如下图所示：
+```
+
+ 
+
+**提示：**
+
+1. `n == grid.length == grid[i].length`
+2. `n == 2x` 其中 `0 <= x <= 6`
+
+
+
+#### 110.2 解法
+
+时间复杂度：$O(n^2)$，空间复杂度：$O(\log n)$。
+
+```cpp
+#include <iostream>
+#include <queue>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+class Node {
+   public:
+    bool val;
+    bool isLeaf;
+    Node* topLeft;
+    Node* topRight;
+    Node* bottomLeft;
+    Node* bottomRight;
+
+    Node() {
+        val = false;
+        isLeaf = false;
+        topLeft = nullptr;
+        topRight = nullptr;
+        bottomLeft = nullptr;
+        bottomRight = nullptr;
+    }
+
+    Node(bool _val, bool _isLeaf) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = nullptr;
+        topRight = nullptr;
+        bottomLeft = nullptr;
+        bottomRight = nullptr;
+    }
+
+    Node(bool _val, bool _isLeaf, Node* _topLeft, Node* _topRight, Node* _bottomLeft, Node* _bottomRight) {
+        val = _val;
+        isLeaf = _isLeaf;
+        topLeft = _topLeft;
+        topRight = _topRight;
+        bottomLeft = _bottomLeft;
+        bottomRight = _bottomRight;
+    }
+};
+
+class Solution {
+   private:
+    Node* buildTree(vector<vector<int>>& grid, int upI, int upJ, int downI, int downJ) {
+        if (upI == downI && upJ == downJ) {
+            return new Node(grid[upI][upJ] == 1, true);
+        }
+
+        int midI = upI + (downI - upI) / 2;
+        int midJ = upJ + (downJ - upJ) / 2;
+
+        Node* topLeft = buildTree(grid, upI, upJ, midI, midJ);
+        Node* topRight = buildTree(grid, upI, midJ + 1, midI, downJ);
+        Node* bottomLeft = buildTree(grid, midI + 1, upJ, downI, midJ);
+        Node* bottomRight = buildTree(grid, midI + 1, midJ + 1, downI, downJ);
+
+        if (topLeft->isLeaf && topRight->isLeaf && bottomLeft->isLeaf && bottomRight->isLeaf &&
+            topLeft->val == topRight->val && topLeft->val == bottomLeft->val && topLeft->val == bottomRight->val) {
+            bool mergedVal = topLeft->val;
+            delete topLeft;
+            delete topRight;
+            delete bottomLeft;
+            delete bottomRight;
+            return new Node(mergedVal, true);
+        }
+
+        return new Node(true, false, topLeft, topRight, bottomLeft, bottomRight);
+    }
+
+   public:
+    Node* construct(vector<vector<int>>& grid) {
+        return buildTree(grid, 0, 0, grid.size() - 1, grid[0].size() - 1);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (!(cin >> n)) return 0;
+
+    vector<vector<int>> grid(n, vector<int>(n));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            cin >> grid[i][j];
+        }
+    }
+
+    Solution obj;
+    Node* root = obj.construct(grid);
+
+    if (!root) return 0;
+
+    queue<Node*> q;
+    q.push(root);
+    cout << "[";
+
+    bool first = true;
+    while (!q.empty()) {
+        Node* curr = q.front();
+        q.pop();
+
+        if (!first) cout << ",";
+        first = false;
+
+        if (curr == nullptr) {
+            cout << "null";
+        } else {
+            cout << "[" << (curr->isLeaf ? "1" : "0") << "," << (curr->val ? "1" : "0") << "]";
+            if (!curr->isLeaf) {
+                q.push(curr->topLeft);
+                q.push(curr->topRight);
+                q.push(curr->bottomLeft);
+                q.push(curr->bottomRight);
+            }
+        }
+    }
+    cout << "]" << "\n";
+
+    return 0;
+}
+```
+
+
+
+#### 110.3 解析
+
+这个办法就是理论上的最优解，但是还有一种思路：先算一个前缀和，然后把检查任意一个矩形区域内的元素和干到$O(1)$，这样一来，就能预先检查区域要不要分从而自顶向下地解题，虽然时间复杂度上一样，但在实际运行中会快不少：
+
+```cpp
+class Solution {
+   private:
+    vector<vector<int>> preSum;
+
+    int getSum(int r1, int c1, int r2, int c2) {
+        return preSum[r2 + 1][c2 + 1] - preSum[r1][c2 + 1] - preSum[r2 + 1][c1] + preSum[r1][c1];
+    }
+
+    Node* buildTree(int r1, int c1, int r2, int c2) {
+        int total = getSum(r1, c1, r2, c2);
+        int area = (r2 - r1 + 1) * (c2 - c1 + 1);
+
+        if (total == 0) {
+            return new Node(false, true);
+        } else if (total == area) {
+            return new Node(true, true);
+        }
+
+        int midR = r1 + (r2 - r1) / 2;
+        int midC = c1 + (c2 - c1) / 2;
+
+        Node* topLeft = buildTree(r1, c1, midR, midC);
+        Node* topRight = buildTree(r1, midC + 1, midR, c2);
+        Node* bottomLeft = buildTree(midR + 1, c1, r2, midC);
+        Node* bottomRight = buildTree(midR + 1, midC + 1, r2, c2);
+
+        return new Node(true, false, topLeft, topRight, bottomLeft, bottomRight);
+    }
+
+   public:
+    Node* construct(vector<vector<int>>& grid) {
+        int n = grid.size();
+        preSum.assign(n + 1, vector<int>(n + 1, 0));
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                preSum[i + 1][j + 1] = preSum[i][j + 1] + preSum[i + 1][j] - preSum[i][j] + grid[i][j];
+            }
+        }
+
+        return buildTree(0, 0, n - 1, n - 1);
+    }
+};
+```
+
