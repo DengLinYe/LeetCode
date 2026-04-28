@@ -21019,3 +21019,416 @@ class Solution {
 };
 ```
 
+
+
+### 111. 合并K个升序链表*
+
+#### 111.1 题目
+
+给你一个链表数组，每个链表都已经按升序排列。
+
+请你将所有链表合并到一个升序链表中，返回合并后的链表。
+
+ 
+
+**示例 1：**
+
+```
+输入：lists = [[1,4,5],[1,3,4],[2,6]]
+输出：[1,1,2,3,4,4,5,6]
+解释：链表数组如下：
+[
+  1->4->5,
+  1->3->4,
+  2->6
+]
+将它们合并到一个有序链表中得到。
+1->1->2->3->4->4->5->6
+```
+
+**示例 2：**
+
+```
+输入：lists = []
+输出：[]
+```
+
+**示例 3：**
+
+```
+输入：lists = [[]]
+输出：[]
+```
+
+ 
+
+**提示：**
+
+- `k == lists.length`
+- `0 <= k <= 10^4`
+- `0 <= lists[i].length <= 500`
+- `-10^4 <= lists[i][j] <= 10^4`
+- `lists[i]` 按 **升序** 排列
+- `lists[i].length` 的总和不超过 `10^4`
+
+
+
+#### 111.2 解法
+
+时间复杂度：$O(N \log k)$，空间复杂度：$O(\log k)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct ListNode {
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr) {}
+    ListNode(int x) : val(x), next(nullptr) {}
+    ListNode(int x, ListNode* next) : val(x), next(next) {}
+};
+
+class Solution {
+   private:
+    ListNode* mergeVector(vector<ListNode*>& lists, int i, int j) {
+        if (i == j) {
+            return lists[i];
+        }
+        if (i + 1 == j) {
+            return merge2Lists(lists[i], lists[j]);
+        }
+
+        ListNode* left = mergeVector(lists, i, (i + j) / 2);
+        ListNode* right = mergeVector(lists, (i + j) / 2 + 1, j);
+
+        return merge2Lists(left, right);
+    }
+
+    ListNode* merge2Lists(ListNode* l1, ListNode* l2) {
+        ListNode dummy(0);
+        dummy.next = l1;
+        l1 = &dummy;
+        while (l1->next != nullptr && l2 != nullptr) {
+            if (l1->next->val > l2->val) {
+                ListNode* temp = l1->next;
+                l1->next = l2;
+                l2 = l2->next;
+                l1->next->next = temp;
+            }
+            l1 = l1->next;
+        }
+        if (l2 != nullptr) l1->next = l2;
+
+        return dummy.next;
+    }
+
+   public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        if (lists.empty()) return nullptr;
+        return mergeVector(lists, 0, lists.size() - 1);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int k;
+    if (!(cin >> k)) return 0;
+
+    vector<ListNode*> lists;
+    for (int i = 0; i < k; i++) {
+        int n;
+        cin >> n;
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+        for (int j = 0; j < n; j++) {
+            int val;
+            cin >> val;
+            curr->next = new ListNode(val);
+            curr = curr->next;
+        }
+        lists.push_back(dummy.next);
+    }
+
+    Solution obj;
+    ListNode* res = obj.mergeKLists(lists);
+
+    while (res != nullptr) {
+        cout << res->val << " ";
+        res = res->next;
+    }
+    cout << "\n";
+
+    return 0;
+}
+```
+
+> 合并代码可以优化：
+>
+> ```cpp
+> ListNode* merge2Lists(ListNode* l1, ListNode* l2) {
+>         ListNode dummy(0);
+>         ListNode* curr = &dummy;
+> 
+>         while (l1 != nullptr && l2 != nullptr) {
+>             if (l1->val < l2->val) {
+>                 curr->next = l1;
+>                 l1 = l1->next;
+>             } else {
+>                 curr->next = l2;
+>                 l2 = l2->next;
+>             }
+>             curr = curr->next;
+>         }
+> 
+>         curr->next = (l1 != nullptr) ? l1 : l2;
+> 
+>         return dummy.next;
+>     }
+> ```
+
+
+
+#### 111.3 解析
+
+这就是理论最优解之一。此外，还有用优先队列（堆）的解法：
+
+```cpp
+#include <queue>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    struct compare {
+        bool operator()(ListNode* a, ListNode* b) {
+            return a->val > b->val;  // C++ 优先队列默认是大顶堆，大于号表示构建小顶堆
+        }
+    };
+
+   public:
+    ListNode* mergeKLists(vector<ListNode*>& lists) {
+        priority_queue<ListNode*, vector<ListNode*>, compare> pq;
+
+        for (ListNode* head : lists) {
+            if (head != nullptr) {
+                pq.push(head);
+            }
+        }
+
+        ListNode dummy(0);
+        ListNode* curr = &dummy;
+
+        while (!pq.empty()) {
+            ListNode* minNode = pq.top();
+            pq.pop();
+            
+            curr->next = minNode;
+            curr = curr->next;
+            
+            if (minNode->next != nullptr) {
+                pq.push(minNode->next);
+            }
+        }
+
+        return dummy.next;
+    }
+};
+```
+
+其中优先队列在STL库中有实现。
+
+
+
+
+
+## 十四、Kadane
+
+### 112.最大子序列和*
+
+#### 112.1 题目
+
+给你一个整数数组 `nums` ，请你找出一个具有最大和的连续子数组（子数组最少包含一个元素），返回其最大和。
+
+**子数组**是数组中的一个连续部分。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [-2,1,-3,4,-1,2,1,-5,4]
+输出：6
+解释：连续子数组 [4,-1,2,1] 的和最大，为 6 。
+```
+
+**示例 2：**
+
+```
+输入：nums = [1]
+输出：1
+```
+
+**示例 3：**
+
+```
+输入：nums = [5,4,-1,7,8]
+输出：23
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 105`
+- `-104 <= nums[i] <= 104`
+
+ 
+
+**进阶：**如果你已经实现复杂度为 `O(n)` 的解法，尝试使用更为精妙的 **分治法** 求解。
+
+
+
+#### 112.2 解法
+
+时间复杂度：$O(N)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int maxSubArray(vector<int>& nums) {
+        int sumMax = nums[0], sum = nums[0];
+        for (int i = 1; i < nums.size(); i++) {
+            if (sum < 0) {
+                sum = 0;
+            }
+            sum += nums[i];
+            sumMax = max(sum, sumMax);
+        }
+
+        return sumMax;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.maxSubArray(nums);
+
+    return 0;
+}
+```
+
+
+
+#### 112.3 解析
+
+我的解法本质上是一种DP，具体在这就是Kadane算法，不过要写得更漂亮一些。在此前，也多次提到DP，本质上是一种状态转移，即我一个情况，它有固定的几种（两种）状态转移，然后一步步就把所有情况走一遍：这里也是一样，每个元素`nums[i]`，它只有两种选择：
+
+1. 作为一个新子数组的起点
+2. 属于上一个子数组
+
+那么：
+
+```cpp
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int maxSubArray(vector<int>& nums) {
+        int sumMax = nums[0];
+        int sum = nums[0];
+        
+        for (int i = 1; i < nums.size(); i++) {
+            sum = max(nums[i], sum + nums[i]);
+            sumMax = max(sumMax, sum);
+        }
+
+        return sumMax;
+    }
+};
+```
+
+此外，进阶的要求要用分治法，比较难理解：
+
+```cpp
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    // 每个区间,维护四个状态:区间左端为起点的最大子段和(区间内);区间右端为终点的最大子段和(区间内);区间内部最大子段和;区间元素和
+    struct Status {
+        int lSum;
+        int rSum;
+        int mSum;
+        int iSum;
+    };
+
+    // 合并逻辑
+    Status pushUp(Status l, Status r) {
+        //元素和:合并逻辑就是直接加
+        int iSum = l.iSum + r.iSum;
+        //左起最大子段和:左区间的左起最大子段和 或 左元素和+右区间左起最大子段和
+        int lSum = max(l.lSum, l.iSum + r.lSum);
+        //右终最大子段和:对称
+        int rSum = max(r.rSum, r.rSum + l.rSum);
+        //区间最大子段和:各自最大子段和 或 左区间右终最大子段和+右区间左起最大子段和
+        int mSum = max({l.mSum, r.mSum, l.rSum + r.lSum});
+        
+        return (Status){lSum, rSum, mSum, iSum};
+    }
+
+    // 分割与合并逻辑
+    Status get(vector<int>& a, int l, int r) {
+        if (l == r) {
+            return (Status){a[l], a[l], a[l], a[l]};
+        }
+        
+        int m = l + (r - l) / 2;
+        Status lSub = get(a, l, m);
+        Status rSub = get(a, m + 1, r);
+        
+        return pushUp(lSub, rSub);
+    }
+
+   public:
+    int maxSubArray(vector<int>& nums) {
+        return get(nums, 0, nums.size() - 1).mSum;
+    }
+};
+```
+
