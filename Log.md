@@ -21432,3 +21432,253 @@ class Solution {
 };
 ```
 
+
+
+### 113. 环形数组的最大子段和**
+
+#### 113.1 题目
+
+给定一个长度为 `n` 的**环形整数数组** `nums` ，返回 *`nums` 的非空 **子数组** 的最大可能和* 。
+
+**环形数组** 意味着数组的末端将会与开头相连呈环状。形式上， `nums[i]` 的下一个元素是 `nums[(i + 1) % n]` ， `nums[i]` 的前一个元素是 `nums[(i - 1 + n) % n]` 。
+
+**子数组** 最多只能包含固定缓冲区 `nums` 中的每个元素一次。形式上，对于子数组 `nums[i], nums[i + 1], ..., nums[j]` ，不存在 `i <= k1, k2 <= j` 其中 `k1 % n == k2 % n` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [1,-2,3,-2]
+输出：3
+解释：从子数组 [3] 得到最大和 3
+```
+
+**示例 2：**
+
+```
+输入：nums = [5,-3,5]
+输出：10
+解释：从子数组 [5,5] 得到最大和 5 + 5 = 10
+```
+
+**示例 3：**
+
+```
+输入：nums = [3,-2,2,-3]
+输出：3
+解释：从子数组 [3] 和 [3,-2,2] 都可以得到最大和 3
+```
+
+ 
+
+**提示：**
+
+- `n == nums.length`
+- `1 <= n <= 3 * 104`
+- `-3 * 104 <= nums[i] <= 3 * 104`
+
+
+
+#### 113.2 解法
+
+时间复杂度：O(N)，空间复杂度：O(N)。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int maxSubarraySumCircular(vector<int>& nums) {
+        int n = nums.size();
+        int sumMax = nums[0], sum = nums[0], leftSum = nums[0], rightSum = 0;
+
+        vector<int> leftMax(n);
+        leftMax[0] = nums[0];
+
+        for (int i = 1; i < n; i++) {
+            sum = max(nums[i], sum + nums[i]);
+            sumMax = max(sum, sumMax);
+            leftSum += nums[i];
+            leftMax[i] = max(leftMax[i - 1], leftSum);
+        }
+
+        for (int i = n - 1; i >= 1; i--) {
+            rightSum += nums[i];
+            sumMax = max(sumMax, leftMax[i - 1] + rightSum);
+        }
+
+        return sumMax;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.maxSubarraySumCircular(nums);
+
+    return 0;
+}
+```
+
+
+
+#### 113.3 解析
+
+这还不是最优解，事实上，如果是情况二，不难发现，中间那一段不要的就是连续的一个子段，而这个子段就是最小子段和的子段，也就是在求最大子段和的同时再求最小子段和即可：
+
+```cpp
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int maxSubarraySumCircular(vector<int>& nums) {
+        int totalSum = 0;
+        int maxSum = nums[0];
+        int currentMax = 0;
+        int minSum = nums[0];
+        int currentMin = 0;
+
+        for (int num : nums) {
+            currentMax = max(currentMax + num, num);
+            maxSum = max(maxSum, currentMax);
+
+            currentMin = min(currentMin + num, num);
+            minSum = min(minSum, currentMin);
+
+            totalSum += num;
+        }
+
+        if (maxSum < 0) {
+            return maxSum;
+        }
+
+        return max(maxSum, totalSum - minSum);
+    }
+};
+```
+
+
+
+## 十五、二分查找
+
+### 114. 搜索插入位置*
+
+#### 114.1 题目
+
+给定一个排序数组和一个目标值，在数组中找到目标值，并返回其索引。如果目标值不存在于数组中，返回它将会被按顺序插入的位置。
+
+请必须使用时间复杂度为 `O(log n)` 的算法。
+
+ 
+
+**示例 1:**
+
+```
+输入: nums = [1,3,5,6], target = 5
+输出: 2
+```
+
+**示例 2:**
+
+```
+输入: nums = [1,3,5,6], target = 2
+输出: 1
+```
+
+**示例 3:**
+
+```
+输入: nums = [1,3,5,6], target = 7
+输出: 4
+```
+
+ 
+
+**提示:**
+
+- `1 <= nums.length <= 104`
+- `-104 <= nums[i] <= 104`
+- `nums` 为 **无重复元素** 的 **升序** 排列数组
+- `-104 <= target <= 104`
+
+ 
+
+#### 114.2 解法
+
+时间复杂度：$O(\log N)$；空间复杂度：$O(1)。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int searchInsert(vector<int>& nums, int target) {
+        int i = 0, j = nums.size() - 1;
+        while (i <= j) {
+            int mid = (i + j) / 2;
+
+            if (nums[mid] == target) {
+                return mid;
+            } else if (nums[mid] < target) {
+                i = mid + 1;
+            } else {
+                j = mid - 1;
+            }
+        }
+
+        return i;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, target;
+    cin >> n >> target;
+
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.searchInsert(nums, target);
+
+    return 0;
+}
+```
+
+
+
+#### 114.3 解析
+
+没什么好说，就是二分查找。
