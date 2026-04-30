@@ -21682,3 +21682,246 @@ int main() {
 #### 114.3 解析
 
 没什么好说，就是二分查找。
+
+
+
+
+
+### 115. 搜索二维矩阵*
+
+#### 115.1 题目
+
+给你一个满足下述两条属性的 `m x n` 整数矩阵：
+
+- 每行中的整数从左到右按非严格递增顺序排列。
+- 每行的第一个整数大于前一行的最后一个整数。
+
+给你一个整数 `target` ，如果 `target` 在矩阵中，返回 `true` ；否则，返回 `false` 。
+
+ 
+
+**示例 1：**
+
+![img](./assets/mat.jpg)
+
+```
+输入：matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+输出：true
+```
+
+**示例 2：**
+
+![img](./assets/mat2-1777517746394-2.jpg)
+
+```
+输入：matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 13
+输出：false
+```
+
+ 
+
+**提示：**
+
+- `m == matrix.length`
+- `n == matrix[i].length`
+- `1 <= m, n <= 100`
+- `-104 <= matrix[i][j], target <= 104`
+
+
+
+#### 115.2 解法
+
+时间复杂度：$O(\log(n \times m))$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    bool searchMatrix(vector<vector<int>>& matrix, int target) {
+        int n = matrix.size(), m = matrix[0].size();
+        int i = 0, j = n * m - 1;
+        while (i <= j) {
+            int mid = (i + j) / 2;
+            if (matrix[mid / m][mid % m] == target) {
+                return true;
+            } else if (matrix[mid / m][mid % m] < target) {
+                i = mid + 1;
+            } else {
+                j = mid - 1;
+            }
+        }
+
+        return false;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m, target;
+    cin >> n >> m >> target;
+
+    vector<vector<int>> matrix(n, vector<int>(m));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> matrix[i][j];
+        }
+    }
+
+    Solution obj;
+    cout << (obj.searchMatrix(matrix, target) == true ? "true" : "false");
+    return 0;
+}
+```
+
+> 防止溢出，可以让`int mid = i + (j - i) / 2;`，其中`j`因为是乘出来的，比较容易溢出。
+
+
+
+#### 115.3 解析
+
+也没什么好说，坐标转换一下就行。
+
+
+
+
+
+### 116. 寻找峰值*
+
+#### 116.1 题目
+
+峰值元素是指其值严格大于左右相邻值的元素。
+
+给你一个整数数组 `nums`，找到峰值元素并返回其索引。数组可能包含多个峰值，在这种情况下，返回 **任何一个峰值** 所在位置即可。
+
+你可以假设 `nums[-1] = nums[n] = -∞` 。
+
+你必须实现时间复杂度为 `O(log n)` 的算法来解决此问题。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [1,2,3,1]
+输出：2
+解释：3 是峰值元素，你的函数应该返回其索引 2。
+```
+
+**示例 2：**
+
+```
+输入：nums = [1,2,1,3,5,6,4]
+输出：1 或 5 
+解释：你的函数可以返回索引 1，其峰值元素为 2；
+     或者返回索引 5， 其峰值元素为 6。
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 1000`
+- `-231 <= nums[i] <= 231 - 1`
+- 对于所有有效的 `i` 都有 `nums[i] != nums[i + 1]`
+
+
+
+#### 116.2 解法
+
+时间复杂度：$O(\log N)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int findPeakElement(vector<int>& nums) {
+        int i = 0, j = nums.size() - 1;
+        while (i <= j) {
+            int mid = (i + j) / 2;
+            if ((mid == 0 || nums[mid - 1] < nums[mid]) && (mid == nums.size() - 1 || nums[mid] > nums[mid + 1])) {
+                return mid;
+            } else if (mid == 0 || nums[mid - 1] < nums[mid]) {
+                i = mid + 1;
+            } else {
+                j = mid - 1;
+            }
+        }
+
+        return -1;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.findPeakElement(nums);
+
+    return 0;
+}
+```
+
+
+
+#### 116.3 解析
+
+依旧比较简单，但是有一个不错的思路，也就是只比较下一个：
+
+```cpp
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int findPeakElement(vector<int>& nums) {
+        int left = 0;
+        int right = nums.size() - 1;
+
+        // 注意：这里是严格小于。当 left == right 时，循环打破，两者相遇点即为答案。
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+
+            // mid 永远不会等于 right，所以 mid + 1 绝对安全
+            if (nums[mid] > nums[mid + 1]) {
+                // 当前在下坡，说明峰顶在左边（或者当前 mid 就是峰顶）
+                // 所以不能写 right = mid - 1，必须保留 mid
+                right = mid;
+            } else {
+                // 当前在上坡，说明峰顶必然在右边（且 mid 绝对不可能是峰顶）
+                // 所以可以大胆地越过 mid
+                left = mid + 1;
+            }
+        }
+
+        return left;
+    }
+};
+```
+
