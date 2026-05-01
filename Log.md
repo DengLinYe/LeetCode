@@ -21925,3 +21925,292 @@ class Solution {
 };
 ```
 
+
+
+### 117. 搜索旋转排序数组*
+
+#### 117.1 题目
+
+整数数组 `nums` 按升序排列，数组中的值 **互不相同** 。
+
+在传递给函数之前，`nums` 在预先未知的某个下标 `k`（`0 <= k < nums.length`）上进行了 **向左旋转**，使数组变为 `[nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]]`（下标 **从 0 开始** 计数）。例如， `[0,1,2,4,5,6,7]` 下标 `3` 上向左旋转后可能变为 `[4,5,6,7,0,1,2]` 。
+
+给你 **旋转后** 的数组 `nums` 和一个整数 `target` ，如果 `nums` 中存在这个目标值 `target` ，则返回它的下标，否则返回 `-1` 。
+
+你必须设计一个时间复杂度为 `O(log n)` 的算法解决此问题。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [4,5,6,7,0,1,2], target = 0
+输出：4
+```
+
+**示例 2：**
+
+```
+输入：nums = [4,5,6,7,0,1,2], target = 3
+输出：-1
+```
+
+**示例 3：**
+
+```
+输入：nums = [1], target = 0
+输出：-1
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 5000`
+- `-104 <= nums[i] <= 104`
+- `nums` 中的每个值都 **独一无二**
+- 题目数据保证 `nums` 在预先未知的某个下标上进行了旋转
+- `-104 <= target <= 104`
+
+
+
+#### 117.2 解法
+
+时间复杂度：$O(\log N)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int search(vector<int>& nums, int target) {
+        int i = 0, j = nums.size() - 1;
+        while (i <= j) {
+            int mid = i + (j - i) / 2;
+            if (nums[mid] == target) {
+                return mid;
+            }
+            if (nums[0] <= nums[mid]) {
+                if (nums[0] <= target && target < nums[mid]) {
+                    j = mid - 1;
+                } else {
+                    i = mid + 1;
+                }
+            } else {
+                if (nums[mid] < target && target <= nums[nums.size() - 1]) {
+                    i = mid + 1;
+                } else {
+                    j = mid - 1;
+                }
+            }
+        }
+
+        return -1;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, target;
+    cin >> n >> target;
+
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.search(nums, target);
+
+    return 0;
+}
+```
+
+
+
+#### 117.3 解析
+
+关键在于能够认识到前面一部分的连续数组的最小值是大于后面一部分连续数组的最大值的。同样的思路下，也可以用两次二分
+
+```cpp
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    // 第一次二分：寻找数组的最小值索引（旋转的断点）
+    int findMinIndex(const vector<int>& nums) {
+        int left = 0, right = nums.size() - 1;
+        while (left < right) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] > nums[right]) {
+                left = mid + 1; // 最小值在右半部分
+            } else {
+                right = mid;    // 最小值在左半部分，或者就是 mid 本身
+            }
+        }
+        return left;
+    }
+
+    // 第二次二分：在指定的纯升序区间内寻找目标值
+    int binarySearch(const vector<int>& nums, int left, int right, int target) {
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (nums[mid] == target) {
+                return mid;
+            } else if (nums[mid] < target) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return -1;
+    }
+
+   public:
+    int search(vector<int>& nums, int target) {
+        if (nums.empty()) return -1;
+
+        int minIdx = findMinIndex(nums);
+        int n = nums.size();
+
+        // 根据 target 和两端的值，决定去哪一段进行常规二分查找
+        if (target >= nums[minIdx] && target <= nums[n - 1]) {
+            return binarySearch(nums, minIdx, n - 1, target);
+        } else {
+            return binarySearch(nums, 0, minIdx - 1, target);
+        }
+    }
+};
+```
+
+
+
+
+
+### 118. 在排序数组中查找元素的第一个和最后一个位置*
+
+#### 118.1 题目
+
+给你一个按照非递减顺序排列的整数数组 `nums`，和一个目标值 `target`。请你找出给定目标值在数组中的开始位置和结束位置。
+
+如果数组中不存在目标值 `target`，返回 `[-1, -1]`。
+
+你必须设计并实现时间复杂度为 `O(log n)` 的算法解决此问题。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [5,7,7,8,8,10], target = 8
+输出：[3,4]
+```
+
+**示例 2：**
+
+```
+输入：nums = [5,7,7,8,8,10], target = 6
+输出：[-1,-1]
+```
+
+**示例 3：**
+
+```
+输入：nums = [], target = 0
+输出：[-1,-1]
+```
+
+ 
+
+**提示：**
+
+- `0 <= nums.length <= 105`
+- `-109 <= nums[i] <= 109`
+- `nums` 是一个非递减数组
+- `-109 <= target <= 109`
+
+
+
+#### 118.2 解法
+
+时间复杂度：$O(\log N)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        if (nums.size() == 0) return {-1, -1};
+
+        int left = -1, right = -1;
+
+        int i = 0, j = nums.size() - 1;
+        while (i <= j) {
+            int mid = i + (j - i) / 2;
+            if (nums[mid] >= target) {
+                j = mid - 1;
+            } else {
+                i = mid + 1;
+            }
+        }
+        if (i < nums.size() && nums[i] == target) left = i;
+
+        i = 0;
+        j = nums.size() - 1;
+        while (i <= j) {
+            int mid = i + (j - i) / 2;
+            if (nums[mid] <= target) {
+                i = mid + 1;
+            } else {
+                j = mid - 1;
+            }
+        }
+        if (j >= 0 && nums[j] == target) right = j;
+
+        return {left, right};
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, target;
+    cin >> n >> target;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    vector<int> res = obj.searchRange(nums, target);
+    cout << res[0] << " " << res[1] << endl;
+
+    return 0;
+}
+```
+
+
+
+#### 118.3 解析
+
+感觉也没啥好说的……
