@@ -22214,3 +22214,221 @@ int main() {
 #### 118.3 解析
 
 感觉也没啥好说的……
+
+
+
+
+
+### 119. 寻找旋转排序数组中的最小值*
+
+#### 119.1 题目
+
+已知一个长度为 `n` 的数组，预先按照升序排列，经由 `1` 到 `n` 次 **旋转** 后，得到输入数组。例如，原数组 `nums = [0,1,2,4,5,6,7]` 在变化后可能得到：
+
+- 若旋转 `4` 次，则可以得到 `[4,5,6,7,0,1,2]`
+- 若旋转 `7` 次，则可以得到 `[0,1,2,4,5,6,7]`
+
+注意，数组 `[a[0], a[1], a[2], ..., a[n-1]]` **旋转一次** 的结果为数组 `[a[n-1], a[0], a[1], a[2], ..., a[n-2]]` 。
+
+给你一个元素值 **互不相同** 的数组 `nums` ，它原来是一个升序排列的数组，并按上述情形进行了多次旋转。请你找出并返回数组中的 **最小元素** 。
+
+你必须设计一个时间复杂度为 `O(log n)` 的算法解决此问题。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [3,4,5,1,2]
+输出：1
+解释：原数组为 [1,2,3,4,5] ，旋转 3 次得到输入数组。
+```
+
+**示例 2：**
+
+```
+输入：nums = [4,5,6,7,0,1,2]
+输出：0
+解释：原数组为 [0,1,2,4,5,6,7] ，旋转 4 次得到输入数组。
+```
+
+**示例 3：**
+
+```
+输入：nums = [11,13,15,17]
+输出：11
+解释：原数组为 [11,13,15,17] ，旋转 4 次得到输入数组。
+```
+
+ 
+
+**提示：**
+
+- `n == nums.length`
+- `1 <= n <= 5000`
+- `-5000 <= nums[i] <= 5000`
+- `nums` 中的所有整数 **互不相同**
+- `nums` 原来是一个升序排序的数组，并进行了 `1` 至 `n` 次旋转
+
+
+
+#### 119.2 解法
+
+时间复杂度：$O(\log N)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int findMin(vector<int>& nums) {
+        int n = nums.size();
+        if (nums[n - 1] >= nums[0]) return nums[0];
+
+        int i = 0, j = n - 1;
+        while (i < j) {
+            int mid = i + (j - i) / 2;
+            if (nums[mid] >= nums[0]) {
+                i = mid + 1;
+            } else {
+                j = mid;
+            }
+        }
+
+        return nums[i];
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.findMin(nums) << endl;
+
+    return 0;
+}
+```
+
+
+
+#### 119.3 解析
+
+依旧是旋转数组，主要还是是判断到底在左半边还是右半边，没太多可说，要注意边界条件。
+
+
+
+### 120. 寻找两个正序数组的中位数***
+
+#### 120.1 题目
+
+给定两个大小分别为 `m` 和 `n` 的正序（从小到大）数组 `nums1` 和 `nums2`。请你找出并返回这两个正序数组的 **中位数** 。
+
+算法的时间复杂度应该为 `O(log (m+n))` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums1 = [1,3], nums2 = [2]
+输出：2.00000
+解释：合并数组 = [1,2,3] ，中位数 2
+```
+
+**示例 2：**
+
+```
+输入：nums1 = [1,2], nums2 = [3,4]
+输出：2.50000
+解释：合并数组 = [1,2,3,4] ，中位数 (2 + 3) / 2 = 2.5
+```
+
+ 
+
+**提示：**
+
+- `nums1.length == m`
+- `nums2.length == n`
+- `0 <= m <= 1000`
+- `0 <= n <= 1000`
+- `1 <= m + n <= 2000`
+- `-106 <= nums1[i], nums2[i] <= 106`
+
+
+
+#### 120.2 解法
+
+略
+
+
+
+#### 120.3 解析
+
+时间复杂度：$O(\log(\min(m, n)))$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <climits>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+        // 保证nums1一定是长度更短的
+        if (nums1.size() > nums2.size()) {
+            return findMedianSortedArrays(nums2, nums1);
+        }
+
+        int m = nums1.size();
+        int n = nums2.size();
+        // left和right都是在nums1的坐标，用以确定切线i，下面注释会讲到i与j关系，解得i就解得j，所以二分求解i
+        int left = 0, right = m;
+        // median是中位数，如果奇数就median1，如果是偶数就median1、2的平均
+        int median1 = 0, median2 = 0;
+
+        while (left <= right) {
+            // i是在nums1的切线，j是在nums2的切线，它们满足i+j = int((m+n+1)/2)，也就是合计左一半右一半
+            int i = left + (right - left) / 2;
+            int j = (m + n + 1) / 2 - i;
+
+            // nums_im1是i左边第一个元素，nums_i是i右边第一个元素，以此类推j类似
+            // INT_MAX和MIN是防边界的
+            int nums_im1 = (i == 0 ? INT_MIN : nums1[i - 1]);
+            int nums_i = (i == m ? INT_MAX : nums1[i]);
+            int nums_jm1 = (j == 0 ? INT_MIN : nums2[j - 1]);
+            int nums_j = (j == n ? INT_MAX : nums2[j]);
+
+            // 如果满足nums_im1 <= nums_j，这是符合条件的，就取median1和median2。而i可能还会更大，取left=i+1
+            // 如果不满足，那不符合条件，i应该更小
+            if (nums_im1 <= nums_j) {
+                median1 = max(nums_im1, nums_jm1);
+                median2 = min(nums_i, nums_j);
+                left = i + 1;
+            } else {
+                right = i - 1;
+            }
+        }
+
+        return (m + n) % 2 == 0 ? (median1 + median2) / 2.0 : median1;
+    }
+};
+```
+
