@@ -22432,3 +22432,420 @@ class Solution {
 };
 ```
 
+
+
+
+
+## 十六、堆
+
+### 121. 数组中的第K个最大元素*（@）
+
+#### 121.1 题目
+
+给定整数数组 `nums` 和整数 `k`，请返回数组中第 `**k**` 个最大的元素。
+
+请注意，你需要找的是数组排序后的第 `k` 个最大的元素，而不是第 `k` 个不同的元素。
+
+你必须设计并实现时间复杂度为 `O(n)` 的算法解决此问题。
+
+ 
+
+**示例 1:**
+
+```
+输入: [3,2,1,5,6,4], k = 2
+输出: 5
+```
+
+**示例 2:**
+
+```
+输入: [3,2,3,1,2,4,5,5,6], k = 4
+输出: 4
+```
+
+ 
+
+**提示：**
+
+- `1 <= k <= nums.length <= 105`
+- `-104 <= nums[i] <= 104`
+
+
+
+#### 121.2 解法
+
+时间复杂度：$O(N + k \log N)$，空间复杂度：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+struct MaxHeap {
+    int size;
+    vector<int> heap;
+
+    MaxHeap(int _size, vector<int>& _heap) {
+        size = _size;
+        heap = _heap;
+
+        for (int i = size / 2 - 1; i >= 0; i--) {
+            siftDown(i);
+        }
+    }
+
+    void siftDown(int index) {
+        if (index >= size) return;
+
+        int l = index * 2 + 1, r = index * 2 + 2, largest = index;
+        if (l < size && heap[l] > heap[largest]) largest = l;
+        if (r < size && heap[r] > heap[largest]) largest = r;
+        if (largest != index) {
+            swap(heap[index], heap[largest]);
+            siftDown(largest);
+        }
+    }
+
+    bool getMax(int& maxNum) {
+        if (size == 0) return false;
+
+        maxNum = heap[0];
+        swap(heap[0], heap[size - 1]);
+        size--;
+        siftDown(0);
+
+        return true;
+    }
+};
+
+class Solution {
+   public:
+    int findKthLargest(vector<int>& nums, int k) {
+        MaxHeap heap(nums.size(), nums);
+        int maxNum;
+        for (int i = 0; i < k; i++) {
+            heap.getMax(maxNum);
+        }
+
+        return maxNum;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, k;
+    cin >> n >> k;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.findKthLargest(nums, k);
+
+    return 0;
+}
+```
+
+> 传入的时候可以避免拷贝，如：
+>
+> ```cpp
+> struct MaxHeap {
+>     int size;
+>     vector<int>& heap; // 直接引用，避免复制
+> 
+>     MaxHeap(int _size, vector<int>& _heap) : size(_size), heap(_heap) {
+>         // 从非叶子结点开始调整为大顶堆
+>         for (int i = size / 2 - 1; i >= 0; i--) {
+>             siftDown(i);
+>         }
+>     }
+> 
+>     void siftDown(int index) {
+>         if (index >= size) return;
+> 		// 计算得左右两个孩子坐标
+>         int l = index * 2 + 1, r = index * 2 + 2, largest = index;
+>         // 找到三个节点中最大的
+>         if (l < size && heap[l] > heap[largest]) largest = l;
+>         if (r < size && heap[r] > heap[largest]) largest = r;
+>         // 交换，并向下调整
+>         if (largest != index) {
+>             swap(heap[index], heap[largest]);
+>             siftDown(largest);
+>         }
+>     }
+> 
+>     bool getMax(int& maxNum) {
+>         if (size == 0) return false;
+> 
+>         maxNum = heap[0];
+>         swap(heap[0], heap[size - 1]);
+>         size--;
+>         siftDown(0);
+> 
+>         return true;
+>     }
+> };
+> ```
+
+
+
+#### 121.3 解析
+
+用堆做就能达到最优，题目说$O(N)$，疑似是左右脑互搏导致的，理论上不可能。堆实际上可以用STL库的优先队列直接弄，但是如果题目是这种程度的话，一般是要自己写堆：
+
+```cpp
+#include <vector>
+#include <queue>
+
+using namespace std;
+
+class Solution {
+   public:
+    int findKthLargest(vector<int>& nums, int k) {
+        // 直接使用STL中的priority_queue
+        priority_queue<int, vector<int>, greater<int>> minHeap;
+
+        // 这里强制堆大小不大于k，因为没必要维护一个大于K的堆，这是一个小顶堆，是nums中最大的k个数，而里面最小的，就是第K大的
+        for (int num : nums) {
+            minHeap.push(num);
+            if (minHeap.size() > k) {
+                minHeap.pop();
+            }
+        }
+
+        return minHeap.top();
+    }
+};
+```
+
+由于限制了堆的大小，所以达到了时间复杂度 $O(N \log k)$，空间复杂度 $O(k)$，当然这种思路也能用在自己写的堆上。
+
+此外，还可以魔改快排，即快速选择算法：
+
+```cpp
+#include <vector>
+#include <cstdlib>
+
+using namespace std;
+
+class Solution {
+   private:
+    int quickSelect(vector<int>& nums, int left, int right, int k) {
+        // 锁定
+        if (left == right) return nums[left];
+
+        // pivot选择
+        int pivotIndex = left + rand() % (right - left + 1);
+        int pivot = nums[pivotIndex];
+        
+        // 即快排逻辑，交换比pivot大的数，使得i左边都是比pivot大的元素
+        swap(nums[pivotIndex], nums[right])
+        int i = left;
+        for (int j = left; j < right; j++) {
+            if (nums[j] > pivot) {
+                swap(nums[i], nums[j]);
+                i++;
+            }
+        }
+        swap(nums[i], nums[right]);
+
+        // 如果正好i就是k，返回，如果小于，接着排i到right补充，否则缩小范围
+        if (i == k) {
+            return nums[i];
+        } else if (i < k) {
+            return quickSelect(nums, i + 1, right, k);
+        } else {
+            return quickSelect(nums, left, i - 1, k);
+        }
+    }
+
+   public:
+    int findKthLargest(vector<int>& nums, int k) {
+        return quickSelect(nums, 0, nums.size() - 1, k - 1);
+    }
+};
+```
+
+
+
+
+
+### 122. IPO*
+
+#### 122.1 题目
+
+假设 力扣（LeetCode）即将开始 **IPO** 。为了以更高的价格将股票卖给风险投资公司，力扣 希望在 IPO 之前开展一些项目以增加其资本。 由于资源有限，它只能在 IPO 之前完成最多 `k` 个不同的项目。帮助 力扣 设计完成最多 `k` 个不同项目后得到最大总资本的方式。
+
+给你 `n` 个项目。对于每个项目 `i` ，它都有一个纯利润 `profits[i]` ，和启动该项目需要的最小资本 `capital[i]` 。
+
+最初，你的资本为 `w` 。当你完成一个项目时，你将获得纯利润，且利润将被添加到你的总资本中。
+
+总而言之，从给定项目中选择 **最多** `k` 个不同项目的列表，以 **最大化最终资本** ，并输出最终可获得的最多资本。
+
+答案保证在 32 位有符号整数范围内。
+
+ 
+
+**示例 1：**
+
+```
+输入：k = 2, w = 0, profits = [1,2,3], capital = [0,1,1]
+输出：4
+解释：
+由于你的初始资本为 0，你仅可以从 0 号项目开始。
+在完成后，你将获得 1 的利润，你的总资本将变为 1。
+此时你可以选择开始 1 号或 2 号项目。
+由于你最多可以选择两个项目，所以你需要完成 2 号项目以获得最大的资本。
+因此，输出最后最大化的资本，为 0 + 1 + 3 = 4。
+```
+
+**示例 2：**
+
+```
+输入：k = 3, w = 0, profits = [1,2,3], capital = [0,1,2]
+输出：6
+```
+
+ 
+
+**提示：**
+
+- `1 <= k <= 105`
+- `0 <= w <= 109`
+- `n == profits.length`
+- `n == capital.length`
+- `1 <= n <= 105`
+- `0 <= profits[i] <= 104`
+- `0 <= capital[i] <= 109`
+
+
+
+#### 122.2 解法
+
+时间复杂度：$O(N \log N + K \log N)$，空间复杂度：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    void buildHeap(vector<pair<int, int>>& pairs, priority_queue<pair<int, int>>& pq, int w) {
+        while (!pairs.empty()) {
+            if (pairs.back().second > w) return;
+            pq.push(pairs.back());
+            pairs.pop_back();
+        }
+    }
+
+   public:
+    int findMaximizedCapital(int k, int w, vector<int>& profits, vector<int>& capital) {
+        vector<pair<int, int>> pairs(profits.size());
+        for (int i = 0; i < profits.size(); i++) {
+            pairs[i].first = profits[i];
+            pairs[i].second = capital[i];
+        }
+        sort(pairs.begin(), pairs.end(),
+             [](const pair<int, int>& a, const pair<int, int>& b) { return a.second > b.second; });
+
+        priority_queue<pair<int, int>> pq;
+        while (k > 0) {
+            buildHeap(pairs, pq, w);
+            if (pq.empty()) return w;
+
+            w += pq.top().first;
+            k--;
+            pq.pop();
+        }
+
+        return w;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, k, w;
+    cin >> n >> k >> w;
+    vector<int> capital(n), profits(n);
+    for (int i = 0; i < n; i++) {
+        cin >> profits[i];
+    }
+    for (int i = 0; i < n; i++) {
+        cin >> capital[i];
+    }
+
+    Solution obj;
+    cout << obj.findMaximizedCapital(k, w, profits, capital);
+
+    return 0;
+}
+```
+
+> 其实这样就不用存pair了，在优先队列里，因为都是买得起的：
+>
+> ```cpp
+> #include <algorithm>
+> #include <iostream>
+> #include <queue>
+> #include <vector>
+> 
+> using namespace std;
+> 
+> class Solution {
+>    public:
+>     int findMaximizedCapital(int k, int w, vector<int>& profits, vector<int>& capital) {
+>         int n = profits.size();
+>         vector<pair<int, int>> projects(n);
+>         for (int i = 0; i < n; i++) {
+>             projects[i] = {capital[i], profits[i]}; //直接{}更简便
+>         }
+> 
+>         //按默认排序，因为first这里变成了capital
+>         sort(projects.begin(), projects.end());
+> 
+>         priority_queue<int> pq;
+>         // 额外指针记录到哪了
+>         int curr = 0;
+> 
+>         while (k > 0) {
+>             while (curr < n && projects[curr].first <= w) {
+>                 pq.push(projects[curr].second);
+>                 curr++;
+>             }
+> 
+>             if (pq.empty()) {
+>                 break;
+>             }
+> 
+>             w += pq.top();
+>             pq.pop();
+>             k--;
+>         }
+> 
+>         return w;
+>     }
+> }
+> ```
+
+
+
+#### 122.3 解析
+
+这就是标准解法，我原以为会有些更简单的办法，毕竟这个代码还不是很漂亮，不过这也很难说，因为capital和profits是完全相反的逻辑，似乎两次排序是不可避免的。这道题就没有手写堆，因为重点显然不在这里。
