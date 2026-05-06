@@ -22849,3 +22849,314 @@ int main() {
 #### 122.3 解析
 
 这就是标准解法，我原以为会有些更简单的办法，毕竟这个代码还不是很漂亮，不过这也很难说，因为capital和profits是完全相反的逻辑，似乎两次排序是不可避免的。这道题就没有手写堆，因为重点显然不在这里。
+
+
+
+
+
+### 123. 查找和最小的K对数字*（@）
+
+#### 123.1 题目
+
+给定两个以 **非递减顺序排列** 的整数数组 `nums1` 和 `nums2` , 以及一个整数 `k` 。
+
+定义一对值 `(u,v)`，其中第一个元素来自 `nums1`，第二个元素来自 `nums2` 。
+
+请找到和最小的 `k` 个数对 `(u1,v1)`, ` (u2,v2)` ...  `(uk,vk)` 。
+
+ 
+
+**示例 1:**
+
+```
+输入: nums1 = [1,7,11], nums2 = [2,4,6], k = 3
+输出: [[1,2],[1,4],[1,6]]
+解释: 返回序列中的前 3 对数：
+     [1,2],[1,4],[1,6],[7,2],[7,4],[11,2],[7,6],[11,4],[11,6]
+```
+
+**示例 2:**
+
+```
+输入: nums1 = [1,1,2], nums2 = [1,2,3], k = 2
+输出: [[1,1],[1,1]]
+解释: 返回序列中的前 2 对数：
+     [1,1],[1,1],[1,2],[2,1],[1,2],[2,2],[1,3],[1,3],[2,3]
+```
+
+ 
+
+**提示:**
+
+- `1 <= nums1.length, nums2.length <= 105`
+- `-109 <= nums1[i], nums2[i] <= 109`
+- `nums1` 和 `nums2` 均为 **升序排列**
+- `1 <= k <= 104`
+- `k <= nums1.length * nums2.length`
+
+
+
+#### 123.2 解法
+
+时间复杂度：$O(k \log(\min(k, n)))$，空间复杂度：$O(\min(k, n))$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    vector<vector<int>> kSmallestPairs(vector<int>& nums1, vector<int>& nums2, int k) {
+        auto cmp = [&nums1, &nums2](const pair<int, int>& a, const pair<int, int>& b) {
+            return nums1[a.first] + nums2[a.second] > nums1[b.first] + nums2[b.second];
+        };
+        priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(cmp)> pq(cmp);
+
+        int n = nums1.size(), m = nums2.size();
+        for (int i = 0; i < min(k, n); i++) {
+            pq.push({i, 0});
+        }
+
+        vector<vector<int>> res(0, vector<int>(2));
+        while (k-- > 0 && !pq.empty()) {
+            auto [i, j] = pq.top();
+            pq.pop();
+
+            res.push_back({nums1[i], nums2[j]});
+
+            if (j + 1 < m) pq.push({i, j + 1});
+        }
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m, k;
+    cin >> n >> m >> k;
+
+    vector<int> nums1(n), nums2(m);
+    for (int i = 0; i < n; i++) {
+        cin >> nums1[i];
+    }
+    for (int i = 0; i < m; i++) {
+        cin >> nums2[i];
+    }
+
+    Solution obj;
+    vector<vector<int>> res = obj.kSmallestPairs(nums1, nums2, k);
+
+    for (auto& c : res) {
+        cout << "[" << c[0] << ", " << c[1] << (c == res.back() ? "]" : "], ");
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 123.3 解析
+
+这道题主要有两个难点，一个是思路上的，一个是实现上的。
+
+思路上，注意到如下图，黑色数字是坐标，那么成对数据的大小是沿着红色线增大的。在确定<0,0>一定是最小的情况下，下一个选择就是<0+1,0>或<0,0+1>，以此类推。如此，关键点就在于斜线怎么比较，这就引入优先队列。先让<i,0>全部入队，每top一个<i,j>就让<i,j+1>入队，因为<i,j>的下一个选择一定是<i+1,j>或<i,j+1>（对于<i+1,j>，如果j=0，那么它已经在队列里，如果不是，又由于最开始已经让<i,0>全部入队，这意味着在i更小的区域一定存在比<i+1,j>更小的选择，不先入队）。当然入队不意味着下一个出的就是它，这是一种候选……
+
+<img src="./assets/image-20260506165036761.png" alt="image-20260506165036761" style="zoom:50%;" />
+
+此外就是实现上的，因为优先队列一定得存下标，然而比较是比较对应值，这就需要特殊的写法才能套上STL的优先队列模板，是故标@。下面提几个语法上的点：
+
+1. 优先队列构造：
+
+   1. Lambda表达式：
+
+      ```cpp
+      auto cmp = [&nums1, &nums2](...) { ... };
+      priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(cmp)> pq(cmp);
+      ```
+
+      Lambda 是由编译器在底层自动生成的一个**匿名函数对象（闭包类）**，都有一个独一无二的、不具名的类型。与以往写的Lambda不同，这次要传参，也是最关键的点。
+
+   2. `priority_queue`第三个模板要传类型而不是实例，所以得使用 `decltype`。
+
+   3. 由于要传参，所以最后还需要把cmp传入构造函数。
+
+2. `push`和`emplace`：
+
+   1. `push` 的生命周期（以 `pq.push({i, 0});` 为例）：
+      - **创建临时对象：** 编译器先在当前作用域，根据初始化列表 `{i, 0}` 调用 `std::pair` 的构造函数，生成一个临时的、匿名的 `pair` 对象。
+      - **拷贝/移动：** 将这个临时对象拷贝（或移动）到优先队列底层 `vector` 的内存空间中。
+      - **销毁临时对象：** 语句执行完毕，调用析构函数销毁刚才产生的临时对象。
+
+   2. `emplace` 的生命周期（以 `pq.emplace(i, 0);` 为例）：
+
+      - **原地构造（In-place Construction）：** 编译器直接将参数 `i` 和 `0` 传递给底层容器的分配器。在优先队列底层的内存地址上，**直接调用** `std::pair` 的构造函数生成对象。
+
+      - 全程**零临时对象、零拷贝、零移动**。
+
+   上面是AI写的，总之简单来说，涉及到容器的，为了不拷贝，一般就用emplace和emplace_back。其他无所谓。
+
+
+
+### 124. 数据流的中位数*
+
+#### 124.1 题目
+
+**中位数**是有序整数列表中的中间值。如果列表的大小是偶数，则没有中间值，中位数是两个中间值的平均值。
+
+- 例如 `arr = [2,3,4]` 的中位数是 `3` 。
+- 例如 `arr = [2,3]` 的中位数是 `(2 + 3) / 2 = 2.5` 。
+
+实现 MedianFinder 类:
+
+- `MedianFinder()` 初始化 `MedianFinder` 对象。
+- `void addNum(int num)` 将数据流中的整数 `num` 添加到数据结构中。
+- `double findMedian()` 返回到目前为止所有元素的中位数。与实际答案相差 `10-5` 以内的答案将被接受。
+
+**示例 1：**
+
+```
+输入
+["MedianFinder", "addNum", "addNum", "findMedian", "addNum", "findMedian"]
+[[], [1], [2], [], [3], []]
+输出
+[null, null, null, 1.5, null, 2.0]
+
+解释
+MedianFinder medianFinder = new MedianFinder();
+medianFinder.addNum(1);    // arr = [1]
+medianFinder.addNum(2);    // arr = [1, 2]
+medianFinder.findMedian(); // 返回 1.5 ((1 + 2) / 2)
+medianFinder.addNum(3);    // arr[1, 2, 3]
+medianFinder.findMedian(); // return 2.0
+```
+
+**提示:**
+
+- `-105 <= num <= 105`
+- 在调用 `findMedian` 之前，数据结构中至少有一个元素
+- 最多 `5 * 104` 次调用 `addNum` 和 `findMedian`
+
+
+
+#### 124.2 解法
+
+时间复杂度：$O(logN)$，空间复杂度：$O(N)$。
+
+```cpp
+class MedianFinder {
+   private:
+    priority_queue<int, vector<int>, greater<int>> bigger;
+    priority_queue<int> smaller;
+
+   public:
+    MedianFinder() {}
+
+    void addNum(int num) {
+        if (smaller.empty() || num <= smaller.top()) {
+            smaller.push(num);
+        } else {
+            bigger.push(num);
+        }
+
+        if (smaller.size() > bigger.size() + 1) {
+            bigger.push(smaller.top());
+            smaller.pop();
+        } else if (bigger.size() > smaller.size()) {
+            smaller.push(bigger.top());
+            bigger.pop();
+        }
+    }
+    double findMedian() {
+        if (bigger.size() == smaller.size()) {
+            return (bigger.top() + smaller.top()) / 2.0;
+        } else {
+            return smaller.top();
+        }
+    }
+};
+```
+
+> 优化写法：
+>
+> ```cpp
+> void addNum(int num) {
+>     // 1. 无脑先放进 smaller（大根堆）
+>     smaller.push(num);
+>     
+>     // 2. 为了保证 smaller 里的数绝对小于 bigger 里的数
+>     // 我们把 smaller 当前的最大值弹出来，塞进 bigger（小根堆）里
+>     bigger.push(smaller.top());
+>     smaller.pop();
+>     
+>     // 3. 维护 size 平衡：因为我们规定 smaller 必须 >= bigger
+>     if (smaller.size() < bigger.size()) {
+>         smaller.push(bigger.top());
+>         bigger.pop();
+>     }
+> }
+> ```
+
+
+
+#### 124.3 解析
+
+此外，还有一种有序集合+双指针的写法：
+
+```cpp
+#include <set>
+
+using namespace std;
+
+class MedianFinder {
+   private:
+    // 利用现成的STL红黑树
+    multiset<int> data;
+    multiset<int>::iterator left;
+    multiset<int>::iterator right;
+
+   public:
+    MedianFinder() {}
+
+    void addNum(int num) {
+        data.insert(num);
+        int n = data.size();
+
+        if (n == 1) {
+            // 只有一个元素时，左右指针都指向它
+            left = data.begin();
+            right = data.begin();
+        } else if (n % 2 == 1) {
+            // 插入前是偶数个，插入后变成奇数个
+            // 必定有一个指针要向中间靠拢，使它们重合
+            if (num < *left) {
+                left--;
+            } else {
+                right++;
+            }
+        } else {
+            // 插入前是奇数个（left和right指向同一个元素），插入后变成偶数个
+            // 必定有一个指针要向外侧移动
+            if (num < *left) {
+                left--;
+            } else {
+                right++;
+            }
+        }
+    }
+
+    double findMedian() {
+        return (*left + *right) / 2.0;
+    }
+};
+```
+
