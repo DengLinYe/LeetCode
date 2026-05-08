@@ -23508,3 +23508,233 @@ public:
      - **规则**：所有位向右移动，超出的低位丢弃，**左侧高位补充原有的“符号位”**（正数补 `0`，负数补 `1`）。
        - **目的**：为了保证负数在右移后依然是负数（在底层，这符合数学上的向下取整除以 $2^k$）。
        - **触发条件**：对**带符号整数**（如 `int`）进行右移。*(注：在 C++20 之前，带符号负数的右移是实现定义的，但主流编译器如 GCC/Clang 默认都是算术右移；C++20 标准正式规定其为算术右移。)*
+
+
+
+### 127. 位1的个数*
+
+#### 127.1 题目
+
+给定一个正整数 `n`，编写一个函数，获取一个正整数的二进制形式并返回其二进制表达式中 设置位 的个数（也被称为[汉明重量](https://baike.baidu.com/item/汉明重量)）。
+
+ 
+
+**示例 1：**
+
+```
+输入：n = 11
+输出：3
+解释：输入的二进制串 1011 中，共有 3 个设置位。
+```
+
+**示例 2：**
+
+```
+输入：n = 128
+输出：1
+解释：输入的二进制串 10000000 中，共有 1 个设置位。
+```
+
+**示例 3：**
+
+```
+输入：n = 2147483645
+输出：30
+解释：输入的二进制串 1111111111111111111111111111101 中，共有 30 个设置位。
+```
+
+ 
+
+**提示：**
+
+- `1 <= n <= 231 - 1`
+
+ 
+
+**进阶**：
+
+- 如果多次调用这个函数，你将如何优化你的算法？
+
+
+
+#### 127.2 解法
+
+时间复杂度：$O(1)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <cstdint>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int hammingWeight(int n) {
+        uint32_t m = n;
+        int ans = 0;
+        for (int i = 0; i < 32; i++) {
+            if (m & 1) ans++;
+            m >>= 1;
+        }
+
+        return ans;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    Solution obj;
+    cout << obj.hammingWeight(n);
+
+    return 0;
+}
+```
+
+> 可以改成`while (m != 0)`结束。
+
+
+
+#### 127.3 解析
+
+这道题解法很多，其中一种是**Brian Kernighan 算法**，注意到`n-1`之后，该数最右边的一个`1`会变成0，而它右边所有`0`变`1`，这意味着`n = n & (n - 1)`能执行的次数就是`1`的个数：
+
+```cpp
+class Solution {
+public:
+    int hammingWeight(uint32_t n) { // 力扣新版签名可能是 int，自行转换即可
+        int ans = 0;
+        while (n != 0) {
+            ans++;
+            n &= (n - 1); // 每次抹除最右边的一个 1
+        }
+        return ans;
+    }
+};
+```
+
+此外还有些取巧的办法：
+
+```cpp
+#include <bit>
+
+class Solution {
+public:
+    int hammingWeight(uint32_t n) {
+        return std::popcount(n);
+    }
+};
+```
+
+或：
+
+```cpp
+class Solution {
+public:
+    int hammingWeight(uint32_t n) {
+        return __builtin_popcount(n);
+    }
+};
+```
+
+
+
+### 128. 只出现一次的数字*
+
+#### 128.1 题目
+
+给你一个 **非空** 整数数组 `nums` ，除了某个元素只出现一次以外，其余每个元素均出现两次。找出那个只出现了一次的元素。
+
+你必须设计并实现线性时间复杂度的算法来解决此问题，且该算法只使用常量额外空间。
+
+ 
+
+**示例 1 ：**
+
+**输入：**nums = [2,2,1]
+
+**输出：**1
+
+**示例 2 ：**
+
+**输入：**nums = [4,1,2,1,2]
+
+**输出：**4
+
+**示例 3 ：**
+
+**输入：**nums = [1]
+
+**输出：**1
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 3 * 104`
+- `-3 * 104 <= nums[i] <= 3 * 104`
+- 除了某个元素只出现一次以外，其余每个元素均出现两次。
+
+
+
+#### 128.2 解法
+
+时间复杂度：$O(N)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <cstdint>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int singleNumber(vector<int>& nums) {
+        uint32_t res = nums[0];
+        for (int i = 1; i < nums.size(); i++) {
+            res ^= nums[i];
+        }
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.singleNumber(nums);
+
+    return 0;
+}
+```
+
+> 不需要右移就不用`uint32_t`
+
+
+
+#### 128.3 解析
+
+比较简单……另外还有哈希或者多项式法，比如 $2 \times (a + b + c) - (a + a + b + b + c) = c$。
