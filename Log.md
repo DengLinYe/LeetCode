@@ -23738,3 +23738,294 @@ int main() {
 #### 128.3 解析
 
 比较简单……另外还有哈希或者多项式法，比如 $2 \times (a + b + c) - (a + a + b + b + c) = c$。
+
+
+
+
+
+### 129. 只出现一次的数字II***
+
+#### 129.1 题目
+
+给你一个整数数组 `nums` ，除某个元素仅出现 **一次** 外，其余每个元素都恰出现 **三次 。**请你找出并返回那个只出现了一次的元素。
+
+你必须设计并实现线性时间复杂度的算法且使用常数级空间来解决此问题。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [2,2,3,2]
+输出：3
+```
+
+**示例 2：**
+
+```
+输入：nums = [0,1,0,1,0,1,99]
+输出：99
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 3 * 104`
+- `-231 <= nums[i] <= 231 - 1`
+- `nums` 中，除某个元素仅出现 **一次** 外，其余每个元素都恰出现 **三次**
+
+
+
+#### 129.2 解法
+
+时间复杂度：$O(N)$，**空间复杂度：$O(1)$**。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int singleNumber(vector<int>& nums) {
+        int res = 0;
+        for (int i = 0; i < 32; i++) {
+            int sum = 0;
+            for (auto num : nums) {
+                sum += (num >> i) & 1;
+            }
+            if (sum % 3) res |= (1 << i); //这里写成1U << i会更好
+        }
+
+        return res;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.singleNumber(nums);
+
+    return 0;
+}
+```
+
+
+
+#### 129.3 解析
+
+emm没做出来，这是看了提示之后的。当然这个算法还不是很好，有一种更好的：
+
+之前的解法三个状态也就是需要两个比特位（设为 `twos` 和 `ones`）来表示这三个状态：
+
+- 状态 0：`twos = 0, ones = 0`
+- 状态 1：`twos = 0, ones = 1`
+- 状态 2：`twos = 1, ones = 0`
+
+当新的数字 `num` 进来时，我们需要通过位运算写出状态流转逻辑（`00 -> 01 -> 10 -> 00`）。通过布尔代数化简，可以得到极其精简的两行状态转移公式：
+
+```
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int singleNumber(vector<int>& nums) {
+        int ones = 0, twos = 0;
+        
+        for (int num : nums) {
+            ones = (ones ^ num) & ~twos;
+            twos = (twos ^ num) & ~ones;
+        }
+        
+        return ones;
+    }
+};
+```
+
+
+
+
+
+### 130. 数值范围按位与*
+
+#### 130.1 题目
+
+给你两个整数 `left` 和 `right` ，表示区间 `[left, right]` ，返回此区间内所有数字 **按位与** 的结果（包含 `left` 、`right` 端点）。
+
+ 
+
+**示例 1：**
+
+```
+输入：left = 5, right = 7
+输出：4
+```
+
+**示例 2：**
+
+```
+输入：left = 0, right = 0
+输出：0
+```
+
+**示例 3：**
+
+```
+输入：left = 1, right = 2147483647
+输出：0
+```
+
+ 
+
+**提示：**
+
+- `0 <= left <= right <= 231 - 1`
+
+
+
+#### 130.2 解法
+
+时间复杂度：$O(1)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int rangeBitwiseAnd(int left, int right) {
+        long long base = 1;
+        while (base < right - left) base *= 2;
+        base = ~(base - 1);
+        return (right & left) & base;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int left, right;
+    cin >> left >> right;
+
+    Solution obj;
+    cout << obj.rangeBitwiseAnd(left, right);
+
+    return 0;
+}
+```
+
+
+
+#### 130.3 解析
+
+这个办法其实不难想，但是实现上优化起来有点难度，最开始我还打算一位位判定……
+
+此外还有两种办法：
+
+首先不难发现这道题本质上就是求公共前缀，这里解法如下：
+
+```cpp
+class Solution {
+public:
+    int rangeBitwiseAnd(int left, int right) {
+        int shifts = 0;
+        while (left < right) {
+            left >>= 1;
+            right >>= 1;
+            shifts++;
+        }
+        return left << shifts;
+    }
+};
+```
+
+而更优化的写法是：
+
+```cpp
+class Solution {
+public:
+    int rangeBitwiseAnd(int left, int right) {
+        while (right > left) {
+            right &= (right - 1);
+        }
+        return right;
+    }
+};
+```
+
+
+
+## 十八、数学
+
+### 131. 回文数
+
+#### 131.1 题目
+
+给你一个整数 `x` ，如果 `x` 是一个回文整数，返回 `true` ；否则，返回 `false` 。
+
+回文数是指正序（从左向右）和倒序（从右向左）读都是一样的整数。
+
+- 例如，`121` 是回文，而 `123` 不是。
+
+ 
+
+**示例 1：**
+
+```
+输入：x = 121
+输出：true
+```
+
+**示例 2：**
+
+```
+输入：x = -121
+输出：false
+解释：从左向右读, 为 -121 。 从右向左读, 为 121- 。因此它不是一个回文数。
+```
+
+**示例 3：**
+
+```
+输入：x = 10
+输出：false
+解释：从右向左读, 为 01 。因此它不是一个回文数。
+```
+
+ 
+
+**提示：**
+
+- `-231 <= x <= 231 - 1`
+
+ 
+
+**进阶：**你能不将整数转为字符串来解决这个问题吗？
+
+
+
+#### 131.2 解法
