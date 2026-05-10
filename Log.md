@@ -23981,7 +23981,7 @@ public:
 
 ## 十八、数学
 
-### 131. 回文数
+### 131. 回文数*
 
 #### 131.1 题目
 
@@ -24029,3 +24029,228 @@ public:
 
 
 #### 131.2 解法
+
+时间复杂度：$O(\log_{10}(n))$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    bool isPalindrome(int x) {
+        if (x < 0 || x % 10 == 0 && x != 0) return false;
+        long long rev = 0;
+        int xOri = x;
+        while (x != 0) {
+            rev *= 10;
+            rev += x % 10;
+            x /= 10;
+        }
+
+        return rev == xOri;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    Solution obj;
+    cout << (obj.isPalindrome(n) ? "true" : "false");
+
+    return 0;
+}
+```
+
+
+
+#### 131.3 解析
+
+这个办法当然也行，但是也可以只翻转一半：
+
+```cpp
+class Solution {
+public:
+    bool isPalindrome(int x) {
+        // 1. 负数绝对不是回文数
+        // 2. 如果数字的最后一位是 0，为了使该数字为回文，其第一位数字也应该是 0
+        // 只有 0 满足这一属性
+        if (x < 0 || (x % 10 == 0 && x != 0)) {
+            return false;
+        }
+
+        int revertedHalf = 0;
+        
+        // 当原始数字小于或等于反转后的数字时，就意味着我们已经处理了一半位数的数字了
+        while (x > revertedHalf) {
+            revertedHalf = revertedHalf * 10 + x % 10;
+            x /= 10;
+        }
+
+        // 当数字长度为偶数时，比如 1221，此时 x == 12，revertedHalf == 12
+        // 当数字长度为奇数时，比如 12321，此时 x == 12，revertedHalf == 123
+        // 因为处于中位的数字不影响回文（比如 3），所以我们可以简单地通过 revertedHalf / 10 去除它
+        return x == revertedHalf || x == revertedHalf / 10;
+    }
+};
+```
+
+
+
+### 132. 加一*
+
+#### 132.1 题目
+
+给定一个表示 **大整数** 的整数数组 `digits`，其中 `digits[i]` 是整数的第 `i` 位数字。这些数字按从左到右，从最高位到最低位排列。这个大整数不包含任何前导 `0`。
+
+将大整数加 1，并返回结果的数字数组。
+
+ 
+
+**示例 1：**
+
+```
+输入：digits = [1,2,3]
+输出：[1,2,4]
+解释：输入数组表示数字 123。
+加 1 后得到 123 + 1 = 124。
+因此，结果应该是 [1,2,4]。
+```
+
+**示例 2：**
+
+```
+输入：digits = [4,3,2,1]
+输出：[4,3,2,2]
+解释：输入数组表示数字 4321。
+加 1 后得到 4321 + 1 = 4322。
+因此，结果应该是 [4,3,2,2]。
+```
+
+**示例 3：**
+
+```
+输入：digits = [9]
+输出：[1,0]
+解释：输入数组表示数字 9。
+加 1 得到了 9 + 1 = 10。
+因此，结果应该是 [1,0]。
+```
+
+ 
+
+**提示：**
+
+- `1 <= digits.length <= 100`
+- `0 <= digits[i] <= 9`
+- `digits` 不包含任何前导 `0`。
+
+
+
+#### 132.2 解法
+
+时间复杂度：$O(N)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    vector<int> plusOne(vector<int>& digits) {
+        int n = digits.size();
+        bool c = 1;
+        while (c && n >= 1) {
+            digits[n - 1] += c;
+            c = (digits[n - 1] == 10);
+            digits[n - 1] -= c * 10;
+            n--;
+        }
+        if (c) digits.insert(digits.begin(), 1);
+        return digits;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<int> digits(n);
+    for (int i = 0; i < n; i++) {
+        cin >> digits[i];
+    }
+
+    Solution obj;
+    auto res = obj.plusOne(digits);
+    for (int r : res) {
+        cout << r;
+    }
+
+    return 0;
+}
+```
+
+> 其实我们可以不用insert，每当要insert时，那么结果一定全是0，只要在尾部加一个0，头部设为1即可：
+>
+> ```cpp
+> if (c) {
+>     digits.push_back(0); // 尾部插入是 O(1) 的
+>     digits[0] = 1;       // 0000 变成 1000
+> }
+> ```
+
+
+
+#### 132.3 解析
+
+当然在明白本质上是找9之后，可以使用这个办法：
+
+```cpp
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> plusOne(vector<int>& digits) {
+        int n = digits.size();
+        
+        // 从后往前遍历
+        for (int i = n - 1; i >= 0; i--) {
+            if (digits[i] < 9) {
+                // 只要不是 9，加 1 之后绝对不会产生进位，直接结束战斗
+                digits[i]++;
+                return digits;
+            }
+            // 如果是 9，加 1 后必定变成 0，继续往前看有没有进位
+            digits[i] = 0;
+        }
+        
+        // 如果能活着走出上面的 for 循环，说明所有的数字全都是 9（比如 999 变成了 000）
+        // 此时我们只需要在最后加个 0，然后把开头变成 1
+        digits.push_back(0);
+        digits[0] = 1;
+        
+        return digits;
+    }
+};
+```
+
