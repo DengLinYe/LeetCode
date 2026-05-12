@@ -24493,3 +24493,256 @@ public:
 $$
 r_{n+1} = \frac{r_n + \frac{x}{r_n}}{2}
 $$
+
+
+### 135. Pow(x, n)**
+
+#### 135.1 题目
+
+实现 [pow(*x*, *n*)](https://www.cplusplus.com/reference/valarray/pow/) ，即计算 `x` 的整数 `n` 次幂函数（即，`xn` ）。
+
+ 
+
+**示例 1：**
+
+```
+输入：x = 2.00000, n = 10
+输出：1024.00000
+```
+
+**示例 2：**
+
+```
+输入：x = 2.10000, n = 3
+输出：9.26100
+```
+
+**示例 3：**
+
+```
+输入：x = 2.00000, n = -2
+输出：0.25000
+解释：2-2 = 1/22 = 1/4 = 0.25
+```
+
+ 
+
+**提示：**
+
+- `-100.0 < x < 100.0`
+- `-231 <= n <= 231-1`
+- `n` 是一个整数
+- 要么 `x` 不为零，要么 `n > 0` 。
+- `-104 <= xn <= 104`
+
+
+
+#### 135.2 解法
+
+时间复杂度：$O(\log n)$，空间复杂度：$O(\log n)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    double calculator(double x, long long n) {
+        if (n == 1) return x;
+        double res = calculator(x, n / 2);
+        return res * res * (n % 2 ? x : 1);
+    }
+
+   public:
+    double myPow(double x, long long n) {
+        if (x == 0) return 0;
+        if (n == 0) return 1;
+        if (n < 0) {
+            x = 1 / x;
+            n *= -1;
+        }
+
+        return calculator(x, n);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    double x;
+    int n;
+    cin >> x >> n;
+
+    Solution obj;
+    cout << obj.myPow(x, n);
+
+    return 0;
+}
+```
+
+
+
+#### 135.3 解析
+
+$O(1)$。在速度上差不太多，但是空间复杂度上其实可以达到$O(1)$。利用位运算，比如要求 $x^{13}$，把指数 13 写成二进制：$1101_{(2)}$，那么 $x^{13} = x^8 \times x^4 \times x^1$：
+
+```cpp
+class Solution {
+public:
+    double myPow(double x, int n) {
+        // 1. 规避 INT_MIN 溢出陷阱
+        long long N = n;
+        if (N < 0) {
+            x = 1 / x;
+            N = -N;
+        }
+        
+        double res = 1.0;
+        
+        // 2. 纯位运算迭代，榨干 CPU 性能
+        while (N > 0) {
+            // 如果最低位是 1，说明需要把当前的 x 乘入结果集
+            if (N & 1) {
+                res *= x;
+            }
+            
+            // x 自身平方，准备对应下一位的权重
+            x *= x;
+            
+            // 剥离掉最低位，考察下一个二进制位
+            N >>= 1;
+        }
+        
+        return res;
+    }
+};
+```
+
+
+
+
+
+### 136. 直线上最多的点数***
+
+#### 136.1 题目
+
+给你一个数组 `points` ，其中 `points[i] = [xi, yi]` 表示 **X-Y** 平面上的一个点。求最多有多少个点在同一条直线上。
+
+ 
+
+**示例 1：**
+
+![img](./assets/plane1.jpg)
+
+```
+输入：points = [[1,1],[2,2],[3,3]]
+输出：3
+```
+
+**示例 2：**
+
+![img](./assets/plane2.jpg)
+
+```
+输入：points = [[1,1],[3,2],[5,3],[4,1],[2,3],[1,4]]
+输出：4
+```
+
+ 
+
+
+
+**提示：**
+
+- `1 <= points.length <= 300`
+- `points[i].length == 2`
+- `-104 <= xi, yi <= 104`
+- `points` 中的所有点 **互不相同**
+
+
+
+#### 136.2 解法
+
+时间复杂度：$O(N^2 \log(\max(dx, dy)))$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   private:
+    int gcd(int a, int b) { return b == 0 ? a : gcd(b, a % b); }
+
+   public:
+    int maxPoints(vector<vector<int>>& points) {
+        int n = points.size();
+        if (n <= 2) return n;
+
+        int maxN = 0;
+
+        for (int i = 0; i < n; i++) {
+            unordered_map<string, int> localMap;
+            int localMax = 0;
+
+            for (int j = i + 1; j < n; j++) {
+                int dx = points[j][0] - points[i][0];
+                int dy = points[j][1] - points[i][1];
+
+                int g = gcd(dx, dy);
+                dx /= g;
+                dy /= g;
+
+                if (dx < 0 || (dx == 0 && dy < 0)) {
+                    dx = -dx;
+                    dy = -dy;
+                }
+
+                string slopeKey = to_string(dx) + "_" + to_string(dy);
+                localMap[slopeKey]++;
+
+                localMax = max(localMax, localMap[slopeKey]);
+            }
+
+            maxN = max(maxN, localMax + 1);
+        }
+
+        return maxN;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    if (cin >> n) {
+        vector<vector<int>> points(n, vector<int>(2));
+        for (int i = 0; i < n; i++) {
+            cin >> points[i][0] >> points[i][1];
+        }
+
+        Solution obj;
+        cout << obj.maxPoints(points) << "\n";
+    }
+
+    return 0;
+}
+```
+
+
+
+#### 136.3 解析
+
+这道题也不算难，主要是我最初的办法走偏了。这里核心首先是不能用`double`来做`hash`，所以用了两个数字，然后约分。
