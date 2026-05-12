@@ -24254,3 +24254,242 @@ public:
 };
 ```
 
+
+
+
+
+### 133. 阶乘后的零*
+
+#### 133.1 题目
+
+给定一个整数 `n` ，返回 `n!` 结果中尾随零的数量。
+
+提示 `n! = n * (n - 1) * (n - 2) * ... * 3 * 2 * 1`
+
+ 
+
+**示例 1：**
+
+```
+输入：n = 3
+输出：0
+解释：3! = 6 ，不含尾随 0
+```
+
+**示例 2：**
+
+```
+输入：n = 5
+输出：1
+解释：5! = 120 ，有一个尾随 0
+```
+
+**示例 3：**
+
+```
+输入：n = 0
+输出：0
+```
+
+ 
+
+**提示：**
+
+- `0 <= n <= 104`
+
+ 
+
+**进阶：**你可以设计并实现对数时间复杂度的算法来解决此问题吗？
+
+
+
+#### 133.2 解法
+
+时间复杂度：$O(\log n)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int trailingZeroes(int n) {
+        int N = n;
+        int a = 0, b = 0;
+
+        while (n > 0) {
+            a += n / 5;
+            n /= 5;
+        }
+
+        n = N;
+        while (n > 0) {
+            b += n / 2;
+            n /= 2;
+        }
+
+        return min(a, b);
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    Solution obj;
+    cout << obj.trailingZeroes(n);
+
+    return 0;
+}
+```
+
+
+
+#### 133.3 解析
+
+这道题核心就在于发现后缀0就是10的几次方，而它又可以进一步地化为2、5之中更小的次方数。当然5的次方数一定比2小，所以可以优化成：
+
+```cpp
+class Solution {
+public:
+    int trailingZeroes(int n) {
+        int count = 0;
+        
+        while (n > 0) {
+            count += n / 5;
+            n /= 5;
+        }
+        
+        return count;
+    }
+};
+```
+
+
+
+
+
+### 134. X的平方根*/**
+
+#### 134.1 题目
+
+给你一个非负整数 `x` ，计算并返回 `x` 的 **算术平方根** 。
+
+由于返回类型是整数，结果只保留 **整数部分** ，小数部分将被 **舍去 。**
+
+**注意：**不允许使用任何内置指数函数和算符，例如 `pow(x, 0.5)` 或者 `x ** 0.5` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：x = 4
+输出：2
+```
+
+**示例 2：**
+
+```
+输入：x = 8
+输出：2
+解释：8 的算术平方根是 2.82842..., 由于返回类型是整数，小数部分将被舍去。
+```
+
+ 
+
+**提示：**
+
+- `0 <= x <= 231 - 1`
+
+
+
+#### 134.2 解法
+
+时间复杂度：$O(\log x)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int mySqrt(int x) {
+        if (x < 2) return x;
+
+        long long i = x;
+        while (i * i > x) i /= 2;
+
+        int left = i, right = i * 2;
+        while (left <= right) {
+            long long mid = left + (right - left) / 2;
+            // cout << mid << endl;
+            if (mid * mid <= x)
+                left = mid + 1;
+            else
+                right = mid - 1;
+        }
+
+        return --left;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    Solution obj;
+    cout << obj.mySqrt(n);
+
+    return 0;
+}
+```
+
+
+
+#### 134.3 解析
+
+我这个办法也算等效最优解，但是可以用牛顿迭代法：
+
+```cpp
+class Solution {
+public:
+    int mySqrt(int x) {
+        if (x == 0) return 0;
+        
+        // 初始值随便猜一个，比如 x 本身
+        double r = x; 
+        
+        // 只要 r^2 大于 x，就疯狂套用牛顿公式向下逼近
+        // 实际运算中由于浮点精度问题，可以写成绝对值差，但在整数域，直接判断即可
+        while (r * r > x) {
+            r = (r + x / r) / 2;
+        }
+        
+        return (int)r;
+    }
+};
+```
+
+回顾一下：利用切线方程，不断逼近抛物线 $y = r^2 - x$ 的零点， 迭代公式： 
+$$
+r_{n+1} = \frac{r_n + \frac{x}{r_n}}{2}
+$$
