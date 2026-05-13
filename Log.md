@@ -24746,3 +24746,189 @@ int main() {
 #### 136.3 解析
 
 这道题也不算难，主要是我最初的办法走偏了。这里核心首先是不能用`double`来做`hash`，所以用了两个数字，然后约分。
+
+
+
+
+
+## 十九、动态规划
+
+### 137. 爬楼梯*
+
+#### 137.1 题目
+
+假设你正在爬楼梯。需要 `n` 阶你才能到达楼顶。
+
+每次你可以爬 `1` 或 `2` 个台阶。你有多少种不同的方法可以爬到楼顶呢？
+
+ 
+
+**示例 1：**
+
+```
+输入：n = 2
+输出：2
+解释：有两种方法可以爬到楼顶。
+1. 1 阶 + 1 阶
+2. 2 阶
+```
+
+**示例 2：**
+
+```
+输入：n = 3
+输出：3
+解释：有三种方法可以爬到楼顶。
+1. 1 阶 + 1 阶 + 1 阶
+2. 1 阶 + 2 阶
+3. 2 阶 + 1 阶
+```
+
+ 
+
+**提示：**
+
+- `1 <= n <= 45`
+
+
+
+#### 137.2 解法
+
+时间复杂度：$O(N)$，空间复杂度：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int climbStairs(int n) {
+        vector<int> dp(n + 1, 0);
+        dp[0] = dp[1] = 1;
+        for (int i = 2; i <= n; i++) {
+            dp[i] = dp[i - 1] + dp[i - 2];
+        }
+
+        return dp.back();
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+
+    Solution obj;
+    cout << obj.climbStairs(n);
+
+    return 0;
+}
+```
+
+
+
+#### 137.3 解析
+
+这是比较标准的DP，当然也可以把它简化成用两个滚动变量来做，这样就不用数组了。
+
+
+
+### 138. 打家劫舍*
+
+#### 138.1 题目
+
+你是一个专业的小偷，计划偷窃沿街的房屋。每间房内都藏有一定的现金，影响你偷窃的唯一制约因素就是相邻的房屋装有相互连通的防盗系统，**如果两间相邻的房屋在同一晚上被小偷闯入，系统会自动报警**。
+
+给定一个代表每个房屋存放金额的非负整数数组，计算你 **不触动警报装置的情况下** ，一夜之内能够偷窃到的最高金额。
+
+ 
+
+**示例 1：**
+
+```
+输入：[1,2,3,1]
+输出：4
+解释：偷窃 1 号房屋 (金额 = 1) ，然后偷窃 3 号房屋 (金额 = 3)。
+     偷窃到的最高金额 = 1 + 3 = 4 。
+```
+
+**示例 2：**
+
+```
+输入：[2,7,9,3,1]
+输出：12
+解释：偷窃 1 号房屋 (金额 = 2), 偷窃 3 号房屋 (金额 = 9)，接着偷窃 5 号房屋 (金额 = 1)。
+     偷窃到的最高金额 = 2 + 9 + 1 = 12 。
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 100`
+- `0 <= nums[i] <= 400`
+
+
+
+#### 138.2 解法
+
+时间复杂度：$O(N)$，空间复杂度：$O(1)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int rob(vector<int>& nums) {
+        int n = nums.size();
+        if (n == 1) return nums[0];
+
+        int pre1 = nums[0], pre2 = max(nums[0], nums[1]);
+        for (int i = 2; i < n; i++) {
+            int curr = max(pre1 + nums[i], pre2);
+            pre1 = pre2;
+            pre2 = curr;
+        }
+
+        return pre2;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.rob(nums);
+
+    return 0;
+}
+```
+
+
+
+#### 138.3 解析
+
+暂时来看，这都属于一维的DP，比较公式化。其实核心就在于找出状态转移的公式，而找出公式其实还是比较容易，关键是怎么定义这个状态。
