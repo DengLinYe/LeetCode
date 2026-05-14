@@ -24753,7 +24753,7 @@ int main() {
 
 ## 十九、动态规划
 
-### 137. 爬楼梯*
+### 137. 爬楼梯*（@）
 
 #### 137.1 题目
 
@@ -24932,3 +24932,357 @@ int main() {
 #### 138.3 解析
 
 暂时来看，这都属于一维的DP，比较公式化。其实核心就在于找出状态转移的公式，而找出公式其实还是比较容易，关键是怎么定义这个状态。
+
+
+
+
+
+### 139. 单词拆分*
+
+#### 139.1 题目
+
+给你一个字符串 `s` 和一个字符串列表 `wordDict` 作为字典。如果可以利用字典中出现的一个或多个单词拼接出 `s` 则返回 `true`。
+
+**注意：**不要求字典中出现的单词全部都使用，并且字典中的单词可以重复使用。
+
+ 
+
+**示例 1：**
+
+```
+输入: s = "leetcode", wordDict = ["leet", "code"]
+输出: true
+解释: 返回 true 因为 "leetcode" 可以由 "leet" 和 "code" 拼接成。
+```
+
+**示例 2：**
+
+```
+输入: s = "applepenapple", wordDict = ["apple", "pen"]
+输出: true
+解释: 返回 true 因为 "applepenapple" 可以由 "apple" "pen" "apple" 拼接成。
+     注意，你可以重复使用字典中的单词。
+```
+
+**示例 3：**
+
+```
+输入: s = "catsandog", wordDict = ["cats", "dog", "sand", "and", "cat"]
+输出: false
+```
+
+ 
+
+**提示：**
+
+- `1 <= s.length <= 300`
+- `1 <= wordDict.length <= 1000`
+- `1 <= wordDict[i].length <= 20`
+- `s` 和 `wordDict[i]` 仅由小写英文字母组成
+- `wordDict` 中的所有字符串 **互不相同**
+
+
+
+#### 139.2 解法
+
+时间复杂度：$O(N \cdot L^2)$，空间复杂度：$O(N + M)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+        unordered_set<string> words;
+        int maxLen = 0, minLen = INT_MAX, n = s.size();
+        for (string& w : wordDict) {
+            words.insert(w);
+            maxLen = max(maxLen, int(w.size()));
+            minLen = min(minLen, int(w.size()));
+        }
+
+        vector<int> dp(n + 1, 0);
+        dp[0] = 1;
+        int j = 0;
+        for (int i = minLen; i <= n; i++) {
+            if (i - j > maxLen) return false;
+            for (int k = minLen; k <= maxLen; k++) {
+                int st = i - k;
+                if (st < 0) break;
+                if (dp[st] == 0) continue;
+                if (words.count(s.substr(st, k))) {
+                    dp[i] = 1;
+                    j = i;
+                }
+            }
+        }
+
+        return dp[n];
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<string> words(n);
+    for (int i = 0; i < n; i++) {
+        cin >> words[i];
+    }
+
+    string s;
+    cin >> s;
+
+    Solution obj;
+    cout << (obj.wordBreak(s, words) ? "true" : "false");
+
+    return 0;
+}
+```
+
+> 因为不记录解，所以找到一个解之后就可以break了。
+
+
+
+#### 139.3 解析
+
+也可以不用hash，直接在向量中遍历，这样更标准一点：
+
+```cpp
+class Solution {
+public:
+    bool wordBreak(string s, vector<string>& wordDict) {
+        int n = s.size();
+        vector<int> dp(n + 1, 0);
+        dp[0] = 1;
+        
+        for (int i = 1; i <= n; i++) {
+            // 我们不再去切分 s，而是直接遍历字典里的每一个单词
+            for (const string& word : wordDict) {
+                int len = word.size();
+                // 如果当前截断的长度 i 足以容下这个单词
+                // 并且去掉这个单词后的前半部分 dp[i - len] 是可拆分的
+                if (i >= len && dp[i - len] == 1) {
+                    // 利用 string 的 compare 方法进行无拷贝比对
+                    // s.compare(起始位置, 比较长度, 目标字符串)
+                    if (s.compare(i - len, len, word) == 0) {
+                        dp[i] = 1;
+                        break; // 只要找到一个匹配的，立刻结束内层循环
+                    }
+                }
+            }
+        }
+        return dp[n];
+    }
+};
+```
+
+
+
+### 140. 零钱兑换**（@）
+
+#### 140.1 题目
+
+给你一个整数数组 `coins` ，表示不同面额的硬币；以及一个整数 `amount` ，表示总金额。
+
+计算并返回可以凑成总金额所需的 **最少的硬币个数** 。如果没有任何一种硬币组合能组成总金额，返回 `-1` 。
+
+你可以认为每种硬币的数量是无限的。
+
+ 
+
+**示例 1：**
+
+```
+输入：coins = [1, 2, 5], amount = 11
+输出：3 
+解释：11 = 5 + 5 + 1
+```
+
+**示例 2：**
+
+```
+输入：coins = [2], amount = 3
+输出：-1
+```
+
+**示例 3：**
+
+```
+输入：coins = [1], amount = 0
+输出：0
+```
+
+ 
+
+**提示：**
+
+- `1 <= coins.length <= 12`
+
+- `1 <= coins[i] <= 231 - 1`
+
+- `0 <= amount <= 104`
+
+  
+
+#### 140.2 解法
+
+时间复杂度：最坏 $O(\text{amount} \times N)$，最好 $O(N)$；空间复杂度：$O(\text{amount})$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int coinChange(vector<int>& coins, int amount) {
+        int maxNum = 0, minNum = INT_MAX;
+        for (int c : coins) {
+            maxNum = max(maxNum, c);
+            minNum = min(minNum, c);
+        }
+
+        vector<int> dp(amount + 1, -1);
+        dp[0] = 0;
+        int j = 0;
+        for (int i = minNum; i <= amount; i++) {
+            if (i - j > maxNum) return -1;
+            for (int c : coins) {
+                if (i - c < 0) continue;
+                if (dp[i - c] == -1) continue;
+                if (dp[i] == -1)
+                    dp[i] = dp[i - c] + 1;
+                else
+                    dp[i] = min(dp[i], dp[i - c] + 1);
+                j = i;
+            }
+        }
+
+        return dp[amount];
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, amount;
+    cin >> n >> amount;
+    vector<int> coins(n);
+    for (int i = 0; i < n; i++) {
+        cin >> coins[i];
+    }
+
+    Solution obj;
+    cout << obj.coinChange(coins, amount);
+
+    return 0;
+}
+```
+
+> 可以用amount+1表示不可达值，这样就不需要那么多判断了：
+>
+> ```cpp
+> class Solution {
+> public:
+>     int coinChange(vector<int>& coins, int amount) {
+>         if (amount == 0) return 0;
+>         
+>         int maxNum = 0, minNum = INT_MAX;
+>         for (int c : coins) {
+>             maxNum = max(maxNum, c);
+>             minNum = min(minNum, c);
+>         }
+> 
+>         // 核心优化：将数组全部初始化为 amount + 1（相当于无穷大）
+>         vector<int> dp(amount + 1, amount + 1);
+>         dp[0] = 0;
+>         int j = 0;
+>         
+>         for (int i = minNum; i <= amount; i++) {
+>             // 保留你的断层剪枝绝杀
+>             if (i - j > maxNum) return -1;
+>             
+>             for (int c : coins) {
+>                 // 只要硬币能塞下，无脑取最小值。因为非法的状态本身就是无穷大
+>                 if (i - c >= 0) {
+>                     dp[i] = min(dp[i], dp[i - c] + 1);
+>                 }
+>             }
+>             
+>             // 如果当前金额可达，更新最后的脚印 j
+>             if (dp[i] != amount + 1) {
+>                 j = i;
+>             }
+>         }
+> 
+>         // 如果最后结果还是无穷大，说明没找到解，返回 -1
+>         return dp[amount] > amount ? -1 : dp[amount];
+>     }
+> };
+> ```
+
+
+
+#### 140.3 解析
+
+单纯DP的话，写法比较标准，所以加了@；但是DP不是最快的，因为算了很多没用的值，这是很显然的。最快的是贪心+回溯，其实在之前的题也有类似思想的：
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+private:
+    void dfs(const vector<int>& coins, int amount, int index, int count, int& ans) {
+        if (amount == 0) {
+            ans = min(ans, count);
+            return;
+        }
+        
+        // 如果硬币种类用完了，直接返回
+        if (index == coins.size()) return;
+
+        // amount / coins[index] 是：如果接下来的钱全部用当前最大的硬币凑，还需要几枚。如果 (当前的硬币数 + 理论最少的后续硬币数) >= 已经找到的全局最优解，说明这条路就算走到底，直接剪枝
+        if (count + amount / coins[index] >= ans) return;
+
+        // 贪心，即从大（index）的开始拿，然后从多（k = amount / coins[index]）的开始拿
+        for (int k = amount / coins[index]; k >= 0; k--) {
+            dfs(coins, amount - k * coins[index], index + 1, count + k, ans);
+        }
+    }
+
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        if (amount == 0) return 0;
+        
+        sort(coins.rbegin(), coins.rend());
+        
+        int ans = INT_MAX;
+        dfs(coins, amount, 0, 0, ans);
+        
+        return ans == INT_MAX ? -1 : ans;
+    }
+};
+```
+
+当然，在特殊用例下，比如类似 `coins = [186, 419, 83, 408], amount = 6249` 这种彼此互质、无法尽早触发剪枝的数据，这个办法会直接超时……
