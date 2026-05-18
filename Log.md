@@ -25286,3 +25286,304 @@ public:
 ```
 
 当然，在特殊用例下，比如类似 `coins = [186, 419, 83, 408], amount = 6249` 这种彼此互质、无法尽早触发剪枝的数据，这个办法会直接超时……
+
+​	
+
+
+
+### 141. 最长递增子序列**
+
+#### 141.1 题目
+
+给你一个整数数组 `nums` ，找到其中最长严格递增子序列的长度。
+
+**子序列** 是由数组派生而来的序列，删除（或不删除）数组中的元素而不改变其余元素的顺序。例如，`[3,6,2,7]` 是数组 `[0,3,1,6,2,2,7]` 的子序列。
+
+ 
+
+**示例 1：**
+
+```
+输入：nums = [10,9,2,5,3,7,101,18]
+输出：4
+解释：最长递增子序列是 [2,3,7,101]，因此长度为 4 。
+```
+
+**示例 2：**
+
+```
+输入：nums = [0,1,0,3,2,3]
+输出：4
+```
+
+**示例 3：**
+
+```
+输入：nums = [7,7,7,7,7,7,7]
+输出：1
+```
+
+ 
+
+**提示：**
+
+- `1 <= nums.length <= 2500`
+- `-104 <= nums[i] <= 104`
+
+ 
+
+**进阶：**
+
+- 你能将算法的时间复杂度降低到 `O(n log(n))` 吗?
+
+
+
+#### 141.2 解法
+
+时间复杂度： $O(N^2)$，空间复杂度：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int lengthOfLIS(vector<int>& nums) {
+        int n = nums.size(), th = nums[0], totalMax = 1;
+        vector<int> dp(n, 1);
+        for (int i = 1; i < n; i++) {
+            if (nums[i] <= th) {
+                th = nums[i];
+                continue;
+            }
+
+            int maxLen = 0;
+            for (int j = 0; j < i; j++) {
+                if (nums[j] < nums[i]) maxLen = max(maxLen, dp[j]);
+            }
+
+            dp[i] = maxLen + 1;
+            totalMax = max(totalMax, dp[i]);
+        }
+
+        return totalMax;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    Solution obj;
+    cout << obj.lengthOfLIS(nums);
+
+    return 0;
+}
+```
+
+
+
+#### 141.3 解析
+
+这道题公式化地用dp就能解，但是理论上还有$O(N \log N)$的办法。维护一个数组 `tails`，其中 `tails[i]` 存储的是“所有长度为 i+1 的递增子序列中，最小的那个结尾数字”，这个`tails`本身就是一个递增子序列：
+
+```cpp
+#include <vector>
+#include <algorithm>
+#include <iostream>
+
+using namespace std;
+
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        // tails 数组，本身就是递增的
+        vector<int> tails;
+        
+        for (int num : nums) {
+            // 如果 tails 为空，或者当前数字大于 tails 的最后一个数字
+            if (tails.empty() || num > tails.back()) {
+                tails.push_back(num); // 序列长度增加
+            } else {
+                // 否则，在 tails 中找到第一个大于等于 num 的数字，并替换它
+                // std::lower_bound 内部使用的就是二分查找，复杂度 O(log N)
+                auto it = lower_bound(tails.begin(), tails.end(), num);
+                *it = num; 
+            }
+        }
+        
+        // tails 的最终长度，就是最长递增子序列的长度
+        return tails.size();
+    }
+};
+```
+
+
+
+
+
+### 142. 三角形最小路径和
+
+#### 142.1 题目
+
+给定一个三角形 `triangle` ，找出自顶向下的最小路径和。
+
+每一步只能移动到下一行中相邻的结点上。**相邻的结点** 在这里指的是 **下标** 与 **上一层结点下标** 相同或者等于 **上一层结点下标 + 1** 的两个结点。也就是说，如果正位于当前行的下标 `i` ，那么下一步可以移动到下一行的下标 `i` 或 `i + 1` 。
+
+ 
+
+**示例 1：**
+
+```
+输入：triangle = [[2],[3,4],[6,5,7],[4,1,8,3]]
+输出：11
+解释：如下面简图所示：
+   2
+  3 4
+ 6 5 7
+4 1 8 3
+自顶向下的最小路径和为 11（即，2 + 3 + 5 + 1 = 11）。
+```
+
+**示例 2：**
+
+```
+输入：triangle = [[-10]]
+输出：-10
+```
+
+ 
+
+**提示：**
+
+- `1 <= triangle.length <= 200`
+- `triangle[0].length == 1`
+- `triangle[i].length == triangle[i - 1].length + 1`
+- `-104 <= triangle[i][j] <= 104`
+
+ 
+
+**进阶：**
+
+- 你可以只使用 `O(n)` 的额外空间（`n` 为三角形的总行数）来解决这个问题吗？
+
+
+
+#### 142.2 解法
+
+时间复杂度：$O(N^2)$，空间复杂度：$O(N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int minimumTotal(vector<vector<int>>& triangle) {
+        int n = triangle.size(), minPath = INT_MAX;
+
+        queue<int> q;
+        q.push(triangle[0][0]);
+        while (!q.empty()) {
+            int layer = q.size();
+            if (layer > n) break;
+
+            for (int i = 0; i < layer; i++) {
+                int len = q.front();
+                q.pop();
+
+                if (layer == n) {
+                    minPath = min(minPath, len);
+                } else {
+                    if (i == 0) {
+                        q.push(len + triangle[layer][i]);
+                    } else {
+                        if (len + triangle[layer][i] < q.back()) {
+                            q.back() = len + triangle[layer][i];
+                        }
+                    }
+                    q.push(len + triangle[layer][i + 1]);
+                }
+            }
+        }
+
+        return minPath;
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<vector<int>> triangle(n, vector<int>(n));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < i + 1; j++) {
+            cin >> triangle[i][j];
+        }
+    }
+
+    Solution obj;
+    cout << obj.minimumTotal(triangle);
+
+    return 0;
+}
+```
+
+> 用`vector`会好一点
+
+
+
+#### 142.3 解析
+
+正向这样弄也行，但是显然倒过来会舒服很多：
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int minimumTotal(vector<vector<int>>& triangle) {
+        int n = triangle.size();
+        
+        // 长度为 n 的一维数组，初始化为三角形的最后一行
+        vector<int> dp = triangle.back();
+        
+        // 从倒数第二行开始，自底向上遍历
+        for (int i = n - 2; i >= 0; i--) {
+            for (int j = 0; j <= i; j++) {
+                // 当前节点的最短路径 = 自身的值 + 下方两个子节点中较小的一个
+                dp[j] = triangle[i][j] + min(dp[j], dp[j + 1]);
+            }
+        }
+        
+        // 最终全部汇聚到了顶点 dp[0]
+        return dp[0];
+    }
+};
+```
+
