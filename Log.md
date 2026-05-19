@@ -25435,7 +25435,7 @@ public:
 
 
 
-### 142. 三角形最小路径和
+### 142. 三角形最小路径和*
 
 #### 142.1 题目
 
@@ -25587,3 +25587,244 @@ public:
 };
 ```
 
+
+
+
+
+### 143. 最小路径和**（@）
+
+#### 143.1 题目
+
+给定一个包含非负整数的 `*m* x *n*` 网格 `grid` ，请找出一条从左上角到右下角的路径，使得路径上的数字总和为最小。
+
+**说明：**每次只能向下或者向右移动一步。
+
+ 
+
+**示例 1：**
+
+![img](./assets/minpath.jpg)
+
+```
+输入：grid = [[1,3,1],[1,5,1],[4,2,1]]
+输出：7
+解释：因为路径 1→3→1→1→1 的总和最小。
+```
+
+**示例 2：**
+
+```
+输入：grid = [[1,2,3],[4,5,6]]
+输出：12
+```
+
+ 
+
+
+
+**提示：**
+
+- `m == grid.length`
+- `n == grid[i].length`
+- `1 <= m, n <= 200`
+- `0 <= grid[i][j] <= 200`
+
+
+
+#### 143.2 解法
+
+时间复杂度：$O(M \times N)$，空间复杂度：$O(M \times N)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int minPathSum(vector<vector<int>>& grid) {
+        int n = grid.size(), m = grid[0].size();
+        vector<vector<int>> dp(n, vector<int>(m));
+        dp[0][0] = grid[0][0];
+        for (int i = 1; i < m; i++) dp[0][i] = dp[0][i - 1] + grid[0][i];
+        for (int i = 1; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                dp[i][j] = grid[i][j];
+                if (j == 0) {
+                    dp[i][j] += dp[i - 1][j];
+                } else {
+                    dp[i][j] += min(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+        }
+
+        return dp.back().back();
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    cin >> n >> m;
+    vector<vector<int>> grid(n, vector<int>(m));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> grid[i][j];
+        }
+    }
+
+    Solution obj;
+    cout << obj.minPathSum(grid);
+
+    return 0;
+}
+```
+
+
+
+#### 143.3 解析
+
+这道题标@是因为它是二维DP里面比较标准的一个题目，当然它能有更好的解法，比如不需要存储整一个矩阵的DP值，这一点和很多一维DP一样的，只要不是涉及遍历前面的DP数组的题目，一般都能简化：
+
+```cpp
+#include <algorithm>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int minPathSum(vector<vector<int>>& grid) {
+        int n = grid.size(), m = grid[0].size();
+
+        for (int i = 1; i < m; i++) grid[0][i] += grid[0][i - 1];
+        for (int i = 1; i < n; i++) grid[i][0] += grid[i - 1][0];
+
+        for (int i = 1; i < n; i++) {
+            for (int j = 1; j < m; j++) {
+                grid[i][j] += min(grid[i - 1][j], grid[i][j - 1]);
+            }
+        }
+
+        return grid.back().back();
+    }
+};
+```
+
+
+
+### 144. 不同路径II**
+
+#### 144.1 题目
+
+给定一个 `m x n` 的整数数组 `grid`。一个机器人初始位于 **左上角**（即 `grid[0][0]`）。机器人尝试移动到 **右下角**（即 `grid[m - 1][n - 1]`）。机器人每次只能向下或者向右移动一步。
+
+网格中的障碍物和空位置分别用 `1` 和 `0` 来表示。机器人的移动路径中不能包含 **任何** 有障碍物的方格。
+
+返回机器人能够到达右下角的不同路径数量。
+
+测试用例保证答案小于等于 `2 * 109`。
+
+ 
+
+**示例 1：**
+
+![img](./assets/robot1.jpg)
+
+```
+输入：obstacleGrid = [[0,0,0],[0,1,0],[0,0,0]]
+输出：2
+解释：3x3 网格的正中间有一个障碍物。
+从左上角到右下角一共有 2 条不同的路径：
+1. 向右 -> 向右 -> 向下 -> 向下
+2. 向下 -> 向下 -> 向右 -> 向右
+```
+
+**示例 2：**
+
+![img](./assets/robot2.jpg)
+
+```
+输入：obstacleGrid = [[0,1],[0,0]]
+输出：1
+```
+
+ 
+
+**提示：**
+
+- `m == obstacleGrid.length`
+- `n == obstacleGrid[i].length`
+- `1 <= m, n <= 100`
+- `obstacleGrid[i][j]` 为 `0` 或 `1`
+
+
+
+#### 144.2 解法
+
+时间复杂度：$O(N \times M)$，空间复杂度：$O(N \times M)$。
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+   public:
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+        int n = obstacleGrid.size(), m = obstacleGrid[0].size();
+        vector<vector<int>> dp(n, vector<int>(m));
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                dp[i][j] = 0;
+                if (obstacleGrid[i][j] == 1) continue;
+                if (i == 0 && j == 0) {
+                    dp[i][j] = 1;
+                    continue;
+                }
+                if (i > 0) dp[i][j] += dp[i - 1][j];
+                if (j > 0) dp[i][j] += dp[i][j - 1];
+            }
+        }
+
+        return dp.back().back();
+    }
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    cin >> n >> m;
+    vector<vector<int>> grid(n, vector<int>(m));
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            cin >> grid[i][j];
+        }
+    }
+
+    Solution obj;
+    cout << obj.uniquePathsWithObstacles(grid);
+
+    return 0;
+}
+```
+
+
+
+#### 144.3 解析
+
+差不太多，当然也能压缩空间，但是这都公式化解题，也懒得再弄了。
